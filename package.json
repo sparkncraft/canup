@@ -1,0 +1,64 @@
+{
+  "name": "canup",
+  "version": "0.1.0",
+  "description": "Managed backend for Canva Apps — CLI & React components",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sparkncraft/canup.git"
+  },
+  "keywords": ["canva", "canva-apps", "serverless", "lambda", "cli", "deploy", "react"],
+  "type": "module",
+  "bin": {
+    "canup": "./dist/cli/index.mjs"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/ui/index.d.ts",
+      "import": "./dist/ui/index.js"
+    }
+  },
+  "files": ["dist"],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsdown",
+    "test": "vitest run",
+    "changeset": "changeset"
+  },
+  "dependencies": {
+    "commander": "^13.1.0",
+    "chalk": "^5.6.2",
+    "ora": "^9.3.0",
+    "@inquirer/prompts": "^8.3.0",
+    "open": "^10.1.0",
+    "zod": "^3.24.2"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "@canva/app-ui-kit": ">=5.0.0 <7.0.0",
+    "@canva/platform": "*",
+    "@canva/user": "*"
+  },
+  "peerDependenciesMeta": {
+    "react": { "optional": true },
+    "@canva/app-ui-kit": { "optional": true },
+    "@canva/platform": { "optional": true },
+    "@canva/user": { "optional": true }
+  },
+  "devDependencies": {
+    "tsdown": "^0.21.4",
+    "typescript": "^5.7.3",
+    "vitest": "^4.1.0",
+    "@changesets/cli": "^2.30.0",
+    "@changesets/changelog-github": "^0.6.0",
+    "react": "^19.0.0",
+    "@types/react": "^19.0.0",
+    "@canva/app-ui-kit": "^5.7.0",
+    "@canva/platform": "^2.2.0",
+    "@canva/user": "^2.2.0",
+    "@testing-library/react": "^16.3.2",
+    "jsdom": "^26.0.0",
+    "msw": "^2.12.14",
+    "@types/node": "^22.13.4"
+  }
+}

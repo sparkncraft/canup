@@ -1,0 +1,10 @@
+.scrollContainer {
+  box-sizing: border-box;
+  overflow-y: scroll;
+  height: 100%;
+  padding-top: var(--ui-kit-space-200);
+  padding-right: var(--ui-kit-space-200);
+  padding-bottom: var(--ui-kit-space-200);
+  scrollbar-width: thin;
+  scrollbar-color: var(--ui-kit-color-content-placeholder-fg) transparent;
+}

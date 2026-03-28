@@ -1,0 +1,38 @@
+{
+  "name": "canva-app-example",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Example Canva app showcasing canup components",
+  "scripts": {
+    "start": "tsx scripts/start.ts",
+    "build": "tsx scripts/build.ts"
+  },
+  "dependencies": {
+    "canup": "workspace:^",
+    "@canva/app-hooks": "^0.0.0-beta.4",
+    "@canva/app-i18n-kit": "^1.2.0",
+    "@canva/app-ui-kit": "^5.7.0",
+    "@canva/design": "^2.8.0",
+    "@canva/intents": "^2.3.1",
+    "@canva/platform": "^2.2.2",
+    "@canva/user": "^2.2.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-intl": "^7.1.11"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@types/webpack-env": "^1.18.8",
+    "chalk": "^4.1.2",
+    "css-loader": "^7.1.2",
+    "dotenv": "^16.6.0",
+    "style-loader": "^4.0.0",
+    "terser-webpack-plugin": "^5.4.0",
+    "ts-loader": "^9.5.4",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2",
+    "webpack": "^5.105.2",
+    "webpack-dev-server": "^5.2.2"
+  }
+}
