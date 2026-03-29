@@ -236,7 +236,7 @@ export interface MockSpinner {
  *
  * The default implementation executes the wrapped function immediately
  * (no spinner UI) and returns its result. This solves the withSpinner
- * re-mock problem -- tests no longer need to individually
+ * re-mock problem from Phase 6 -- tests no longer need to individually
  * mock withSpinner in beforeEach after vi.clearAllMocks() clears call counts.
  */
 export function createMockSpinner(): MockSpinner {

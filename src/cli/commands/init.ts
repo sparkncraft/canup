@@ -1,7 +1,7 @@
 import type { Command } from 'commander';
-import { mkdirSync, readFileSync, existsSync } from 'node:fs';
+import { mkdirSync, readFileSync, existsSync, writeFileSync } from 'node:fs';
 import { createInterface } from 'node:readline/promises';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { select, Separator } from '@inquirer/prompts';
 import { loadToken } from '../auth/token-store.js';
 import { saveApiKey } from '../auth/token-store.js';
@@ -139,14 +139,53 @@ export function registerInitCommand(program: Command): void {
         // g. Save project config (only appId -- no canvaAppId in new convention)
         saveProjectConfig(process.cwd(), { appId });
 
-        // h. Output
+        // h. Add canup as a dependency in the project's package.json
+        try {
+          const sdkPkgPath = resolve(import.meta.dirname, '../../../package.json');
+          const sdkVersion = JSON.parse(readFileSync(sdkPkgPath, 'utf-8')).version as string;
+
+          const projectPkgPath = join(process.cwd(), 'package.json');
+          if (existsSync(projectPkgPath)) {
+            const pkgContent = readFileSync(projectPkgPath, 'utf-8');
+            const pkg = JSON.parse(pkgContent);
+            if (!pkg.dependencies) pkg.dependencies = {};
+            if (!pkg.dependencies.canup) {
+              pkg.dependencies.canup = '^' + sdkVersion;
+              writeFileSync(projectPkgPath, JSON.stringify(pkg, null, 2) + '\n');
+              info('Added "canup" to package.json dependencies');
+            }
+          }
+        } catch {
+          // Non-critical: user can add manually
+          hint('Add "canup" to your package.json dependencies');
+        }
+
+        // i. Suggest install command based on lockfile detection
+        try {
+          const lockfiles: Array<[string, string]> = [
+            ['pnpm-lock.yaml', 'pnpm install'],
+            ['yarn.lock', 'yarn install'],
+            ['package-lock.json', 'npm install'],
+            ['bun.lockb', 'bun install'],
+          ];
+          const detectedLockfile = lockfiles.find(([file]) => existsSync(join(process.cwd(), file)));
+          if (detectedLockfile) {
+            hint(`Run: ${detectedLockfile[1]}`);
+          } else {
+            hint("Run your package manager's install command");
+          }
+        } catch {
+          // Non-critical: lockfile detection is best-effort
+        }
+
+        // j. Output
         success('Project initialized');
         label('App ID', appId);
         label('Config', join(CANUP_DIR, 'canup.json'));
         label('API Key', `${prefix}...`);
         hint('Add the canup/ folder to your git repository.');
 
-        // i. If joining existing app, check for deployed actions and suggest pull
+        // k. If joining existing app, check for deployed actions and suggest pull
         if (isExistingApp) {
           const appActions = await client.listActions(appId);
           const deployedCount = appActions.filter((a) => a.deployed).length;

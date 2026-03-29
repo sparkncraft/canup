@@ -1,5 +1,5 @@
 /**
- * Internal types for the UI layer.
+ * Internal types for @canup/ui.
  * These mirror the server API response shapes but are client-side types.
  */
 
