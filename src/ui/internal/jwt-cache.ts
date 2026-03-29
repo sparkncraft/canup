@@ -1,16 +1,10 @@
+import { auth } from '@canva/user';
+
 let cachedToken: string | null = null;
 let tokenExpiry = 0;
 let pendingRequest: Promise<string> | null = null;
 
-let getTokenFn: (() => Promise<string>) | null = null;
-
 export async function getJwt(): Promise<string> {
-  if (!getTokenFn) {
-    // Lazy import @canva/user only if not configured
-    const { auth } = await import('@canva/user');
-    getTokenFn = () => auth.getCanvaUserToken();
-  }
-
   // Return cached if not expired (with 30s buffer)
   if (cachedToken && Date.now() < tokenExpiry - 30_000) {
     return cachedToken;
@@ -21,7 +15,7 @@ export async function getJwt(): Promise<string> {
     return pendingRequest;
   }
 
-  pendingRequest = getTokenFn()
+  pendingRequest = auth.getCanvaUserToken()
     .then((token) => {
       cachedToken = token;
       // Parse exp from JWT payload (base64url decode middle segment)

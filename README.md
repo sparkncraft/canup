@@ -12,26 +12,12 @@ pnpm add canup
 
 ## Quick Start
 
-Initialize your project:
-
 ```sh
-npx canup init
+npx canup login          # Authenticate via GitHub OAuth
+npx canup init           # Link to your Canva app, create canup/ folder
+npx canup actions new generate-text   # Scaffold an action
+npx canup actions deploy generate-text # Deploy to AWS Lambda
 ```
-
-This links your directory to a Canva App, creates the `canup/` config folder, and adds `canup` to your `package.json` dependencies.
-
-## CLI Commands
-
-| Command | Description |
-|---------|-------------|
-| `canup init` | Initialize a Canup project (auto-login, app linking, dependency setup) |
-| `canup actions deploy` | Deploy an action script to AWS Lambda |
-| `canup actions list` | List all actions for the current app |
-| `canup actions new` | Scaffold a new action |
-| `canup actions run` | Invoke a deployed action |
-| `canup actions logs` | View execution logs |
-| `canup status` | Show project and app status |
-| `canup login` | Authenticate via GitHub OAuth |
 
 ## React Components
 
@@ -43,35 +29,108 @@ import { ActionButton, CreditCounter } from 'canup';
 function App() {
   return (
     <div>
-      <CreditCounter actionSlug="generate-text" />
       <ActionButton
-        actionSlug="generate-text"
-        label="Generate"
-        onSuccess={(result) => console.log(result)}
-      />
+        action="generate-text"
+        params={{ prompt: 'Hello world' }}
+        onResult={(data) => console.log(data.result)}
+        onError={(error) => console.error(error.message)}
+        variant="primary"
+      >
+        Generate
+      </ActionButton>
+      <CreditCounter action="generate-text" />
     </div>
   );
 }
 ```
 
-### Cross-component sync
-
 `ActionButton` and `CreditCounter` share a reactive credit store. When a user clicks an `ActionButton` and consumes credits, every `CreditCounter` on the page updates automatically -- no prop drilling, no context providers, no state management boilerplate.
 
-### Available exports
+## Hooks
+
+For full control, use the hooks directly:
+
+```tsx
+import { useAction, useCredits } from 'canup';
+
+function MyComponent() {
+  const { execute, loading, error } = useAction('generate-text');
+  const { data, exhausted, refresh } = useCredits('generate-text');
+
+  const handleClick = async () => {
+    const { result, durationMs } = await execute({ prompt: 'Hello' });
+    console.log(result, `${durationMs}ms`);
+  };
+
+  return (
+    <div>
+      <button onClick={handleClick} disabled={loading || exhausted}>
+        {loading ? 'Running...' : 'Execute'}
+      </button>
+      {data && <p>{data.remaining} / {data.quota} credits</p>}
+    </div>
+  );
+}
+```
+
+## CLI Commands
+
+| Command | Description |
+|---------|-------------|
+| `canup init` | Initialize a project (auto-login, app linking, dependency setup) |
+| `canup login` | Authenticate via GitHub OAuth |
+| `canup logout` | Clear stored credentials |
+| `canup whoami` | Show current user identity |
+| `canup status` | Show project and app status |
+| `canup pull` | Download deployed action scripts |
+
+### Actions
+
+| Command | Description |
+|---------|-------------|
+| `canup actions new <name>` | Scaffold a new action (Python or Node.js) |
+| `canup actions deploy <name>` | Deploy an action to AWS Lambda |
+| `canup actions list` | List all actions for the current app |
+| `canup actions run <name>` | Invoke a deployed action |
+| `canup actions test <name>` | Test an action locally |
+| `canup actions logs <name>` | View execution logs |
+| `canup actions remove <name>` | Remove a deployed action |
+| `canup actions credits set <name>` | Set credit quota for an action |
+| `canup actions credits show <name>` | Show credit configuration |
+
+### Secrets & Dependencies
+
+| Command | Description |
+|---------|-------------|
+| `canup secrets set <key>` | Set a secret (available as env var in actions) |
+| `canup secrets list` | List all secrets |
+| `canup secrets delete <key>` | Remove a secret |
+| `canup deps add <pkg>` | Add a pip/npm dependency to your actions |
+| `canup deps list` | List action dependencies |
+| `canup deps remove <pkg>` | Remove a dependency |
+
+### Stripe Integration
+
+| Command | Description |
+|---------|-------------|
+| `canup stripe connect` | Connect your Stripe account for billing |
+| `canup stripe status` | Show Stripe connection status |
+| `canup stripe disconnect` | Disconnect Stripe |
+
+## How It Works
+
+1. Write a backend action (Python or Node.js) in `canup/actions/`
+2. Deploy with `canup actions deploy`
+3. Import `ActionButton` in your Canva app to trigger it
+4. Users click the button, the action runs on AWS Lambda, credits are tracked automatically
+
+## Exports
 
 **Components:** `ActionButton`, `CreditCounter`
 
 **Hooks:** `useAction`, `useCredits`
 
 **Types:** `ActionButtonProps`, `CreditCounterProps`, `UseActionResult`, `UseCreditsResult`, `CreditBalance`, `ActionResult`, `CanupError`, `CanupErrorType`
-
-## How It Works
-
-1. Write a backend action (Python or Node.js) in your `canup/actions/` folder
-2. Deploy with `canup actions deploy`
-3. Import `ActionButton` in your Canva app to trigger it
-4. Users click the button, the action runs on AWS Lambda, credits are tracked automatically
 
 ## License
 

@@ -1,10 +1,3 @@
-// Local dev: point canup at local server instead of canup.link
-// CANUP_API_URL is injected by webpack DefinePlugin from .env
-declare const CANUP_API_URL: string | undefined;
-if (typeof CANUP_API_URL === 'string' && CANUP_API_URL) {
-  (globalThis as Record<string, unknown>).__canup_url = CANUP_API_URL;
-}
-
 import '@canva/app-ui-kit/styles.css';
 import type { DesignEditorIntent } from '@canva/intents/design';
 import { AppI18nProvider } from '@canva/app-i18n-kit';

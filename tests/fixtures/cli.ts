@@ -2,19 +2,11 @@
  * Vitest 4.1 fixture-based `test` export for CLI tests.
  *
  * Usage:
- *   import { test, output, client, project, spinner } from '@canup/testing/cli'
+ *   import { test, output, client, project, spinner } from '../fixtures/cli.js'
  *   import { describe, expect, vi } from 'vitest'
  *
- *   vi.mock('../../ui/output.js', () => output)
- *   vi.mock('../../api-client.js', () => ({ CanupClient: vi.fn(() => client) }))
- *   vi.mock('../../config/require-project.js', () => ({ requireProject: vi.fn(() => project) }))
- *   vi.mock('../../ui/spinner.js', () => spinner)
- *
- *   describe('my command', () => {
- *     test('does something', ({ client, output, processMocks }) => {
- *       client.deployAction.mockResolvedValue({ ... })
- *     })
- *   })
+ *   vi.mock('../../../src/cli/ui/output.js', () => output)
+ *   vi.mock('../../../src/cli/api-client.js', () => ({ CanupClient: vi.fn(() => client) }))
  *
  * What fixtures handle:
  * - Auto-clearing mock call history between tests (via vitest clearMocks: true)

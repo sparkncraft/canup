@@ -20,6 +20,3 @@ declare module "*.jpeg" {
   export default content;
 }
 
-// Globals injected by webpack DefinePlugin
-declare const BACKEND_HOST: string | undefined;
-declare const CANUP_API_URL: string | undefined;

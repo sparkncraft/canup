@@ -38,7 +38,8 @@ export function useAction(action: string): UseActionResult {
           throw err;
         }
 
-        const canupError = new CanupError('NETWORK_ERROR', (err as Error).message);
+        const message = err instanceof Error ? err.message : String(err);
+        const canupError = new CanupError('NETWORK_ERROR', message);
         setError(canupError);
         throw canupError;
       }

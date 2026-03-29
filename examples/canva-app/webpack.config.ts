@@ -1,11 +1,8 @@
 import type { Configuration } from "webpack";
-import { DefinePlugin, optimize } from "webpack";
+import { optimize } from "webpack";
 import path from "path";
 import TerserPlugin from "terser-webpack-plugin";
-import { config } from "dotenv";
 import type { Configuration as DevServerConfiguration } from "webpack-dev-server";
-
-config();
 
 type DevConfig = {
   port: number;
@@ -17,13 +14,9 @@ type DevConfig = {
 export function buildConfig({
   devConfig,
   appEntry = path.join(process.cwd(), "src", "index.tsx"),
-  backendHost = process.env.CANVA_BACKEND_HOST,
-  canupApiUrl = process.env.CANUP_API_URL,
 }: {
   devConfig?: DevConfig;
   appEntry?: string;
-  backendHost?: string;
-  canupApiUrl?: string;
 } = {}): Configuration & { devServer?: DevServerConfiguration } {
   const mode = devConfig ? "development" : "production";
 
@@ -35,16 +28,10 @@ export function buildConfig({
     },
     target: "web",
     resolve: {
-      // Prevent duplicate modules from file: protocol dependencies
-      modules: [path.resolve(process.cwd(), "node_modules"), "node_modules"],
       alias: {
-        // Point at canup TypeScript source for immediate dev feedback
-        "canup": path.resolve(__dirname, "../../src/ui/index.ts"),
         styles: path.resolve(process.cwd(), "src/styles"),
       },
       extensions: [".ts", ".tsx", ".js", ".css"],
-      // Map .js imports to .ts/.tsx (canup uses .js extensions in imports)
-      extensionAlias: { ".js": [".ts", ".tsx", ".js"] },
     },
     infrastructureLogging: {
       level: "none",
@@ -53,7 +40,6 @@ export function buildConfig({
       rules: [
         {
           test: /\.tsx?$/,
-          // Allow canup source through ts-loader
           exclude: /node_modules/,
           use: [
             {
@@ -92,10 +78,6 @@ export function buildConfig({
       clean: true,
     },
     plugins: [
-      new DefinePlugin({
-        BACKEND_HOST: JSON.stringify(backendHost),
-        CANUP_API_URL: JSON.stringify(canupApiUrl),
-      }),
       // Canva apps must submit a single JS file
       new optimize.LimitChunkCountPlugin({ maxChunks: 1 }),
     ],
