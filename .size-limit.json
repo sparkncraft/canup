@@ -1,0 +1,15 @@
+[
+  {
+    "name": "UI entry (full import)",
+    "path": "dist/ui/index.js",
+    "limit": "15 kB",
+    "gzip": true,
+    "ignore": [
+      "react",
+      "react/jsx-runtime",
+      "@canva/app-ui-kit",
+      "@canva/platform",
+      "@canva/user"
+    ]
+  }
+]
