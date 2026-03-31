@@ -85,7 +85,7 @@ export default tseslint.config(
 
   // Test files: relax strict rules
   {
-    files: ['**/*.test.ts', '**/*.test.tsx', '**/*.spec.ts', 'tests/**/*.ts'],
+    files: ['**/*.test.ts', '**/*.test.tsx', '**/*.spec.ts', 'test/**/*.ts'],
     rules: {
       '@typescript-eslint/no-unsafe-assignment': 'off',
       '@typescript-eslint/no-unsafe-member-access': 'off',
@@ -109,7 +109,7 @@ export default tseslint.config(
       '**/*.test.ts',
       '**/*.test.tsx',
       '**/*.spec.ts',
-      'tests/**/*.ts',
+      'test/**/*.ts',
       '*.config.{js,mjs,ts,mts}',
       'vitest.config.ts',
     ],

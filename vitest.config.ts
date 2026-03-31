@@ -1,8 +1,20 @@
 import { defineConfig } from 'vitest/config';
+import path from 'node:path';
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      '#test': path.resolve(import.meta.dirname, 'test'),
+    },
+  },
   test: {
     clearMocks: true,
-    include: ['tests/**/*.test.ts', 'tests/**/*.test.tsx'],
+    include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
+    coverage: {
+      provider: 'v8',
+      include: ['src/**/*.ts', 'src/**/*.tsx'],
+      exclude: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'src/**/index.ts'],
+      reporter: ['text', 'json', 'html'],
+    },
   },
 });
