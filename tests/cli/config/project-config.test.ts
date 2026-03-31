@@ -6,7 +6,7 @@ import { randomUUID } from 'node:crypto';
 // vi.hoisted runs at hoist-time, before static imports resolve.
 // This file has a static import of project-config.js which itself imports output.js,
 // so the mock must be ready before module loading — createMockOutput() can't be used
-// because the @canup/testing/cli import hasn't resolved yet at hoist time.
+// because the fixtures import hasn't resolved yet at hoist time.
 const mockOutput = vi.hoisted(() => ({
   success: vi.fn(),
   error: vi.fn(),

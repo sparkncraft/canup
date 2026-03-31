@@ -57,6 +57,22 @@ describe('api-client', () => {
       expect(capturedBody).toEqual({ params: { prompt: 'hello' } });
     });
 
+    it('sends { params: {} } when no params provided', async () => {
+      let capturedBody: unknown = null;
+
+      server.use(
+        http.post(`${BASE_URL}/run/my-action`, async ({ request }) => {
+          capturedBody = await request.json();
+          return HttpResponse.json({ ok: true, data: { result: 'ok', durationMs: 1 } });
+        }),
+      );
+
+      const { runAction } = await getModule();
+      await runAction('my-action');
+
+      expect(capturedBody).toEqual({ params: {} });
+    });
+
     it('returns { result, durationMs } on success', async () => {
       server.use(
         http.post(`${BASE_URL}/run/my-action`, () =>
