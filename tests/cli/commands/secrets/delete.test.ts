@@ -21,7 +21,8 @@ describe('secrets delete command', () => {
     client.deleteSecret.mockResolvedValue({ deleted: 'MY_KEY', synced: true });
 
     const { Command } = await import('commander');
-    const { registerSecretsDeleteAction } = await import('../../../../src/cli/commands/secrets/delete.js');
+    const { registerSecretsDeleteAction } =
+      await import('../../../../src/cli/commands/secrets/delete.js');
 
     const program = new Command();
     const secrets = program.command('secrets');
@@ -39,7 +40,8 @@ describe('secrets delete command', () => {
     client.deleteSecret.mockRejectedValue(apiError);
 
     const { Command } = await import('commander');
-    const { registerSecretsDeleteAction } = await import('../../../../src/cli/commands/secrets/delete.js');
+    const { registerSecretsDeleteAction } =
+      await import('../../../../src/cli/commands/secrets/delete.js');
 
     const program = new Command();
     const secrets = program.command('secrets');
@@ -55,7 +57,8 @@ describe('secrets delete command', () => {
     client.deleteSecret.mockResolvedValue({ deleted: 'MY_KEY', synced: false });
 
     const { Command } = await import('commander');
-    const { registerSecretsDeleteAction } = await import('../../../../src/cli/commands/secrets/delete.js');
+    const { registerSecretsDeleteAction } =
+      await import('../../../../src/cli/commands/secrets/delete.js');
 
     const program = new Command();
     const secrets = program.command('secrets');

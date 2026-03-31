@@ -89,7 +89,8 @@ describe('Token Store', () => {
   });
 
   it('clears the token by deleting credentials file', async () => {
-    const { saveToken, clearToken, loadToken } = await import('../../../src/cli/auth/token-store.js');
+    const { saveToken, clearToken, loadToken } =
+      await import('../../../src/cli/auth/token-store.js');
 
     saveToken('test-token');
     expect(loadToken()).toBe('test-token');

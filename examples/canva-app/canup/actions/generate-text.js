@@ -12,7 +12,7 @@ export async function handler(params, context) {
    * @param {Object} context - Platform context (user_id, brand_id, app_id, invocation_id)
    * @returns {any} JSON-serializable value
    */
-  const prompt = params.prompt || "Hello, world!";
+  const prompt = params.prompt || 'Hello, world!';
 
   return {
     text: `Generated text for: "${prompt}"`,

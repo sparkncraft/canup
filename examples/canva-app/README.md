@@ -47,11 +47,11 @@ A reference Canva app that demonstrates canup components in a realistic project 
 
 ## Key code
 
-| File | Description |
-|------|-------------|
-| `src/intents/design_editor/app.tsx` | Main app UI with ActionButton and CreditCounter |
-| `canup/actions/generate-text.js` | Server-side action handler (replace with your logic) |
-| `canup/canup.json` | Canup project configuration |
+| File                                | Description                                          |
+| ----------------------------------- | ---------------------------------------------------- |
+| `src/intents/design_editor/app.tsx` | Main app UI with ActionButton and CreditCounter      |
+| `canup/actions/generate-text.js`    | Server-side action handler (replace with your logic) |
+| `canup/canup.json`                  | Canup project configuration                          |
 
 ### Core integration
 

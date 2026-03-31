@@ -25,7 +25,8 @@ describe('deps remove command', () => {
     client.removeDep.mockResolvedValue({ deleted: 'express' });
 
     const { Command } = await import('commander');
-    const { registerDepsRemoveAction } = await import('../../../../src/cli/commands/deps/remove.js');
+    const { registerDepsRemoveAction } =
+      await import('../../../../src/cli/commands/deps/remove.js');
 
     const program = new Command();
     const deps = program.command('deps');
@@ -49,7 +50,8 @@ describe('deps remove command', () => {
     });
 
     const { Command } = await import('commander');
-    const { registerDepsRemoveAction } = await import('../../../../src/cli/commands/deps/remove.js');
+    const { registerDepsRemoveAction } =
+      await import('../../../../src/cli/commands/deps/remove.js');
 
     const program = new Command();
     const deps = program.command('deps');
@@ -76,7 +78,8 @@ describe('deps remove command', () => {
     client.removeDep.mockRejectedValue(apiError);
 
     const { Command } = await import('commander');
-    const { registerDepsRemoveAction } = await import('../../../../src/cli/commands/deps/remove.js');
+    const { registerDepsRemoveAction } =
+      await import('../../../../src/cli/commands/deps/remove.js');
 
     const program = new Command();
     const deps = program.command('deps');
@@ -92,7 +95,8 @@ describe('deps remove command', () => {
 
   test('exits with error for invalid language', async ({ output, processMocks }) => {
     const { Command } = await import('commander');
-    const { registerDepsRemoveAction } = await import('../../../../src/cli/commands/deps/remove.js');
+    const { registerDepsRemoveAction } =
+      await import('../../../../src/cli/commands/deps/remove.js');
 
     const program = new Command();
     const deps = program.command('deps');

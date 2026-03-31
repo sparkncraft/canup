@@ -1,5 +1,8 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { startCallbackServer, type CallbackServerResult } from '../../../src/cli/auth/oauth-server.js';
+import {
+  startCallbackServer,
+  type CallbackServerResult,
+} from '../../../src/cli/auth/oauth-server.js';
 
 describe('OAuth Callback Server', () => {
   let server: CallbackServerResult | null = null;

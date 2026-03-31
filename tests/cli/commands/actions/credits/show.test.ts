@@ -24,7 +24,8 @@ describe('credits show command', () => {
     });
 
     const { Command } = await import('commander');
-    const { registerCreditsShowAction } = await import('../../../../../src/cli/commands/actions/credits/show.js');
+    const { registerCreditsShowAction } =
+      await import('../../../../../src/cli/commands/actions/credits/show.js');
 
     const program = new Command();
     const credits = program.command('credits');
@@ -41,7 +42,8 @@ describe('credits show command', () => {
     client.getCreditConfig.mockResolvedValue(null);
 
     const { Command } = await import('commander');
-    const { registerCreditsShowAction } = await import('../../../../../src/cli/commands/actions/credits/show.js');
+    const { registerCreditsShowAction } =
+      await import('../../../../../src/cli/commands/actions/credits/show.js');
 
     const program = new Command();
     const credits = program.command('credits');
@@ -56,7 +58,8 @@ describe('credits show command', () => {
     client.getCreditConfig.mockRejectedValue(new Error('Not found'));
 
     const { Command } = await import('commander');
-    const { registerCreditsShowAction } = await import('../../../../../src/cli/commands/actions/credits/show.js');
+    const { registerCreditsShowAction } =
+      await import('../../../../../src/cli/commands/actions/credits/show.js');
 
     const program = new Command();
     const credits = program.command('credits');

@@ -30,7 +30,8 @@ describe('stripe connect command', () => {
     client.connectStripe.mockResolvedValue({ connected: true });
 
     const { Command } = await import('commander');
-    const { registerStripeConnectAction } = await import('../../../../src/cli/commands/stripe/connect.js');
+    const { registerStripeConnectAction } =
+      await import('../../../../src/cli/commands/stripe/connect.js');
 
     const program = new Command();
     const stripe = program.command('stripe');
@@ -50,7 +51,8 @@ describe('stripe connect command', () => {
     process.stdin.isTTY = true as boolean;
 
     const { Command } = await import('commander');
-    const { registerStripeConnectAction } = await import('../../../../src/cli/commands/stripe/connect.js');
+    const { registerStripeConnectAction } =
+      await import('../../../../src/cli/commands/stripe/connect.js');
 
     const program = new Command();
     const stripe = program.command('stripe');
@@ -72,7 +74,8 @@ describe('stripe connect command', () => {
     process.stdin.isTTY = undefined;
 
     const { Command } = await import('commander');
-    const { registerStripeConnectAction } = await import('../../../../src/cli/commands/stripe/connect.js');
+    const { registerStripeConnectAction } =
+      await import('../../../../src/cli/commands/stripe/connect.js');
 
     const program = new Command();
     const stripe = program.command('stripe');
@@ -92,7 +95,8 @@ describe('stripe connect command', () => {
     client.connectStripe.mockRejectedValue(err);
 
     const { Command } = await import('commander');
-    const { registerStripeConnectAction } = await import('../../../../src/cli/commands/stripe/connect.js');
+    const { registerStripeConnectAction } =
+      await import('../../../../src/cli/commands/stripe/connect.js');
 
     const program = new Command();
     const stripe = program.command('stripe');
@@ -114,7 +118,8 @@ describe('stripe connect command', () => {
     client.connectStripe.mockRejectedValue(err);
 
     const { Command } = await import('commander');
-    const { registerStripeConnectAction } = await import('../../../../src/cli/commands/stripe/connect.js');
+    const { registerStripeConnectAction } =
+      await import('../../../../src/cli/commands/stripe/connect.js');
 
     const program = new Command();
     const stripe = program.command('stripe');
@@ -142,7 +147,8 @@ describe('stripe connect command', () => {
     vi.mocked(readStdinPipe).mockResolvedValueOnce('');
 
     const { Command } = await import('commander');
-    const { registerStripeConnectAction } = await import('../../../../src/cli/commands/stripe/connect.js');
+    const { registerStripeConnectAction } =
+      await import('../../../../src/cli/commands/stripe/connect.js');
 
     const program = new Command();
     const stripe = program.command('stripe');
@@ -158,7 +164,8 @@ describe('stripe connect command', () => {
 
   test('shows error for empty value', async ({ output, processMocks }) => {
     const { Command } = await import('commander');
-    const { registerStripeConnectAction } = await import('../../../../src/cli/commands/stripe/connect.js');
+    const { registerStripeConnectAction } =
+      await import('../../../../src/cli/commands/stripe/connect.js');
 
     const program = new Command();
     const stripe = program.command('stripe');

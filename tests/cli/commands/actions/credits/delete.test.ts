@@ -16,7 +16,8 @@ describe('credits delete command', () => {
     client.deleteCreditConfig.mockResolvedValue({ deleted: 'my-action' });
 
     const { Command } = await import('commander');
-    const { registerCreditsDeleteAction } = await import('../../../../../src/cli/commands/actions/credits/delete.js');
+    const { registerCreditsDeleteAction } =
+      await import('../../../../../src/cli/commands/actions/credits/delete.js');
 
     const program = new Command();
     const credits = program.command('credits');
@@ -34,7 +35,8 @@ describe('credits delete command', () => {
     client.deleteCreditConfig.mockRejectedValue(err);
 
     const { Command } = await import('commander');
-    const { registerCreditsDeleteAction } = await import('../../../../../src/cli/commands/actions/credits/delete.js');
+    const { registerCreditsDeleteAction } =
+      await import('../../../../../src/cli/commands/actions/credits/delete.js');
 
     const program = new Command();
     const credits = program.command('credits');
@@ -50,7 +52,8 @@ describe('credits delete command', () => {
     client.deleteCreditConfig.mockRejectedValue(new Error('Server error'));
 
     const { Command } = await import('commander');
-    const { registerCreditsDeleteAction } = await import('../../../../../src/cli/commands/actions/credits/delete.js');
+    const { registerCreditsDeleteAction } =
+      await import('../../../../../src/cli/commands/actions/credits/delete.js');
 
     const program = new Command();
     const credits = program.command('credits');

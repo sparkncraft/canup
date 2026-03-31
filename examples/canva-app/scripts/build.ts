@@ -4,8 +4,8 @@
  * Uses tsx (not webpack-cli) to match the start script pattern
  * and avoid needing ts-node as a dependency.
  */
-import webpack from "webpack";
-import { buildConfig } from "../webpack.config";
+import webpack from 'webpack';
+import { buildConfig } from '../webpack.config';
 
 const config = buildConfig();
 const compiler = webpack(config);

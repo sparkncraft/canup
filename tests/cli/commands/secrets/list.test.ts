@@ -28,7 +28,8 @@ describe('secrets list command', () => {
     ]);
 
     const { Command } = await import('commander');
-    const { registerSecretsListAction } = await import('../../../../src/cli/commands/secrets/list.js');
+    const { registerSecretsListAction } =
+      await import('../../../../src/cli/commands/secrets/list.js');
 
     const program = new Command();
     const secrets = program.command('secrets');
@@ -52,7 +53,8 @@ describe('secrets list command', () => {
     client.listSecrets.mockResolvedValue([]);
 
     const { Command } = await import('commander');
-    const { registerSecretsListAction } = await import('../../../../src/cli/commands/secrets/list.js');
+    const { registerSecretsListAction } =
+      await import('../../../../src/cli/commands/secrets/list.js');
 
     const program = new Command();
     const secrets = program.command('secrets');

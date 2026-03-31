@@ -34,7 +34,8 @@ describe('actions new command', () => {
     mockExistsSync.mockReturnValue(false);
 
     const { Command } = await import('commander');
-    const { registerActionsNewAction } = await import('../../../../src/cli/commands/actions/new.js');
+    const { registerActionsNewAction } =
+      await import('../../../../src/cli/commands/actions/new.js');
 
     const program = new Command();
     const actions = program.command('actions');
@@ -58,7 +59,8 @@ describe('actions new command', () => {
     mockExistsSync.mockReturnValue(false);
 
     const { Command } = await import('commander');
-    const { registerActionsNewAction } = await import('../../../../src/cli/commands/actions/new.js');
+    const { registerActionsNewAction } =
+      await import('../../../../src/cli/commands/actions/new.js');
 
     const program = new Command();
     const actions = program.command('actions');
@@ -79,7 +81,8 @@ describe('actions new command', () => {
     mockExistsSync.mockReturnValue(true);
 
     const { Command } = await import('commander');
-    const { registerActionsNewAction } = await import('../../../../src/cli/commands/actions/new.js');
+    const { registerActionsNewAction } =
+      await import('../../../../src/cli/commands/actions/new.js');
 
     const program = new Command();
     const actions = program.command('actions');
@@ -96,7 +99,8 @@ describe('actions new command', () => {
     mockExistsSync.mockReturnValue(true);
 
     const { Command } = await import('commander');
-    const { registerActionsNewAction } = await import('../../../../src/cli/commands/actions/new.js');
+    const { registerActionsNewAction } =
+      await import('../../../../src/cli/commands/actions/new.js');
 
     const program = new Command();
     const actions = program.command('actions');
@@ -114,7 +118,8 @@ describe('actions new command', () => {
     mockExistsSync.mockReturnValue(true);
 
     const { Command } = await import('commander');
-    const { registerActionsNewAction } = await import('../../../../src/cli/commands/actions/new.js');
+    const { registerActionsNewAction } =
+      await import('../../../../src/cli/commands/actions/new.js');
 
     const program = new Command();
     const actions = program.command('actions');
@@ -133,7 +138,8 @@ describe('actions new command', () => {
     mockExistsSync.mockReturnValue(false);
 
     const { Command } = await import('commander');
-    const { registerActionsNewAction } = await import('../../../../src/cli/commands/actions/new.js');
+    const { registerActionsNewAction } =
+      await import('../../../../src/cli/commands/actions/new.js');
 
     const program = new Command();
     const actions = program.command('actions');
@@ -149,7 +155,8 @@ describe('actions new command', () => {
     mockExistsSync.mockReturnValue(false);
 
     const { Command } = await import('commander');
-    const { registerActionsNewAction } = await import('../../../../src/cli/commands/actions/new.js');
+    const { registerActionsNewAction } =
+      await import('../../../../src/cli/commands/actions/new.js');
 
     const program = new Command();
     const actions = program.command('actions');

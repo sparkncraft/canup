@@ -66,7 +66,8 @@ describe('actions deploy command', () => {
     mockReadFileSync.mockReturnValue('def handler(params, context): pass');
 
     const { Command } = await import('commander');
-    const { registerActionsDeployAction } = await import('../../../../src/cli/commands/actions/deploy.js');
+    const { registerActionsDeployAction } =
+      await import('../../../../src/cli/commands/actions/deploy.js');
 
     const program = new Command();
     const actions = program.command('actions');
@@ -112,7 +113,8 @@ describe('actions deploy command', () => {
     mockReadFileSync.mockReturnValue('code');
 
     const { Command } = await import('commander');
-    const { registerActionsDeployAction } = await import('../../../../src/cli/commands/actions/deploy.js');
+    const { registerActionsDeployAction } =
+      await import('../../../../src/cli/commands/actions/deploy.js');
 
     const program = new Command();
     const actions = program.command('actions');
@@ -156,7 +158,8 @@ describe('actions deploy command', () => {
     mockReadFileSync.mockReturnValue(code);
 
     const { Command } = await import('commander');
-    const { registerActionsDeployAction } = await import('../../../../src/cli/commands/actions/deploy.js');
+    const { registerActionsDeployAction } =
+      await import('../../../../src/cli/commands/actions/deploy.js');
 
     const program = new Command();
     const actions = program.command('actions');
@@ -194,7 +197,8 @@ describe('actions deploy command', () => {
     mockReadFileSync.mockReturnValue('code');
 
     const { Command } = await import('commander');
-    const { registerActionsDeployAction } = await import('../../../../src/cli/commands/actions/deploy.js');
+    const { registerActionsDeployAction } =
+      await import('../../../../src/cli/commands/actions/deploy.js');
 
     const program = new Command();
     const actions = program.command('actions');
@@ -217,7 +221,8 @@ describe('actions deploy command', () => {
     client.listActions.mockRejectedValue(apiError);
 
     const { Command } = await import('commander');
-    const { registerActionsDeployAction } = await import('../../../../src/cli/commands/actions/deploy.js');
+    const { registerActionsDeployAction } =
+      await import('../../../../src/cli/commands/actions/deploy.js');
 
     const program = new Command();
     const actions = program.command('actions');
@@ -237,7 +242,8 @@ describe('actions deploy command', () => {
     client.listActions.mockRejectedValue(apiError);
 
     const { Command } = await import('commander');
-    const { registerActionsDeployAction } = await import('../../../../src/cli/commands/actions/deploy.js');
+    const { registerActionsDeployAction } =
+      await import('../../../../src/cli/commands/actions/deploy.js');
 
     const program = new Command();
     const actions = program.command('actions');
@@ -276,7 +282,8 @@ describe('actions deploy command', () => {
     mockReadFileSync.mockReturnValue('code');
 
     const { Command } = await import('commander');
-    const { registerActionsDeployAction } = await import('../../../../src/cli/commands/actions/deploy.js');
+    const { registerActionsDeployAction } =
+      await import('../../../../src/cli/commands/actions/deploy.js');
 
     const program = new Command();
     const actions = program.command('actions');

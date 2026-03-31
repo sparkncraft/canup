@@ -31,7 +31,8 @@ describe('actions logs command', () => {
     const { formatTable } = await import('../../../../src/cli/ui/output.js');
 
     const { Command } = await import('commander');
-    const { registerActionsLogsAction } = await import('../../../../src/cli/commands/actions/logs.js');
+    const { registerActionsLogsAction } =
+      await import('../../../../src/cli/commands/actions/logs.js');
 
     const program = new Command();
     const actions = program.command('actions');
@@ -61,7 +62,8 @@ describe('actions logs command', () => {
     });
 
     const { Command } = await import('commander');
-    const { registerActionsLogsAction } = await import('../../../../src/cli/commands/actions/logs.js');
+    const { registerActionsLogsAction } =
+      await import('../../../../src/cli/commands/actions/logs.js');
 
     const program = new Command();
     const actions = program.command('actions');
@@ -82,7 +84,8 @@ describe('actions logs command', () => {
     client.listHistory.mockResolvedValue([]);
 
     const { Command } = await import('commander');
-    const { registerActionsLogsAction } = await import('../../../../src/cli/commands/actions/logs.js');
+    const { registerActionsLogsAction } =
+      await import('../../../../src/cli/commands/actions/logs.js');
 
     const program = new Command();
     const actions = program.command('actions');
@@ -99,7 +102,8 @@ describe('actions logs command', () => {
     client.getHistoryDetail.mockRejectedValue(apiError);
 
     const { Command } = await import('commander');
-    const { registerActionsLogsAction } = await import('../../../../src/cli/commands/actions/logs.js');
+    const { registerActionsLogsAction } =
+      await import('../../../../src/cli/commands/actions/logs.js');
 
     const program = new Command();
     const actions = program.command('actions');
@@ -117,7 +121,8 @@ describe('actions logs command', () => {
     client.listHistory.mockRejectedValue(apiError);
 
     const { Command } = await import('commander');
-    const { registerActionsLogsAction } = await import('../../../../src/cli/commands/actions/logs.js');
+    const { registerActionsLogsAction } =
+      await import('../../../../src/cli/commands/actions/logs.js');
 
     const program = new Command();
     const actions = program.command('actions');

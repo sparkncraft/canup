@@ -15,7 +15,8 @@ export async function getJwt(): Promise<string> {
     return pendingRequest;
   }
 
-  pendingRequest = auth.getCanvaUserToken()
+  pendingRequest = auth
+    .getCanvaUserToken()
     .then((token) => {
       cachedToken = token;
       // Parse exp from JWT payload (base64url decode middle segment)

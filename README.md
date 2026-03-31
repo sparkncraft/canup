@@ -67,7 +67,11 @@ function MyComponent() {
       <button onClick={handleClick} disabled={loading || exhausted}>
         {loading ? 'Running...' : 'Execute'}
       </button>
-      {data && <p>{data.remaining} / {data.quota} credits</p>}
+      {data && (
+        <p>
+          {data.remaining} / {data.quota} credits
+        </p>
+      )}
     </div>
   );
 }
@@ -75,47 +79,47 @@ function MyComponent() {
 
 ## CLI Commands
 
-| Command | Description |
-|---------|-------------|
-| `canup init` | Initialize a project (auto-login, app linking, dependency setup) |
-| `canup login` | Authenticate via GitHub OAuth |
-| `canup logout` | Clear stored credentials |
-| `canup whoami` | Show current user identity |
-| `canup status` | Show project and app status |
-| `canup pull` | Download deployed action scripts |
+| Command        | Description                                                      |
+| -------------- | ---------------------------------------------------------------- |
+| `canup init`   | Initialize a project (auto-login, app linking, dependency setup) |
+| `canup login`  | Authenticate via GitHub OAuth                                    |
+| `canup logout` | Clear stored credentials                                         |
+| `canup whoami` | Show current user identity                                       |
+| `canup status` | Show project and app status                                      |
+| `canup pull`   | Download deployed action scripts                                 |
 
 ### Actions
 
-| Command | Description |
-|---------|-------------|
-| `canup actions new <name>` | Scaffold a new action (Python or Node.js) |
-| `canup actions deploy <name>` | Deploy an action to AWS Lambda |
-| `canup actions list` | List all actions for the current app |
-| `canup actions run <name>` | Invoke a deployed action |
-| `canup actions test <name>` | Test an action locally |
-| `canup actions logs <name>` | View execution logs |
-| `canup actions remove <name>` | Remove a deployed action |
-| `canup actions credits set <name>` | Set credit quota for an action |
-| `canup actions credits show <name>` | Show credit configuration |
+| Command                             | Description                               |
+| ----------------------------------- | ----------------------------------------- |
+| `canup actions new <name>`          | Scaffold a new action (Python or Node.js) |
+| `canup actions deploy <name>`       | Deploy an action to AWS Lambda            |
+| `canup actions list`                | List all actions for the current app      |
+| `canup actions run <name>`          | Invoke a deployed action                  |
+| `canup actions test <name>`         | Test an action locally                    |
+| `canup actions logs <name>`         | View execution logs                       |
+| `canup actions remove <name>`       | Remove a deployed action                  |
+| `canup actions credits set <name>`  | Set credit quota for an action            |
+| `canup actions credits show <name>` | Show credit configuration                 |
 
 ### Secrets & Dependencies
 
-| Command | Description |
-|---------|-------------|
-| `canup secrets set <key>` | Set a secret (available as env var in actions) |
-| `canup secrets list` | List all secrets |
-| `canup secrets delete <key>` | Remove a secret |
-| `canup deps add <pkg>` | Add a pip/npm dependency to your actions |
-| `canup deps list` | List action dependencies |
-| `canup deps remove <pkg>` | Remove a dependency |
+| Command                      | Description                                    |
+| ---------------------------- | ---------------------------------------------- |
+| `canup secrets set <key>`    | Set a secret (available as env var in actions) |
+| `canup secrets list`         | List all secrets                               |
+| `canup secrets delete <key>` | Remove a secret                                |
+| `canup deps add <pkg>`       | Add a pip/npm dependency to your actions       |
+| `canup deps list`            | List action dependencies                       |
+| `canup deps remove <pkg>`    | Remove a dependency                            |
 
 ### Stripe Integration
 
-| Command | Description |
-|---------|-------------|
-| `canup stripe connect` | Connect your Stripe account for billing |
-| `canup stripe status` | Show Stripe connection status |
-| `canup stripe disconnect` | Disconnect Stripe |
+| Command                   | Description                             |
+| ------------------------- | --------------------------------------- |
+| `canup stripe connect`    | Connect your Stripe account for billing |
+| `canup stripe status`     | Show Stripe connection status           |
+| `canup stripe disconnect` | Disconnect Stripe                       |
 
 ## How It Works
 

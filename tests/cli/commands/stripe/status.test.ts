@@ -28,7 +28,8 @@ describe('stripe status command', () => {
     });
 
     const { Command } = await import('commander');
-    const { registerStripeStatusAction } = await import('../../../../src/cli/commands/stripe/status.js');
+    const { registerStripeStatusAction } =
+      await import('../../../../src/cli/commands/stripe/status.js');
 
     const program = new Command();
     const stripe = program.command('stripe');
@@ -47,7 +48,8 @@ describe('stripe status command', () => {
     client.stripeStatus.mockResolvedValue({ connected: false });
 
     const { Command } = await import('commander');
-    const { registerStripeStatusAction } = await import('../../../../src/cli/commands/stripe/status.js');
+    const { registerStripeStatusAction } =
+      await import('../../../../src/cli/commands/stripe/status.js');
 
     const program = new Command();
     const stripe = program.command('stripe');

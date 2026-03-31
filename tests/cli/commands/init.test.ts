@@ -2,7 +2,15 @@ import { describe, expect, vi } from 'vitest';
 import { test, output, client, tokenStore, projectConfig } from '../../fixtures/cli.js';
 
 // Local mocks referenced in vi.mock() factories -- must be hoisted
-const { mockPerformLogin, mockSaveProjectConfig, mockMkdirSync, mockExistsSync, mockReadFileSync, mockSelect, mockCreateInterface } = vi.hoisted(() => ({
+const {
+  mockPerformLogin,
+  mockSaveProjectConfig,
+  mockMkdirSync,
+  mockExistsSync,
+  mockReadFileSync,
+  mockSelect,
+  mockCreateInterface,
+} = vi.hoisted(() => ({
   mockPerformLogin: vi.fn(),
   mockSaveProjectConfig: vi.fn(),
   mockMkdirSync: vi.fn(),
@@ -19,7 +27,9 @@ vi.mock('../../../src/cli/auth/perform-login.js', () => ({
 }));
 
 vi.mock('../../../src/cli/api-client.js', () => ({
-  CanupClient: vi.fn(function () { return client; }),
+  CanupClient: vi.fn(function () {
+    return client;
+  }),
 }));
 
 vi.mock('../../../src/cli/config/project-config.js', () => ({
@@ -57,7 +67,11 @@ describe('init command', () => {
   }) => {
     tokenStore.loadToken.mockReturnValue('valid-token');
     projectConfig.loadProjectConfig.mockReturnValue(null);
-    client.registerApp.mockResolvedValue({ id: 'app-uuid-123', canvaAppId: 'AAFtest', name: 'My App' });
+    client.registerApp.mockResolvedValue({
+      id: 'app-uuid-123',
+      canvaAppId: 'AAFtest',
+      name: 'My App',
+    });
     client.createApiKey.mockResolvedValue({ key: 'cnup_full_key_123', prefix: 'cnup_full' });
 
     const { Command } = await import('commander');
@@ -103,7 +117,11 @@ describe('init command', () => {
     tokenStore.loadToken.mockReturnValue(null);
     mockPerformLogin.mockResolvedValue('auto-login-token');
     projectConfig.loadProjectConfig.mockReturnValue(null);
-    client.registerApp.mockResolvedValue({ id: 'app-uuid-456', canvaAppId: 'AAFauto', name: 'Auto App' });
+    client.registerApp.mockResolvedValue({
+      id: 'app-uuid-456',
+      canvaAppId: 'AAFauto',
+      name: 'Auto App',
+    });
     client.createApiKey.mockResolvedValue({ key: 'cnup_auto_key', prefix: 'cnup_auto' });
 
     const { Command } = await import('commander');
@@ -126,7 +144,11 @@ describe('init command', () => {
     projectConfig.loadProjectConfig.mockReturnValue(null);
     mockExistsSync.mockReturnValueOnce(true);
     mockReadFileSync.mockReturnValue('CANVA_APP_ID=AAFdetected\nOTHER_VAR=foo\n');
-    client.registerApp.mockResolvedValue({ id: 'app-uuid-789', canvaAppId: 'AAFdetected', name: 'Detected App' });
+    client.registerApp.mockResolvedValue({
+      id: 'app-uuid-789',
+      canvaAppId: 'AAFdetected',
+      name: 'Detected App',
+    });
     client.createApiKey.mockResolvedValue({ key: 'cnup_det_key', prefix: 'cnup_det' });
 
     const { Command } = await import('commander');
@@ -165,7 +187,11 @@ describe('init command', () => {
   test('handles API failure at createApiKey step', async ({ output, processMocks }) => {
     tokenStore.loadToken.mockReturnValue('valid-token');
     projectConfig.loadProjectConfig.mockReturnValue(null);
-    client.registerApp.mockResolvedValue({ id: 'app-uuid-123', canvaAppId: 'AAFtest', name: 'App' });
+    client.registerApp.mockResolvedValue({
+      id: 'app-uuid-123',
+      canvaAppId: 'AAFtest',
+      name: 'App',
+    });
 
     const apiError = new Error('Key creation failed') as Error & { statusCode: number };
     apiError.statusCode = 500;

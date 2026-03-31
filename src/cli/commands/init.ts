@@ -1,4 +1,5 @@
 import type { Command } from 'commander';
+import type { PackageJson } from 'type-fest';
 import { mkdirSync, readFileSync, existsSync, writeFileSync } from 'node:fs';
 import { createInterface } from 'node:readline/promises';
 import { join, resolve } from 'node:path';
@@ -142,13 +143,14 @@ export function registerInitCommand(program: Command): void {
         // h. Add canup as a dependency in the project's package.json
         try {
           const sdkPkgPath = resolve(import.meta.dirname, '../../../package.json');
-          const sdkVersion = JSON.parse(readFileSync(sdkPkgPath, 'utf-8')).version as string;
+          const sdkPkg = JSON.parse(readFileSync(sdkPkgPath, 'utf-8')) as PackageJson;
+          const sdkVersion = sdkPkg.version!;
 
           const projectPkgPath = join(process.cwd(), 'package.json');
           if (existsSync(projectPkgPath)) {
             const pkgContent = readFileSync(projectPkgPath, 'utf-8');
-            const pkg = JSON.parse(pkgContent);
-            if (!pkg.dependencies) pkg.dependencies = {};
+            const pkg = JSON.parse(pkgContent) as PackageJson;
+            pkg.dependencies ??= {};
             if (!pkg.dependencies.canup) {
               pkg.dependencies.canup = '^' + sdkVersion;
               writeFileSync(projectPkgPath, JSON.stringify(pkg, null, 2) + '\n');
@@ -162,13 +164,15 @@ export function registerInitCommand(program: Command): void {
 
         // i. Suggest install command based on lockfile detection
         try {
-          const lockfiles: Array<[string, string]> = [
+          const lockfiles: [string, string][] = [
             ['pnpm-lock.yaml', 'pnpm install'],
             ['yarn.lock', 'yarn install'],
             ['package-lock.json', 'npm install'],
             ['bun.lockb', 'bun install'],
           ];
-          const detectedLockfile = lockfiles.find(([file]) => existsSync(join(process.cwd(), file)));
+          const detectedLockfile = lockfiles.find(([file]) =>
+            existsSync(join(process.cwd(), file)),
+          );
           if (detectedLockfile) {
             hint(`Run: ${detectedLockfile[1]}`);
           } else {

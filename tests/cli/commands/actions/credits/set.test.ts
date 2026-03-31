@@ -24,7 +24,8 @@ describe('credits set command', () => {
     });
 
     const { Command } = await import('commander');
-    const { registerCreditsSetAction } = await import('../../../../../src/cli/commands/actions/credits/set.js');
+    const { registerCreditsSetAction } =
+      await import('../../../../../src/cli/commands/actions/credits/set.js');
 
     const program = new Command();
     const credits = program.command('credits');
@@ -51,7 +52,8 @@ describe('credits set command', () => {
     });
 
     const { Command } = await import('commander');
-    const { registerCreditsSetAction } = await import('../../../../../src/cli/commands/actions/credits/set.js');
+    const { registerCreditsSetAction } =
+      await import('../../../../../src/cli/commands/actions/credits/set.js');
 
     const program = new Command();
     const credits = program.command('credits');
@@ -70,7 +72,8 @@ describe('credits set command', () => {
 
   test('rejects invalid interval', async ({ output, processMocks }) => {
     const { Command } = await import('commander');
-    const { registerCreditsSetAction } = await import('../../../../../src/cli/commands/actions/credits/set.js');
+    const { registerCreditsSetAction } =
+      await import('../../../../../src/cli/commands/actions/credits/set.js');
 
     const program = new Command();
     const credits = program.command('credits');
@@ -87,7 +90,8 @@ describe('credits set command', () => {
 
   test('rejects non-positive quota', async ({ output, processMocks }) => {
     const { Command } = await import('commander');
-    const { registerCreditsSetAction } = await import('../../../../../src/cli/commands/actions/credits/set.js');
+    const { registerCreditsSetAction } =
+      await import('../../../../../src/cli/commands/actions/credits/set.js');
 
     const program = new Command();
     const credits = program.command('credits');
@@ -106,7 +110,8 @@ describe('credits set command', () => {
     client.setCreditConfig.mockRejectedValue(new Error('Server error'));
 
     const { Command } = await import('commander');
-    const { registerCreditsSetAction } = await import('../../../../../src/cli/commands/actions/credits/set.js');
+    const { registerCreditsSetAction } =
+      await import('../../../../../src/cli/commands/actions/credits/set.js');
 
     const program = new Command();
     const credits = program.command('credits');

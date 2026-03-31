@@ -6,12 +6,19 @@ import type { CanupError } from '../internal/errors.js';
 
 type CanvaButtonProps = ComponentProps<typeof Button>;
 
-export interface ActionButtonProps extends Omit<CanvaButtonProps, 'onClick' | 'loading'> {
+/** Preserves discriminated union structure (unlike built-in Omit which collapses unions). */
+type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
+
+export type ActionButtonProps = DistributiveOmit<
+  CanvaButtonProps,
+  'onClick' | 'loading' | 'pressed' | 'variant'
+> & {
   action: string;
   params?: Record<string, unknown>;
   onResult?: (data: { result: unknown; durationMs: number }) => void;
   onError?: (error: CanupError) => void;
-}
+  variant?: 'primary' | 'secondary' | 'tertiary' | 'contrast';
+};
 
 export function ActionButton({
   action,
@@ -20,6 +27,7 @@ export function ActionButton({
   onError,
   disabled,
   children,
+  variant = 'primary',
   ...rest
 }: ActionButtonProps) {
   const { execute, loading } = useAction(action);
@@ -34,15 +42,18 @@ export function ActionButton({
     }
   }, [execute, params, onResult, onError]);
 
-  return (
-    <Button
-      {...rest}
-      onClick={handleClick}
-      loading={loading}
-      // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- intentional: disabled=false should not override exhausted=true
-      disabled={disabled || exhausted}
-    >
-      {children}
-    </Button>
-  );
+  // Canva's Button uses nested discriminated unions (pressed × size × variant)
+  // that TypeScript cannot narrow through a variable (TS #41184). We reassemble
+  // the props object and assert the type — inputs are fully checked via DistributiveOmit.
+  const buttonProps = {
+    ...rest,
+    variant,
+    onClick: handleClick,
+    loading,
+    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- disabled=false should not override exhausted=true
+    disabled: disabled || exhausted,
+    children,
+  } as unknown as CanvaButtonProps;
+
+  return <Button {...buttonProps} />;
 }

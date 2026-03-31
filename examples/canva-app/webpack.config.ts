@@ -1,8 +1,8 @@
-import type { Configuration } from "webpack";
-import { optimize } from "webpack";
-import path from "path";
-import TerserPlugin from "terser-webpack-plugin";
-import type { Configuration as DevServerConfiguration } from "webpack-dev-server";
+import type { Configuration } from 'webpack';
+import { optimize } from 'webpack';
+import path from 'path';
+import TerserPlugin from 'terser-webpack-plugin';
+import type { Configuration as DevServerConfiguration } from 'webpack-dev-server';
 
 type DevConfig = {
   port: number;
@@ -13,28 +13,28 @@ type DevConfig = {
 
 export function buildConfig({
   devConfig,
-  appEntry = path.join(process.cwd(), "src", "index.tsx"),
+  appEntry = path.join(process.cwd(), 'src', 'index.tsx'),
 }: {
   devConfig?: DevConfig;
   appEntry?: string;
 } = {}): Configuration & { devServer?: DevServerConfiguration } {
-  const mode = devConfig ? "development" : "production";
+  const mode = devConfig ? 'development' : 'production';
 
   return {
     mode,
-    context: path.resolve(process.cwd(), "./"),
+    context: path.resolve(process.cwd(), './'),
     entry: {
       app: appEntry,
     },
-    target: "web",
+    target: 'web',
     resolve: {
       alias: {
-        styles: path.resolve(process.cwd(), "src/styles"),
+        styles: path.resolve(process.cwd(), 'src/styles'),
       },
-      extensions: [".ts", ".tsx", ".js", ".css"],
+      extensions: ['.ts', '.tsx', '.js', '.css'],
     },
     infrastructureLogging: {
-      level: "none",
+      level: 'none',
     },
     module: {
       rules: [
@@ -43,7 +43,7 @@ export function buildConfig({
           exclude: /node_modules/,
           use: [
             {
-              loader: "ts-loader",
+              loader: 'ts-loader',
               options: { transpileOnly: true },
             },
           ],
@@ -52,16 +52,13 @@ export function buildConfig({
           // CSS from node_modules (Canva UI Kit styles)
           test: /\.css$/,
           include: /node_modules/,
-          use: ["style-loader", "css-loader"],
+          use: ['style-loader', 'css-loader'],
         },
         {
           // CSS from app source (CSS Modules)
           test: /\.css$/,
           exclude: /node_modules/,
-          use: [
-            "style-loader",
-            { loader: "css-loader", options: { modules: true } },
-          ],
+          use: ['style-loader', { loader: 'css-loader', options: { modules: true } }],
         },
       ],
     },
@@ -73,8 +70,8 @@ export function buildConfig({
       ],
     },
     output: {
-      filename: "[name].js",
-      path: path.resolve(process.cwd(), "dist"),
+      filename: '[name].js',
+      path: path.resolve(process.cwd(), 'dist'),
       clean: true,
     },
     plugins: [
@@ -94,18 +91,18 @@ function buildDevConfig(options?: DevConfig): {
   }
 
   const { port, enableHmr, appOrigin, enableHttps } = options;
-  const host = "localhost";
+  const host = 'localhost';
 
   let devServer: DevServerConfiguration = {
-    server: enableHttps ? "https" : "http",
+    server: enableHttps ? 'https' : 'http',
     host,
     allowedHosts: [host],
     historyApiFallback: {
-      rewrites: [{ from: /^\/$/, to: "/app.js" }],
+      rewrites: [{ from: /^\/$/, to: '/app.js' }],
     },
     port,
     client: {
-      logging: "verbose",
+      logging: 'verbose',
     },
   };
 
@@ -114,9 +111,9 @@ function buildDevConfig(options?: DevConfig): {
       ...devServer,
       allowedHosts: [host, new URL(appOrigin).hostname],
       headers: {
-        "Access-Control-Allow-Origin": appOrigin,
-        "Access-Control-Allow-Credentials": "true",
-        "Access-Control-Allow-Private-Network": "true",
+        'Access-Control-Allow-Origin': appOrigin,
+        'Access-Control-Allow-Credentials': 'true',
+        'Access-Control-Allow-Private-Network': 'true',
       },
     };
   } else {
@@ -124,7 +121,7 @@ function buildDevConfig(options?: DevConfig): {
   }
 
   return {
-    devtool: "source-map",
+    devtool: 'source-map',
     devServer,
   };
 }

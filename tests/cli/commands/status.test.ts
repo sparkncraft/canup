@@ -1,5 +1,12 @@
 import { describe, expect, vi } from 'vitest';
-import { test, output, client, project, projectConfig, actionsDiscovery } from '../../fixtures/cli.js';
+import {
+  test,
+  output,
+  client,
+  project,
+  projectConfig,
+  actionsDiscovery,
+} from '../../fixtures/cli.js';
 
 vi.mock('../../../src/cli/config/require-project.js', () => ({
   requireProject: vi.fn(() => project),

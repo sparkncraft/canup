@@ -21,7 +21,8 @@ describe('secrets set command', () => {
     client.setSecret.mockResolvedValue({ name: 'MY_KEY', created: true, synced: true });
 
     const { Command } = await import('commander');
-    const { registerSecretsSetAction } = await import('../../../../src/cli/commands/secrets/set.js');
+    const { registerSecretsSetAction } =
+      await import('../../../../src/cli/commands/secrets/set.js');
 
     const program = new Command();
     const secrets = program.command('secrets');
@@ -39,7 +40,8 @@ describe('secrets set command', () => {
     client.setSecret.mockResolvedValue({ name: 'MY_KEY', created: false, synced: true });
 
     const { Command } = await import('commander');
-    const { registerSecretsSetAction } = await import('../../../../src/cli/commands/secrets/set.js');
+    const { registerSecretsSetAction } =
+      await import('../../../../src/cli/commands/secrets/set.js');
 
     const program = new Command();
     const secrets = program.command('secrets');
@@ -56,7 +58,8 @@ describe('secrets set command', () => {
     client.setSecret.mockResolvedValue({ name: 'MY_KEY', created: true, synced: false });
 
     const { Command } = await import('commander');
-    const { registerSecretsSetAction } = await import('../../../../src/cli/commands/secrets/set.js');
+    const { registerSecretsSetAction } =
+      await import('../../../../src/cli/commands/secrets/set.js');
 
     const program = new Command();
     const secrets = program.command('secrets');
@@ -126,7 +129,8 @@ describe('secrets set command', () => {
     vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
 
     const { Command } = await import('commander');
-    const { registerSecretsSetAction } = await import('../../../../src/cli/commands/secrets/set.js');
+    const { registerSecretsSetAction } =
+      await import('../../../../src/cli/commands/secrets/set.js');
 
     const program = new Command();
     const secrets = program.command('secrets');
@@ -151,7 +155,8 @@ describe('secrets set command', () => {
     client.setSecret.mockRejectedValue(new Error('Server error'));
 
     const { Command } = await import('commander');
-    const { registerSecretsSetAction } = await import('../../../../src/cli/commands/secrets/set.js');
+    const { registerSecretsSetAction } =
+      await import('../../../../src/cli/commands/secrets/set.js');
 
     const program = new Command();
     const secrets = program.command('secrets');

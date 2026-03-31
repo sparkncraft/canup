@@ -31,7 +31,8 @@ describe('actions list command', () => {
     const { formatTable } = await import('../../../../src/cli/ui/output.js');
 
     const { Command } = await import('commander');
-    const { registerActionsListAction } = await import('../../../../src/cli/commands/actions/list.js');
+    const { registerActionsListAction } =
+      await import('../../../../src/cli/commands/actions/list.js');
 
     const program = new Command();
     const actions = program.command('actions');
@@ -50,7 +51,8 @@ describe('actions list command', () => {
     client.listActions.mockResolvedValue([]);
 
     const { Command } = await import('commander');
-    const { registerActionsListAction } = await import('../../../../src/cli/commands/actions/list.js');
+    const { registerActionsListAction } =
+      await import('../../../../src/cli/commands/actions/list.js');
 
     const program = new Command();
     const actions = program.command('actions');

@@ -21,7 +21,8 @@ describe('stripe disconnect command', () => {
     client.disconnectStripe.mockResolvedValue({ disconnected: true });
 
     const { Command } = await import('commander');
-    const { registerStripeDisconnectAction } = await import('../../../../src/cli/commands/stripe/disconnect.js');
+    const { registerStripeDisconnectAction } =
+      await import('../../../../src/cli/commands/stripe/disconnect.js');
 
     const program = new Command();
     const stripe = program.command('stripe');
@@ -37,7 +38,8 @@ describe('stripe disconnect command', () => {
     client.disconnectStripe.mockRejectedValue(new Error('Not connected'));
 
     const { Command } = await import('commander');
-    const { registerStripeDisconnectAction } = await import('../../../../src/cli/commands/stripe/disconnect.js');
+    const { registerStripeDisconnectAction } =
+      await import('../../../../src/cli/commands/stripe/disconnect.js');
 
     const program = new Command();
     const stripe = program.command('stripe');

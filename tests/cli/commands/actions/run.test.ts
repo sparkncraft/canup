@@ -29,7 +29,8 @@ describe('actions run command', () => {
       });
 
       const { Command } = await import('commander');
-      const { registerActionsRunAction } = await import('../../../../src/cli/commands/actions/run.js');
+      const { registerActionsRunAction } =
+        await import('../../../../src/cli/commands/actions/run.js');
 
       const program = new Command();
       const actions = program.command('actions');
@@ -47,7 +48,8 @@ describe('actions run command', () => {
       });
 
       const { Command } = await import('commander');
-      const { registerActionsRunAction } = await import('../../../../src/cli/commands/actions/run.js');
+      const { registerActionsRunAction } =
+        await import('../../../../src/cli/commands/actions/run.js');
 
       const program = new Command();
       const actions = program.command('actions');
@@ -71,7 +73,8 @@ describe('actions run command', () => {
         });
 
         const { Command } = await import('commander');
-        const { registerActionsRunAction } = await import('../../../../src/cli/commands/actions/run.js');
+        const { registerActionsRunAction } =
+          await import('../../../../src/cli/commands/actions/run.js');
 
         const program = new Command();
         const actions = program.command('actions');
@@ -101,7 +104,8 @@ describe('actions run command', () => {
       });
 
       const { Command } = await import('commander');
-      const { registerActionsRunAction } = await import('../../../../src/cli/commands/actions/run.js');
+      const { registerActionsRunAction } =
+        await import('../../../../src/cli/commands/actions/run.js');
 
       const program = new Command();
       const actions = program.command('actions');
@@ -121,7 +125,8 @@ describe('actions run command', () => {
       });
 
       const { Command } = await import('commander');
-      const { registerActionsRunAction } = await import('../../../../src/cli/commands/actions/run.js');
+      const { registerActionsRunAction } =
+        await import('../../../../src/cli/commands/actions/run.js');
 
       const program = new Command();
       const actions = program.command('actions');
@@ -149,7 +154,8 @@ describe('actions run command', () => {
       });
 
       const { Command } = await import('commander');
-      const { registerActionsRunAction } = await import('../../../../src/cli/commands/actions/run.js');
+      const { registerActionsRunAction } =
+        await import('../../../../src/cli/commands/actions/run.js');
 
       const program = new Command();
       const actions = program.command('actions');
@@ -174,7 +180,8 @@ describe('actions run command', () => {
       });
 
       const { Command } = await import('commander');
-      const { registerActionsRunAction } = await import('../../../../src/cli/commands/actions/run.js');
+      const { registerActionsRunAction } =
+        await import('../../../../src/cli/commands/actions/run.js');
 
       const program = new Command();
       const actions = program.command('actions');
@@ -196,7 +203,8 @@ describe('actions run command', () => {
       client.runAction.mockRejectedValue(apiError);
 
       const { Command } = await import('commander');
-      const { registerActionsRunAction } = await import('../../../../src/cli/commands/actions/run.js');
+      const { registerActionsRunAction } =
+        await import('../../../../src/cli/commands/actions/run.js');
 
       const program = new Command();
       const actions = program.command('actions');
@@ -215,7 +223,8 @@ describe('actions run command', () => {
       client.runAction.mockRejectedValue(apiError);
 
       const { Command } = await import('commander');
-      const { registerActionsRunAction } = await import('../../../../src/cli/commands/actions/run.js');
+      const { registerActionsRunAction } =
+        await import('../../../../src/cli/commands/actions/run.js');
 
       const program = new Command();
       const actions = program.command('actions');
@@ -234,7 +243,8 @@ describe('actions run command', () => {
       client.runAction.mockRejectedValue(new Error('Network timeout'));
 
       const { Command } = await import('commander');
-      const { registerActionsRunAction } = await import('../../../../src/cli/commands/actions/run.js');
+      const { registerActionsRunAction } =
+        await import('../../../../src/cli/commands/actions/run.js');
 
       const program = new Command();
       const actions = program.command('actions');
@@ -255,7 +265,8 @@ describe('actions run command', () => {
       });
 
       const { Command } = await import('commander');
-      const { registerActionsRunAction } = await import('../../../../src/cli/commands/actions/run.js');
+      const { registerActionsRunAction } =
+        await import('../../../../src/cli/commands/actions/run.js');
 
       const program = new Command();
       const actions = program.command('actions');
@@ -284,7 +295,8 @@ describe('actions run command', () => {
         });
 
         const { Command } = await import('commander');
-        const { registerActionsRunAction } = await import('../../../../src/cli/commands/actions/run.js');
+        const { registerActionsRunAction } =
+          await import('../../../../src/cli/commands/actions/run.js');
 
         const program = new Command();
         const actions = program.command('actions');
@@ -314,7 +326,8 @@ describe('actions run command', () => {
       });
 
       const { Command } = await import('commander');
-      const { registerActionsRunAction } = await import('../../../../src/cli/commands/actions/run.js');
+      const { registerActionsRunAction } =
+        await import('../../../../src/cli/commands/actions/run.js');
 
       const program = new Command();
       const actions = program.command('actions');

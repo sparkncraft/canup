@@ -18,7 +18,8 @@ describe('actions remove command', () => {
     client.deleteAction.mockResolvedValue({ deleted: 'my-action' });
 
     const { Command } = await import('commander');
-    const { registerActionsRemoveAction } = await import('../../../../src/cli/commands/actions/remove.js');
+    const { registerActionsRemoveAction } =
+      await import('../../../../src/cli/commands/actions/remove.js');
 
     const program = new Command();
     const actions = program.command('actions');
@@ -36,7 +37,8 @@ describe('actions remove command', () => {
     client.deleteAction.mockRejectedValue(apiError);
 
     const { Command } = await import('commander');
-    const { registerActionsRemoveAction } = await import('../../../../src/cli/commands/actions/remove.js');
+    const { registerActionsRemoveAction } =
+      await import('../../../../src/cli/commands/actions/remove.js');
 
     const program = new Command();
     const actions = program.command('actions');
@@ -55,7 +57,8 @@ describe('actions remove command', () => {
     client.deleteAction.mockRejectedValue(apiError);
 
     const { Command } = await import('commander');
-    const { registerActionsRemoveAction } = await import('../../../../src/cli/commands/actions/remove.js');
+    const { registerActionsRemoveAction } =
+      await import('../../../../src/cli/commands/actions/remove.js');
 
     const program = new Command();
     const actions = program.command('actions');

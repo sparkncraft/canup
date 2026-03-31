@@ -61,7 +61,8 @@ describe('actions test command', () => {
       mockReadFileSync.mockReturnValue('def handler(p, c): return {"answer": 42}');
 
       const { Command } = await import('commander');
-      const { registerActionsTestAction } = await import('../../../../src/cli/commands/actions/test.js');
+      const { registerActionsTestAction } =
+        await import('../../../../src/cli/commands/actions/test.js');
 
       const program = new Command();
       const actions = program.command('actions');
@@ -90,7 +91,8 @@ describe('actions test command', () => {
       mockReadFileSync.mockReturnValue('def handler(p, c): pass');
 
       const { Command } = await import('commander');
-      const { registerActionsTestAction } = await import('../../../../src/cli/commands/actions/test.js');
+      const { registerActionsTestAction } =
+        await import('../../../../src/cli/commands/actions/test.js');
 
       const program = new Command();
       const actions = program.command('actions');
@@ -131,7 +133,8 @@ describe('actions test command', () => {
       mockReadFileSync.mockReturnValue('export const handler = () => { throw new Error() }');
 
       const { Command } = await import('commander');
-      const { registerActionsTestAction } = await import('../../../../src/cli/commands/actions/test.js');
+      const { registerActionsTestAction } =
+        await import('../../../../src/cli/commands/actions/test.js');
 
       const program = new Command();
       const actions = program.command('actions');
@@ -159,7 +162,8 @@ describe('actions test command', () => {
       mockReadFileSync.mockReturnValue('export const handler = () => "ok"');
 
       const { Command } = await import('commander');
-      const { registerActionsTestAction } = await import('../../../../src/cli/commands/actions/test.js');
+      const { registerActionsTestAction } =
+        await import('../../../../src/cli/commands/actions/test.js');
 
       const program = new Command();
       const actions = program.command('actions');
@@ -198,7 +202,8 @@ describe('actions test command', () => {
       mockReadFileSync.mockReturnValue('def handler(p, c): pass');
 
       const { Command } = await import('commander');
-      const { registerActionsTestAction } = await import('../../../../src/cli/commands/actions/test.js');
+      const { registerActionsTestAction } =
+        await import('../../../../src/cli/commands/actions/test.js');
 
       const program = new Command();
       const actions = program.command('actions');
@@ -235,7 +240,8 @@ describe('actions test command', () => {
       mockReadFileSync.mockReturnValue('code');
 
       const { Command } = await import('commander');
-      const { registerActionsTestAction } = await import('../../../../src/cli/commands/actions/test.js');
+      const { registerActionsTestAction } =
+        await import('../../../../src/cli/commands/actions/test.js');
 
       const program = new Command();
       const actions = program.command('actions');
@@ -261,7 +267,8 @@ describe('actions test command', () => {
       mockReadFileSync.mockReturnValue('exports.handler = () => {}');
 
       const { Command } = await import('commander');
-      const { registerActionsTestAction } = await import('../../../../src/cli/commands/actions/test.js');
+      const { registerActionsTestAction } =
+        await import('../../../../src/cli/commands/actions/test.js');
 
       const program = new Command();
       const actions = program.command('actions');
@@ -291,7 +298,8 @@ describe('actions test command', () => {
       mockReadFileSync.mockReturnValue('code');
 
       const { Command } = await import('commander');
-      const { registerActionsTestAction } = await import('../../../../src/cli/commands/actions/test.js');
+      const { registerActionsTestAction } =
+        await import('../../../../src/cli/commands/actions/test.js');
 
       const program = new Command();
       const actions = program.command('actions');
@@ -313,7 +321,8 @@ describe('actions test command', () => {
       mockReadFileSync.mockReturnValue('code');
 
       const { Command } = await import('commander');
-      const { registerActionsTestAction } = await import('../../../../src/cli/commands/actions/test.js');
+      const { registerActionsTestAction } =
+        await import('../../../../src/cli/commands/actions/test.js');
 
       const program = new Command();
       const actions = program.command('actions');
