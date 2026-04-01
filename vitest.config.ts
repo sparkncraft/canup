@@ -14,7 +14,14 @@ export default defineConfig({
       provider: 'v8',
       include: ['src/**/*.ts', 'src/**/*.tsx'],
       exclude: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'src/**/index.ts'],
-      reporter: ['text', 'json', 'html'],
+      reporter: ['text', 'json-summary', 'json'],
+      thresholds: {
+        autoUpdate: true,
+        statements: 75.47,
+        branches: 68.53,
+        functions: 68,
+        lines: 75.76,
+      },
     },
   },
 });

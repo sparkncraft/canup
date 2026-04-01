@@ -16,6 +16,7 @@
     "deploy",
     "react"
   ],
+  "packageManager": "pnpm@10.30.2",
   "type": "module",
   "bin": {
     "canup": "./dist/cli/index.mjs"
@@ -33,6 +34,7 @@
   "scripts": {
     "build": "tsdown",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "test:build": "publint --strict && attw --pack . --profile esm-only",
     "size": "size-limit",
     "size:check": "size-limit --limit",
@@ -40,7 +42,11 @@
     "typecheck": "tsc --noEmit",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
-    "changeset": "changeset"
+    "changeset": "changeset",
+    "prepare": "simple-git-hooks"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "pnpm lint-staged"
   },
   "dependencies": {
     "@inquirer/prompts": "^8.3.0",
@@ -73,6 +79,7 @@
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.2",
+    "lint-staged": "^16.4.0",
     "@canva/app-ui-kit": "^5.7.0",
     "@canva/platform": "^2.2.0",
     "@canva/user": "^2.2.0",
@@ -96,6 +103,7 @@
     "size-limit": "^12.0.1",
     "tsdown": "^0.21.4",
     "type-fest": "^5.5.0",
+    "simple-git-hooks": "^2.13.1",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.58.0",
     "vitest": "^4.1.0"
