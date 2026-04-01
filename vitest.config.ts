@@ -8,7 +8,10 @@ export default defineConfig({
     },
   },
   test: {
-    clearMocks: true,
+    mockReset: true,
+    unstubGlobals: true,
+    unstubEnvs: true,
+    setupFiles: ['test/setup.ts'],
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
     coverage: {
       provider: 'v8',

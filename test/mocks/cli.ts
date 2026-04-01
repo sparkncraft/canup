@@ -41,6 +41,88 @@ export interface MockCanupClient {
 }
 
 /**
+ * Re-apply default mock implementations on an existing MockCanupClient.
+ * Called after vitest's mockReset clears implementations between tests.
+ */
+export function resetMockCanupClient(client: MockCanupClient): void {
+  client.getAuthUrl.mockResolvedValue({ url: 'https://github.com/login/oauth' });
+  client.getMe.mockResolvedValue({
+    id: 'usr-1',
+    email: 'test@example.com',
+    name: 'Test User',
+    avatarUrl: null,
+    createdAt: '2026-01-01T00:00:00Z',
+  });
+  client.registerApp.mockResolvedValue({ id: 'app-1', canvaAppId: 'AAFtest12345', name: 'Test App' });
+  client.getAppInfo.mockResolvedValue({
+    id: 'app-1',
+    canvaAppId: 'AAFtest12345',
+    name: 'Test App',
+    createdAt: '2026-01-01T00:00:00Z',
+  });
+  client.listApps.mockResolvedValue([]);
+  client.createApiKey.mockResolvedValue({ key: 'cnup_testkey_secret', prefix: 'cnup_testkey' });
+  client.deployAction.mockResolvedValue({
+    id: 'act-1',
+    slug: 'test-action',
+    language: 'python',
+    lambdaReady: true,
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
+  });
+  client.listActions.mockResolvedValue([]);
+  client.listActionsWithScript.mockResolvedValue([]);
+  client.deleteAction.mockResolvedValue({ deleted: 'test-action' });
+  client.testAction.mockResolvedValue({ ok: true, data: { result: null, durationMs: 50, printOutput: '' } });
+  client.runAction.mockResolvedValue({ ok: true, data: { result: null, durationMs: 50, printOutput: '' } });
+  client.listHistory.mockResolvedValue([]);
+  client.getHistoryDetail.mockResolvedValue({
+    id: 'exec-1',
+    actionSlug: 'test-action',
+    status: 'success',
+    durationMs: 50,
+    executedAt: '2026-01-01T00:00:00Z',
+    source: 'api',
+  });
+  client.setSecret.mockResolvedValue({ name: 'MY_SECRET', created: true, synced: true });
+  client.listSecrets.mockResolvedValue([]);
+  client.deleteSecret.mockResolvedValue({ deleted: 'MY_SECRET', synced: true });
+  client.addDeps.mockResolvedValue({
+    cached: false,
+    buildId: 'build-1',
+    status: 'building',
+    packages: [],
+    layerSize: null,
+  });
+  client.listDeps.mockResolvedValue({ packages: [], layerSize: null, layerArn: null });
+  client.removeDep.mockResolvedValue({ deleted: 'express', buildId: 'build-1', status: 'building' });
+  client.clearDeps.mockResolvedValue({ cleared: true });
+  client.getBuildStatus.mockResolvedValue({
+    id: 'build-1',
+    status: 'success',
+    layerVersionArn: null,
+    sizeBytes: null,
+    errorMessage: null,
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
+  });
+  client.setCreditConfig.mockResolvedValue({
+    id: 'cc-1',
+    actionSlug: 'test-action',
+    quota: 50,
+    interval: 'monthly',
+    plan: 'free',
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
+  });
+  client.getCreditConfig.mockResolvedValue(null);
+  client.deleteCreditConfig.mockResolvedValue({ deleted: 'test-action' });
+  client.connectStripe.mockResolvedValue({ connected: true });
+  client.stripeStatus.mockResolvedValue({ connected: false });
+  client.disconnectStripe.mockResolvedValue({ disconnected: true });
+}
+
+/**
  * Mock factory for CanupClient.
  *
  * Returns an object matching all CanupClient public methods as vi.fn() instances.
@@ -171,6 +253,14 @@ export interface MockOutput {
 }
 
 /**
+ * Re-apply default mock implementations on an existing MockOutput.
+ */
+export function resetMockOutput(output: MockOutput): void {
+  output.dim.mockImplementation((msg: string) => msg);
+  output.formatTable.mockImplementation((_headers: string[], _rows: string[][]) => '');
+}
+
+/**
  * Mock factory for CLI output helpers (ui/output.ts).
  *
  * Returns all styled output functions as vi.fn() instances.
@@ -229,6 +319,20 @@ export function createMockProject(overrides?: Partial<MockProject>): MockProject
 export interface MockSpinner {
   withSpinner: Mock;
   createSpinner: Mock;
+}
+
+/**
+ * Re-apply default mock implementations on an existing MockSpinner.
+ */
+export function resetMockSpinner(spinner: MockSpinner): void {
+  spinner.withSpinner.mockImplementation(
+    async <T>(_text: string, fn: () => Promise<T>, _success?: string): Promise<T> => fn(),
+  );
+  spinner.createSpinner.mockImplementation((_text: string) => ({
+    update: vi.fn(),
+    succeed: vi.fn(),
+    fail: vi.fn(),
+  }));
 }
 
 /**

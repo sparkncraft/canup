@@ -13,8 +13,11 @@ function createMockJwt(exp: number): string {
 const TEST_TOKEN = createMockJwt(Math.floor(Date.now() / 1000) + 3600);
 const BASE_URL = 'http://test-canup.local';
 
+const { mockGetJwt } = vi.hoisted(() => ({
+  mockGetJwt: vi.fn(),
+}));
 vi.mock('../internal/jwt-cache.js', () => ({
-  getJwt: vi.fn().mockResolvedValue(TEST_TOKEN),
+  getJwt: mockGetJwt,
 }));
 vi.mock('@canva/user', () => ({
   auth: { getCanvaUserToken: vi.fn() },
@@ -31,6 +34,7 @@ afterAll(() => server.close());
 
 describe('api-client', () => {
   beforeEach(() => {
+    mockGetJwt.mockResolvedValue(TEST_TOKEN);
     (globalThis as Record<string, unknown>).__canup_url = BASE_URL;
   });
 

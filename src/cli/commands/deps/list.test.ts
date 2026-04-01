@@ -64,7 +64,7 @@ describe('deps list command', () => {
     expect(output.info).toHaveBeenCalledWith('No packages installed for python');
   });
 
-  test('exits with error for invalid language', async ({ output, processMocks }) => {
+  test('exits with error for invalid language', async ({ client, output, processMocks }) => {
     const { Command } = await import('commander');
     const { registerDepsListAction } = await import('../../commands/deps/list.js');
 

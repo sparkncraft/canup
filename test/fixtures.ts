@@ -24,6 +24,9 @@ import {
   createMockOutput,
   createMockProject,
   createMockSpinner,
+  resetMockCanupClient,
+  resetMockOutput,
+  resetMockSpinner,
   type MockCanupClient,
   type MockOutput,
   type MockProject,
@@ -77,15 +80,24 @@ export interface TimersMocks {
 
 // -- Fixture-extended test ----------------------------------------------------
 export const test = baseTest
-  .extend('client', () => _client)
-  .extend('output', () => _output)
+  .extend('client', () => {
+    resetMockCanupClient(_client);
+    return _client;
+  })
+  .extend('output', () => {
+    resetMockOutput(_output);
+    return _output;
+  })
   .extend('project', async () => {
     // Reset to defaults — tests that need custom values mutate inline
     Object.assign(_project, PROJECT_DEFAULTS);
     _project.config = { ...PROJECT_DEFAULTS.config };
     return _project;
   })
-  .extend('spinner', () => _spinner)
+  .extend('spinner', () => {
+    resetMockSpinner(_spinner);
+    return _spinner;
+  })
   .extend('processMocks', async ({}, { onCleanup }) => {
     const log = vi.spyOn(console, 'log').mockImplementation(() => {});
     const error = vi.spyOn(console, 'error').mockImplementation(() => {});

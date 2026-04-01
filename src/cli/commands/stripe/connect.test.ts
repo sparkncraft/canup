@@ -20,9 +20,13 @@ vi.mock('../../ui/output.js', () => output);
 vi.mock('../../ui/spinner.js', () => spinner);
 
 // Mock input utilities
+const { mockReadHiddenInput, mockReadStdinPipe } = vi.hoisted(() => ({
+  mockReadHiddenInput: vi.fn(),
+  mockReadStdinPipe: vi.fn(),
+}));
 vi.mock('../../lib/input.js', () => ({
-  readHiddenInput: vi.fn().mockResolvedValue('sk_test_interactive'),
-  readStdinPipe: vi.fn().mockResolvedValue('sk_test_piped'),
+  readHiddenInput: mockReadHiddenInput,
+  readStdinPipe: mockReadStdinPipe,
 }));
 
 describe('stripe connect command', () => {
@@ -45,6 +49,7 @@ describe('stripe connect command', () => {
 
   test('connects stripe via interactive prompt when TTY', async ({ client, output }) => {
     client.connectStripe.mockResolvedValue({ connected: true });
+    mockReadHiddenInput.mockResolvedValue('sk_test_interactive');
 
     // Set up TTY mode
     const originalIsTTY = process.stdin.isTTY;
@@ -68,6 +73,7 @@ describe('stripe connect command', () => {
 
   test('connects stripe via stdin pipe', async ({ client }) => {
     client.connectStripe.mockResolvedValue({ connected: true });
+    mockReadStdinPipe.mockResolvedValue('sk_test_piped');
 
     // Non-TTY mode (pipe)
     const originalIsTTY = process.stdin.isTTY;
@@ -142,9 +148,8 @@ describe('stripe connect command', () => {
     const originalIsTTY = process.stdin.isTTY;
     process.stdin.isTTY = undefined;
 
-    // Override the default mock to return empty string for this test
-    const { readStdinPipe } = await import('../../lib/input.js');
-    vi.mocked(readStdinPipe).mockResolvedValueOnce('');
+    // Return empty string for this test
+    mockReadStdinPipe.mockResolvedValueOnce('');
 
     const { Command } = await import('commander');
     const { registerStripeConnectAction } =
