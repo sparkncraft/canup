@@ -16,6 +16,7 @@
     "deploy",
     "react"
   ],
+  "packageManager": "pnpm@10.30.2",
   "type": "module",
   "bin": {
     "canup": "./dist/cli/index.mjs"
