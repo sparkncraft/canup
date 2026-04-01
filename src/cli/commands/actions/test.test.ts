@@ -1,7 +1,7 @@
-import { describe, expect, vi, beforeEach } from 'vitest';
+import { describe, expect, vi } from 'vitest';
 import { EventEmitter } from 'node:events';
 import {
-  test,
+  test as baseTest,
   output,
   client,
   spinner,
@@ -73,16 +73,21 @@ function createMockProcess(stdoutData: string, stderrData: string) {
   return proc;
 }
 
-beforeEach(() => {
-  mockCreateRequire.mockReturnValue({
-    resolve: vi.fn().mockReturnValue('/fake/node_modules/tsx/dist/cli.mjs'),
-  });
+const test = baseTest.extend<{ _createRequire: void }>({
+  _createRequire: [
+    async ({}, use) => {
+      mockCreateRequire.mockReturnValue({
+        resolve: vi.fn().mockReturnValue('/fake/node_modules/tsx/dist/cli.mjs'),
+      });
+      await use();
+    },
+    { auto: true },
+  ],
 });
 
 async function runTest(...extraArgs: string[]) {
   const { Command } = await import('commander');
-  const { registerActionsTestAction } =
-    await import('../../commands/actions/test.js');
+  const { registerActionsTestAction } = await import('../../commands/actions/test.js');
 
   const program = new Command();
   const actions = program.command('actions');
@@ -288,9 +293,7 @@ describe('actions test command', () => {
 
       await runTest('my-script.py');
 
-      expect(output.error).toHaveBeenCalledWith(
-        expect.stringContaining('ValueError: bad input'),
-      );
+      expect(output.error).toHaveBeenCalledWith(expect.stringContaining('ValueError: bad input'));
       expect(processMocks.exit).toHaveBeenCalledWith(1);
     });
 
@@ -341,11 +344,7 @@ describe('actions test command', () => {
       expect(processMocks.exit).toHaveBeenCalledWith(1);
     });
 
-    test('handles 401 authentication error', async ({
-      client,
-      output,
-      processMocks,
-    }) => {
+    test('handles 401 authentication error', async ({ client, output, processMocks }) => {
       mockExistsSync.mockReturnValue(true);
 
       const apiError = new Error('Unauthorized') as Error & { statusCode: number };
@@ -368,7 +367,9 @@ describe('actions test command', () => {
 
       await runTest('./scripts/handler.rb');
 
-      expect(output.error).toHaveBeenCalledWith(expect.stringContaining('Unsupported file extension'));
+      expect(output.error).toHaveBeenCalledWith(
+        expect.stringContaining('Unsupported file extension'),
+      );
       expect(processMocks.exit).toHaveBeenCalledWith(1);
     });
 

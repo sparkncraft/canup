@@ -66,8 +66,7 @@ describe('actions deploy command', () => {
     mockReadFileSync.mockReturnValue('def handler(params, context): pass');
 
     const { Command } = await import('commander');
-    const { registerActionsDeployAction } =
-      await import('../../commands/actions/deploy.js');
+    const { registerActionsDeployAction } = await import('../../commands/actions/deploy.js');
 
     const program = new Command();
     const actions = program.command('actions');
@@ -113,8 +112,7 @@ describe('actions deploy command', () => {
     mockReadFileSync.mockReturnValue('code');
 
     const { Command } = await import('commander');
-    const { registerActionsDeployAction } =
-      await import('../../commands/actions/deploy.js');
+    const { registerActionsDeployAction } = await import('../../commands/actions/deploy.js');
 
     const program = new Command();
     const actions = program.command('actions');
@@ -158,8 +156,7 @@ describe('actions deploy command', () => {
     mockReadFileSync.mockReturnValue(code);
 
     const { Command } = await import('commander');
-    const { registerActionsDeployAction } =
-      await import('../../commands/actions/deploy.js');
+    const { registerActionsDeployAction } = await import('../../commands/actions/deploy.js');
 
     const program = new Command();
     const actions = program.command('actions');
@@ -197,8 +194,7 @@ describe('actions deploy command', () => {
     mockReadFileSync.mockReturnValue('code');
 
     const { Command } = await import('commander');
-    const { registerActionsDeployAction } =
-      await import('../../commands/actions/deploy.js');
+    const { registerActionsDeployAction } = await import('../../commands/actions/deploy.js');
 
     const program = new Command();
     const actions = program.command('actions');
@@ -211,6 +207,99 @@ describe('actions deploy command', () => {
     );
   });
 
+  test('shows error when action name not found in convention directory', async ({
+    output,
+    processMocks,
+  }) => {
+    projectConfig.getActionsDir.mockReturnValue('/project/canup/actions');
+    actionsDiscovery.resolveActionByName.mockReturnValue(null);
+    client.listActions.mockResolvedValue([]);
+
+    const { Command } = await import('commander');
+    const { registerActionsDeployAction } = await import('../../commands/actions/deploy.js');
+
+    const program = new Command();
+    const actions = program.command('actions');
+    registerActionsDeployAction(actions);
+
+    await program.parseAsync(['actions', 'deploy', 'nonexistent'], { from: 'user' });
+
+    expect(output.error).toHaveBeenCalledWith(expect.stringContaining('Action not found'));
+    expect(output.hint).toHaveBeenCalledWith(expect.stringContaining('Available extensions'));
+    expect(processMocks.exit).toHaveBeenCalledWith(1);
+  });
+
+  test('shows error when actions directory is empty', async ({ output, processMocks }) => {
+    projectConfig.getActionsDir.mockReturnValue('/project/canup/actions');
+    actionsDiscovery.discoverActions.mockReturnValue([]);
+    client.listActions.mockResolvedValue([]);
+
+    const { Command } = await import('commander');
+    const { registerActionsDeployAction } = await import('../../commands/actions/deploy.js');
+
+    const program = new Command();
+    const actions = program.command('actions');
+    registerActionsDeployAction(actions);
+
+    await program.parseAsync(['actions', 'deploy'], { from: 'user' });
+
+    expect(output.error).toHaveBeenCalledWith(expect.stringContaining('No action files found'));
+    expect(processMocks.exit).toHaveBeenCalledWith(1);
+  });
+
+  test('skips unchanged and deploys changed in multi-deploy', async ({
+    client,
+    output,
+    processMocks,
+  }) => {
+    projectConfig.getActionsDir.mockReturnValue('/project/canup/actions');
+
+    const unchangedCode = 'def handler(): pass';
+    const unchangedHash = createHash('sha256').update(unchangedCode).digest('hex');
+    const changedCode = 'def handler(): return "new"';
+
+    actionsDiscovery.discoverActions.mockReturnValue([
+      {
+        name: 'unchanged-action',
+        filePath: '/project/canup/actions/unchanged-action.py',
+        language: 'python',
+      },
+      {
+        name: 'changed-action',
+        filePath: '/project/canup/actions/changed-action.py',
+        language: 'python',
+      },
+    ]);
+
+    client.listActions.mockResolvedValue([
+      { slug: 'unchanged-action', contentHash: unchangedHash },
+    ]);
+
+    client.deployAction.mockResolvedValue({
+      id: '2',
+      slug: 'changed-action',
+      language: 'python',
+      lambdaReady: true,
+      createdAt: '2026-01-01T00:00:00Z',
+      updatedAt: '2026-01-01T00:00:00Z',
+    });
+
+    mockReadFileSync.mockReturnValueOnce(unchangedCode).mockReturnValueOnce(changedCode);
+
+    const { Command } = await import('commander');
+    const { registerActionsDeployAction } = await import('../../commands/actions/deploy.js');
+
+    const program = new Command();
+    const actions = program.command('actions');
+    registerActionsDeployAction(actions);
+
+    await program.parseAsync(['actions', 'deploy'], { from: 'user' });
+
+    expect(client.deployAction).toHaveBeenCalledTimes(1);
+    expect(output.info).toHaveBeenCalledWith(expect.stringContaining('unchanged'));
+    expect(output.success).toHaveBeenCalledWith(expect.stringContaining('1 unchanged'));
+  });
+
   test('handles API error during deploy', async ({ client, output, processMocks }) => {
     projectConfig.getActionsDir.mockReturnValue('/project/canup/actions');
 
@@ -221,8 +310,7 @@ describe('actions deploy command', () => {
     client.listActions.mockRejectedValue(apiError);
 
     const { Command } = await import('commander');
-    const { registerActionsDeployAction } =
-      await import('../../commands/actions/deploy.js');
+    const { registerActionsDeployAction } = await import('../../commands/actions/deploy.js');
 
     const program = new Command();
     const actions = program.command('actions');
@@ -242,8 +330,7 @@ describe('actions deploy command', () => {
     client.listActions.mockRejectedValue(apiError);
 
     const { Command } = await import('commander');
-    const { registerActionsDeployAction } =
-      await import('../../commands/actions/deploy.js');
+    const { registerActionsDeployAction } = await import('../../commands/actions/deploy.js');
 
     const program = new Command();
     const actions = program.command('actions');
@@ -282,8 +369,7 @@ describe('actions deploy command', () => {
     mockReadFileSync.mockReturnValue('code');
 
     const { Command } = await import('commander');
-    const { registerActionsDeployAction } =
-      await import('../../commands/actions/deploy.js');
+    const { registerActionsDeployAction } = await import('../../commands/actions/deploy.js');
 
     const program = new Command();
     const actions = program.command('actions');

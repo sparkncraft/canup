@@ -234,6 +234,58 @@ describe('CreditCounter', () => {
     expect(link).toBeNull();
   });
 
+  it('no link renders when subscribeUrl is null with data loaded', () => {
+    mockUseCredits.mockReturnValue(
+      mockCreditsReturn({
+        data: { ...mockBalance, remaining: 50, used: 50 },
+        subscribeUrl: null,
+      }),
+    );
+
+    const { container } = render(<CreditCounter action="my-action" />);
+    const link = container.querySelector('[data-testid="link"]');
+    expect(link).toBeNull();
+    expect(container.textContent).toContain('50 of 100');
+  });
+
+  it('shows "Manage subscription" link text when subscribed', () => {
+    mockUseCredits.mockReturnValue(
+      mockCreditsReturn({
+        data: { ...mockBalance, subscribed: true },
+      }),
+    );
+
+    const { container } = render(<CreditCounter action="my-action" />);
+    const link = container.querySelector('[data-testid="link"]');
+    expect(link).toBeTruthy();
+    expect(link!.textContent).toBe('Manage subscription');
+  });
+
+  it('exhausted without resetAt omits refresh date text', () => {
+    mockUseCredits.mockReturnValue(
+      mockCreditsReturn({
+        data: { ...mockBalance, remaining: 0, used: 100, resetAt: null },
+        exhausted: true,
+      }),
+    );
+
+    const { container } = render(<CreditCounter action="my-action" />);
+    expect(container.textContent).toContain("don't have enough credits left");
+    expect(container.textContent).not.toContain('Credits refresh');
+  });
+
+  it('omits interval text when interval is null', () => {
+    mockUseCredits.mockReturnValue(
+      mockCreditsReturn({
+        data: { ...mockBalance, interval: null },
+      }),
+    );
+
+    const { container } = render(<CreditCounter action="my-action" />);
+    expect(container.textContent).toContain('90 of 100');
+    expect(container.textContent).not.toContain('Credits refresh');
+  });
+
   it('exhausted state shows when remaining is -1 (negative guard)', () => {
     mockUseCredits.mockReturnValue(
       mockCreditsReturn({
