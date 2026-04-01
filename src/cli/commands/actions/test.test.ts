@@ -1,4 +1,5 @@
-import { describe, expect, vi } from 'vitest';
+import { describe, expect, vi, beforeEach } from 'vitest';
+import { EventEmitter } from 'node:events';
 import {
   test,
   output,
@@ -15,6 +16,10 @@ const { mockReadFileSync, mockWriteFileSync, mockUnlinkSync, mockExistsSync } = 
   mockUnlinkSync: vi.fn(),
   mockExistsSync: vi.fn(),
 }));
+
+const { mockSpawn } = vi.hoisted(() => ({ mockSpawn: vi.fn() }));
+
+const { mockCreateRequire } = vi.hoisted(() => ({ mockCreateRequire: vi.fn() }));
 
 vi.mock('../../config/require-project.js', () => ({
   requireProject: vi.fn(() => project),
@@ -44,6 +49,48 @@ vi.mock('node:fs', async (importOriginal) => {
   };
 });
 
+vi.mock('node:child_process', () => ({
+  spawn: mockSpawn,
+}));
+
+vi.mock('node:module', async (importOriginal) => {
+  const original = await importOriginal<typeof import('node:module')>();
+  return {
+    ...original,
+    createRequire: mockCreateRequire,
+  };
+});
+
+function createMockProcess(stdoutData: string, stderrData: string) {
+  const proc = new EventEmitter() as EventEmitter & { stdout: EventEmitter; stderr: EventEmitter };
+  proc.stdout = new EventEmitter();
+  proc.stderr = new EventEmitter();
+  setTimeout(() => {
+    if (stdoutData) proc.stdout.emit('data', Buffer.from(stdoutData));
+    if (stderrData) proc.stderr.emit('data', Buffer.from(stderrData));
+    proc.emit('close', 0);
+  }, 5);
+  return proc;
+}
+
+beforeEach(() => {
+  mockCreateRequire.mockReturnValue({
+    resolve: vi.fn().mockReturnValue('/fake/node_modules/tsx/dist/cli.mjs'),
+  });
+});
+
+async function runTest(...extraArgs: string[]) {
+  const { Command } = await import('commander');
+  const { registerActionsTestAction } =
+    await import('../../commands/actions/test.js');
+
+  const program = new Command();
+  const actions = program.command('actions');
+  registerActionsTestAction(actions);
+
+  await program.parseAsync(['actions', 'test', ...extraArgs], { from: 'user' });
+}
+
 describe('actions test command', () => {
   describe('remote test (--remote)', () => {
     test('sends code to API and displays success result', async ({
@@ -60,15 +107,7 @@ describe('actions test command', () => {
 
       mockReadFileSync.mockReturnValue('def handler(p, c): return {"answer": 42}');
 
-      const { Command } = await import('commander');
-      const { registerActionsTestAction } =
-        await import('../../commands/actions/test.js');
-
-      const program = new Command();
-      const actions = program.command('actions');
-      registerActionsTestAction(actions);
-
-      await program.parseAsync(['actions', 'test', 'my-script.py', '--remote'], { from: 'user' });
+      await runTest('my-script.py', '--remote');
 
       expect(client.testAction).toHaveBeenCalledWith(
         'test-app-id',
@@ -90,18 +129,7 @@ describe('actions test command', () => {
 
       mockReadFileSync.mockReturnValue('def handler(p, c): pass');
 
-      const { Command } = await import('commander');
-      const { registerActionsTestAction } =
-        await import('../../commands/actions/test.js');
-
-      const program = new Command();
-      const actions = program.command('actions');
-      registerActionsTestAction(actions);
-
-      await program.parseAsync(
-        ['actions', 'test', 'my-script.py', '--remote', '--params', '{"key":"val"}'],
-        { from: 'user' },
-      );
+      await runTest('my-script.py', '--remote', '--params', '{"key":"val"}');
 
       expect(client.testAction).toHaveBeenCalledWith(
         'test-app-id',
@@ -132,15 +160,7 @@ describe('actions test command', () => {
 
       mockReadFileSync.mockReturnValue('export const handler = () => { throw new Error() }');
 
-      const { Command } = await import('commander');
-      const { registerActionsTestAction } =
-        await import('../../commands/actions/test.js');
-
-      const program = new Command();
-      const actions = program.command('actions');
-      registerActionsTestAction(actions);
-
-      await program.parseAsync(['actions', 'test', 'handler.ts', '--remote'], { from: 'user' });
+      await runTest('handler.ts', '--remote');
 
       expect(output.error).toHaveBeenCalledWith(
         expect.stringContaining('TypeError: x is not defined'),
@@ -161,15 +181,7 @@ describe('actions test command', () => {
 
       mockReadFileSync.mockReturnValue('export const handler = () => "ok"');
 
-      const { Command } = await import('commander');
-      const { registerActionsTestAction } =
-        await import('../../commands/actions/test.js');
-
-      const program = new Command();
-      const actions = program.command('actions');
-      registerActionsTestAction(actions);
-
-      await program.parseAsync(['actions', 'test', 'handler.ts', '--remote'], { from: 'user' });
+      await runTest('handler.ts', '--remote');
 
       expect(client.testAction).toHaveBeenCalledWith(
         'test-app-id',
@@ -201,15 +213,7 @@ describe('actions test command', () => {
 
       mockReadFileSync.mockReturnValue('def handler(p, c): pass');
 
-      const { Command } = await import('commander');
-      const { registerActionsTestAction } =
-        await import('../../commands/actions/test.js');
-
-      const program = new Command();
-      const actions = program.command('actions');
-      registerActionsTestAction(actions);
-
-      await program.parseAsync(['actions', 'test', 'my-action', '--remote'], { from: 'user' });
+      await runTest('my-action', '--remote');
 
       expect(actionsDiscovery.resolveActionByName).toHaveBeenCalledWith(
         '/project/canup/actions',
@@ -222,6 +226,98 @@ describe('actions test command', () => {
         'python',
         {},
       );
+    });
+  });
+
+  describe('local test (default)', () => {
+    test('spawns python3 for .py files', async ({ output, processMocks }) => {
+      mockExistsSync.mockReturnValue(true);
+
+      const resultJson = JSON.stringify({ ok: true, data: { answer: 42 }, duration_ms: 50 });
+      mockSpawn.mockReturnValue(createMockProcess(`\n__CANUP_RESULT__${resultJson}`, ''));
+
+      await runTest('my-script.py');
+
+      expect(mockSpawn).toHaveBeenCalledWith(
+        'python3',
+        expect.arrayContaining([expect.stringContaining('.py')]),
+        expect.objectContaining({ stdio: ['ignore', 'pipe', 'pipe'] }),
+      );
+      expect(output.success).toHaveBeenCalledWith('Test passed');
+    });
+
+    test('spawns node with tsx for .ts files', async ({ output, processMocks }) => {
+      mockExistsSync.mockReturnValue(true);
+
+      const resultJson = JSON.stringify({ ok: true, data: null, duration_ms: 30 });
+      mockSpawn.mockReturnValue(createMockProcess(`\n__CANUP_RESULT__${resultJson}`, ''));
+
+      await runTest('handler.ts');
+
+      expect(mockSpawn).toHaveBeenCalledWith(
+        process.execPath,
+        expect.arrayContaining(['/fake/node_modules/tsx/dist/cli.mjs']),
+        expect.objectContaining({ stdio: ['ignore', 'pipe', 'pipe'] }),
+      );
+    });
+
+    test('spawns node with tsx for .mjs files', async ({ output, processMocks }) => {
+      mockExistsSync.mockReturnValue(true);
+
+      const resultJson = JSON.stringify({ ok: true, data: null, duration_ms: 10 });
+      mockSpawn.mockReturnValue(createMockProcess(`\n__CANUP_RESULT__${resultJson}`, ''));
+
+      await runTest('handler.mjs');
+
+      expect(mockSpawn).toHaveBeenCalledWith(
+        process.execPath,
+        expect.arrayContaining([expect.stringContaining('.mjs')]),
+        expect.objectContaining({ stdio: ['ignore', 'pipe', 'pipe'] }),
+      );
+    });
+
+    test('displays local test error result', async ({ output, processMocks }) => {
+      mockExistsSync.mockReturnValue(true);
+
+      const resultJson = JSON.stringify({
+        ok: false,
+        error: { type: 'ValueError', message: 'bad input', stack_trace: 'line 5' },
+        duration_ms: 20,
+      });
+      mockSpawn.mockReturnValue(createMockProcess('', `\n__CANUP_RESULT__${resultJson}`));
+
+      await runTest('my-script.py');
+
+      expect(output.error).toHaveBeenCalledWith(
+        expect.stringContaining('ValueError: bad input'),
+      );
+      expect(processMocks.exit).toHaveBeenCalledWith(1);
+    });
+
+    test('passes params from --params to local test context', async ({ output, processMocks }) => {
+      mockExistsSync.mockReturnValue(true);
+
+      const resultJson = JSON.stringify({ ok: true, data: 'ok', duration_ms: 5 });
+      mockSpawn.mockReturnValue(createMockProcess(`\n__CANUP_RESULT__${resultJson}`, ''));
+
+      await runTest('my-script.py', '--params', '{"key":"val"}');
+
+      expect(mockWriteFileSync).toHaveBeenCalled();
+      const [wrapperPath, wrapperContent] = mockWriteFileSync.mock.calls[0] as [string, string];
+      expect(wrapperPath).toContain('.py');
+      expect(wrapperContent).toContain('key');
+      expect(wrapperContent).toContain('val');
+    });
+
+    test('cleans up temp wrapper file after local test', async ({ output, processMocks }) => {
+      mockExistsSync.mockReturnValue(true);
+
+      const resultJson = JSON.stringify({ ok: true, data: null, duration_ms: 5 });
+      mockSpawn.mockReturnValue(createMockProcess(`\n__CANUP_RESULT__${resultJson}`, ''));
+
+      await runTest('my-script.py');
+
+      expect(mockUnlinkSync).toHaveBeenCalled();
     });
   });
 
@@ -239,17 +335,59 @@ describe('actions test command', () => {
 
       mockReadFileSync.mockReturnValue('code');
 
-      const { Command } = await import('commander');
-      const { registerActionsTestAction } =
-        await import('../../commands/actions/test.js');
-
-      const program = new Command();
-      const actions = program.command('actions');
-      registerActionsTestAction(actions);
-
-      await program.parseAsync(['actions', 'test', 'my-script.py', '--remote'], { from: 'user' });
+      await runTest('my-script.py', '--remote');
 
       expect(output.error).toHaveBeenCalledWith('Action not found on server.');
+      expect(processMocks.exit).toHaveBeenCalledWith(1);
+    });
+
+    test('handles 401 authentication error', async ({
+      client,
+      output,
+      processMocks,
+    }) => {
+      mockExistsSync.mockReturnValue(true);
+
+      const apiError = new Error('Unauthorized') as Error & { statusCode: number };
+      apiError.statusCode = 401;
+      client.testAction.mockRejectedValue(apiError);
+
+      mockReadFileSync.mockReturnValue('code');
+
+      await runTest('my-script.py', '--remote');
+
+      expect(output.error).toHaveBeenCalledWith('Not authenticated.');
+      expect(processMocks.exit).toHaveBeenCalledWith(1);
+    });
+
+    test('exits on unsupported file extension', async ({ output, processMocks }) => {
+      mockExistsSync.mockReturnValue(true);
+
+      const resultJson = JSON.stringify({ ok: true, data: null, duration_ms: 0 });
+      mockSpawn.mockReturnValue(createMockProcess(`\n__CANUP_RESULT__${resultJson}`, ''));
+
+      await runTest('./scripts/handler.rb');
+
+      expect(output.error).toHaveBeenCalledWith(expect.stringContaining('Unsupported file extension'));
+      expect(processMocks.exit).toHaveBeenCalledWith(1);
+    });
+
+    test('exits when --params contains invalid JSON', async ({ output, processMocks }) => {
+      mockExistsSync.mockReturnValue(false);
+
+      await runTest('my-script.py', '--params', '{not json');
+
+      expect(output.error).toHaveBeenCalledWith(expect.stringContaining('Invalid --params'));
+      expect(processMocks.exit).toHaveBeenCalledWith(1);
+    });
+
+    test('exits when action file is not found', async ({ output, processMocks }) => {
+      mockExistsSync.mockReturnValue(false);
+      actionsDiscovery.resolveActionByName.mockReturnValue(null);
+
+      await runTest('nonexistent');
+
+      expect(output.error).toHaveBeenCalledWith(expect.stringContaining('Action not found'));
       expect(processMocks.exit).toHaveBeenCalledWith(1);
     });
 
@@ -266,15 +404,7 @@ describe('actions test command', () => {
 
       mockReadFileSync.mockReturnValue('exports.handler = () => {}');
 
-      const { Command } = await import('commander');
-      const { registerActionsTestAction } =
-        await import('../../commands/actions/test.js');
-
-      const program = new Command();
-      const actions = program.command('actions');
-      registerActionsTestAction(actions);
-
-      await program.parseAsync(['actions', 'test', 'handler.js', '--remote'], { from: 'user' });
+      await runTest('handler.js', '--remote');
 
       expect(client.testAction).toHaveBeenCalledWith(
         'test-app-id',
@@ -297,15 +427,7 @@ describe('actions test command', () => {
 
       mockReadFileSync.mockReturnValue('code');
 
-      const { Command } = await import('commander');
-      const { registerActionsTestAction } =
-        await import('../../commands/actions/test.js');
-
-      const program = new Command();
-      const actions = program.command('actions');
-      registerActionsTestAction(actions);
-
-      await program.parseAsync(['actions', 'test', 'my-script.py', '--remote'], { from: 'user' });
+      await runTest('my-script.py', '--remote');
 
       expect(processMocks.log).toHaveBeenCalledWith(expect.stringContaining('500ms'));
     });
@@ -320,15 +442,7 @@ describe('actions test command', () => {
 
       mockReadFileSync.mockReturnValue('code');
 
-      const { Command } = await import('commander');
-      const { registerActionsTestAction } =
-        await import('../../commands/actions/test.js');
-
-      const program = new Command();
-      const actions = program.command('actions');
-      registerActionsTestAction(actions);
-
-      await program.parseAsync(['actions', 'test', 'my-script.py', '--remote'], { from: 'user' });
+      await runTest('my-script.py', '--remote');
 
       expect(processMocks.log).toHaveBeenCalledWith(expect.stringContaining('1.5s'));
     });
