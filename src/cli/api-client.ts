@@ -54,20 +54,6 @@ interface TestError {
 export type TestResult = TestSuccess | TestError;
 
 // ──────────────────────────────────────────────
-// Credit config types
-// ──────────────────────────────────────────────
-
-export interface CreditConfig {
-  id: string;
-  actionSlug: string;
-  quota: number;
-  interval: string;
-  plan: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-// ──────────────────────────────────────────────
 // Deps types
 // ──────────────────────────────────────────────
 
@@ -561,48 +547,6 @@ export class CanupClient {
   async getBuildStatus(appId: string, language: string, buildId: string): Promise<BuildStatus> {
     return this.request<BuildStatus>(
       `/v1/apps/${encodeURIComponent(appId)}/deps/${encodeURIComponent(language)}/builds/${encodeURIComponent(buildId)}`,
-    );
-  }
-
-  // ──────────────────────────────────────────────
-  // Credits management (API key auth, app-scoped)
-  // ──────────────────────────────────────────────
-
-  /**
-   * Set (create or update) credit config for an action.
-   */
-  async setCreditConfig(
-    appId: string,
-    slug: string,
-    quota: number,
-    interval: string,
-  ): Promise<CreditConfig> {
-    return this.request<CreditConfig>(
-      `/v1/apps/${encodeURIComponent(appId)}/actions/${encodeURIComponent(slug)}/credits`,
-      {
-        method: 'PUT',
-        body: JSON.stringify({ quota, interval }),
-      },
-    );
-  }
-
-  /**
-   * Get credit config for an action.
-   * Returns null if no config exists (action is free).
-   */
-  async getCreditConfig(appId: string, slug: string): Promise<CreditConfig | null> {
-    return this.request<CreditConfig | null>(
-      `/v1/apps/${encodeURIComponent(appId)}/actions/${encodeURIComponent(slug)}/credits`,
-    );
-  }
-
-  /**
-   * Delete credit config for an action (action becomes free).
-   */
-  async deleteCreditConfig(appId: string, slug: string): Promise<{ deleted: string }> {
-    return this.request<{ deleted: string }>(
-      `/v1/apps/${encodeURIComponent(appId)}/actions/${encodeURIComponent(slug)}/credits`,
-      { method: 'DELETE' },
     );
   }
 
