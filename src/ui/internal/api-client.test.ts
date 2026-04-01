@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, beforeEach, beforeAll, afterEach, afterAll } from 'vitest';
+import { describe, it, expect, vi, beforeEach, beforeAll, afterAll, afterEach } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 import { CanupError } from '../internal/errors.js';
@@ -19,23 +19,16 @@ const { mockGetJwt } = vi.hoisted(() => ({
 vi.mock('../internal/jwt-cache.js', () => ({
   getJwt: mockGetJwt,
 }));
-vi.mock('@canva/user', () => ({
-  auth: { getCanvaUserToken: vi.fn() },
-}));
-
 const server = setupServer();
 
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
-afterEach(() => {
-  server.resetHandlers();
-  delete (globalThis as Record<string, unknown>).__canup_url;
-});
+afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
 describe('api-client', () => {
   beforeEach(() => {
     mockGetJwt.mockResolvedValue(TEST_TOKEN);
-    (globalThis as Record<string, unknown>).__canup_url = BASE_URL;
+    vi.stubGlobal('__canup_url', BASE_URL);
   });
 
   const getModule = async () => import('../internal/api-client.js');
@@ -228,7 +221,7 @@ describe('api-client', () => {
 
   describe('base URL', () => {
     it('uses globalThis.__canup_url override when set', async () => {
-      (globalThis as Record<string, unknown>).__canup_url = 'http://custom-url.local';
+      vi.stubGlobal('__canup_url', 'http://custom-url.local');
 
       server.use(
         http.post(`http://custom-url.local/run/my-action`, () =>

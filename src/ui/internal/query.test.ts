@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { QueryClient } from '@tanstack/react-query';
 
 const instances: MockBC[] = [];
@@ -18,11 +18,7 @@ describe('query', () => {
   beforeEach(() => {
     vi.resetModules();
     instances.length = 0;
-    globalThis.BroadcastChannel = MockBC as unknown as typeof BroadcastChannel;
-  });
-
-  afterEach(() => {
-    delete (globalThis as Record<string, unknown>).BroadcastChannel;
+    vi.stubGlobal('BroadcastChannel', MockBC);
   });
 
   async function loadModule() {
@@ -95,7 +91,7 @@ describe('query', () => {
   });
 
   it('skips BroadcastChannel when unavailable', async () => {
-    delete (globalThis as Record<string, unknown>).BroadcastChannel;
+    vi.stubGlobal('BroadcastChannel', undefined);
 
     const { queryClient } = await loadModule();
     expect(queryClient).toBeInstanceOf(QueryClient);

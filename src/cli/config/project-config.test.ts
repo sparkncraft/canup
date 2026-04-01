@@ -47,7 +47,6 @@ describe('loadProjectConfig', () => {
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
     rmSync(tmpRoot, { recursive: true, force: true });
   });
 

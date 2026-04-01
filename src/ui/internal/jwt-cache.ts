@@ -4,6 +4,13 @@ let cachedToken: string | null = null;
 let tokenExpiry = 0;
 let pendingRequest: Promise<string> | null = null;
 
+/** @internal Reset cache state for testing. Not part of the public API. */
+export function _resetCache(): void {
+  cachedToken = null;
+  tokenExpiry = 0;
+  pendingRequest = null;
+}
+
 export async function getJwt(): Promise<string> {
   // Return cached if not expired (with 30s buffer)
   if (cachedToken && Date.now() < tokenExpiry - 30_000) {

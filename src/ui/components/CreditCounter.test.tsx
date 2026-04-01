@@ -60,10 +60,6 @@ vi.mock('../hooks/useCredits.js', () => ({
 vi.mock('../internal/jwt-cache.js', () => ({
   getJwt: vi.fn().mockResolvedValue('mock-jwt'),
 }));
-vi.mock('@canva/user', () => ({
-  auth: { getCanvaUserToken: vi.fn() },
-}));
-
 const mockUseCredits = vi.mocked(useCredits);
 
 const mockBalance: CreditBalance = {
