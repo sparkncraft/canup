@@ -1,4 +1,5 @@
 name: CI
+# PR checks: lint, typecheck, test, build, size, coverage, changeset
 
 on:
   pull_request:
