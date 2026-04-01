@@ -1,26 +1,15 @@
 import { describe, it, expect, vi } from 'vitest';
 import { EventEmitter } from 'node:events';
-import { readStdinPipe } from './input.js';
 
 describe('readStdinPipe', () => {
   it('concatenates chunks, trims, and resolves', async () => {
     const fakeStdin = new EventEmitter();
-    using onSpy = vi.spyOn(process, 'stdin', 'get').mockReturnValue(fakeStdin as never);
+    using _spy = vi.spyOn(process, 'stdin', 'get').mockReturnValue(fakeStdin as never);
 
-    const { readStdinPipe: freshReadStdinPipe } = await import('./input.js');
+    vi.resetModules();
+    const { readStdinPipe } = await import('./input.js');
 
-    // readStdinPipe registers handlers on process.stdin, so we need to use the
-    // actual module-level process.stdin. Since mocking the getter is fragile,
-    // test the export directly and simulate events on the real stdin.
-    // Instead, test via a more controlled approach:
-    const promise = new Promise<string>((resolve, reject) => {
-      const chunks: Buffer[] = [];
-      fakeStdin.on('data', (chunk: Buffer) => chunks.push(chunk));
-      fakeStdin.on('end', () => {
-        resolve(Buffer.concat(chunks).toString('utf-8').trim());
-      });
-      fakeStdin.on('error', reject);
-    });
+    const promise = readStdinPipe();
 
     fakeStdin.emit('data', Buffer.from(' hello '));
     fakeStdin.emit('data', Buffer.from('world '));
@@ -28,6 +17,20 @@ describe('readStdinPipe', () => {
 
     const result = await promise;
     expect(result).toBe('hello world');
+  });
+
+  it('rejects on stdin error', async () => {
+    const fakeStdin = new EventEmitter();
+    using _spy = vi.spyOn(process, 'stdin', 'get').mockReturnValue(fakeStdin as never);
+
+    vi.resetModules();
+    const { readStdinPipe } = await import('./input.js');
+
+    const promise = readStdinPipe();
+
+    fakeStdin.emit('error', new Error('broken pipe'));
+
+    await expect(promise).rejects.toThrow('broken pipe');
   });
 });
 
@@ -41,16 +44,14 @@ describe('readHiddenInput', () => {
       removeListener: vi.fn(),
     });
 
-    using stdinSpy = vi.spyOn(process, 'stdin', 'get').mockReturnValue(fakeStdin as never);
-    using stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    using _stdinSpy = vi.spyOn(process, 'stdin', 'get').mockReturnValue(fakeStdin as never);
+    using _stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
 
-    // Fresh import to pick up mocked stdin
     vi.resetModules();
     const { readHiddenInput } = await import('./input.js');
 
     const promise = readHiddenInput('Enter secret: ');
 
-    // Simulate typing 'abc' then Enter
     const dataHandler = fakeStdin.listeners('data')[0] as (key: string) => void;
     dataHandler('a');
     dataHandler('b');
@@ -71,8 +72,8 @@ describe('readHiddenInput', () => {
       removeListener: vi.fn(),
     });
 
-    using stdinSpy = vi.spyOn(process, 'stdin', 'get').mockReturnValue(fakeStdin as never);
-    using stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    using _stdinSpy = vi.spyOn(process, 'stdin', 'get').mockReturnValue(fakeStdin as never);
+    using _stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
 
     vi.resetModules();
     const { readHiddenInput } = await import('./input.js');
@@ -99,8 +100,8 @@ describe('readHiddenInput', () => {
       removeListener: vi.fn(),
     });
 
-    using stdinSpy = vi.spyOn(process, 'stdin', 'get').mockReturnValue(fakeStdin as never);
-    using stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    using _stdinSpy = vi.spyOn(process, 'stdin', 'get').mockReturnValue(fakeStdin as never);
+    using _stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
     using exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => {}) as never);
 
     vi.resetModules();
@@ -112,5 +113,64 @@ describe('readHiddenInput', () => {
     dataHandler('\x03'); // Ctrl+C
 
     expect(exitSpy).toHaveBeenCalledWith(1);
+  });
+
+  it('echoes * for each character and writes prompt to stderr', async () => {
+    const fakeStdin = Object.assign(new EventEmitter(), {
+      setRawMode: vi.fn(),
+      resume: vi.fn(),
+      pause: vi.fn(),
+      setEncoding: vi.fn(),
+      removeListener: vi.fn(),
+    });
+
+    using _stdinSpy = vi.spyOn(process, 'stdin', 'get').mockReturnValue(fakeStdin as never);
+    const stderrCalls: string[] = [];
+    using _stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation((chunk) => {
+      stderrCalls.push(String(chunk));
+      return true;
+    });
+
+    vi.resetModules();
+    const { readHiddenInput } = await import('./input.js');
+
+    const promise = readHiddenInput('Password: ');
+
+    const dataHandler = fakeStdin.listeners('data')[0] as (key: string) => void;
+    dataHandler('x');
+    dataHandler('y');
+    dataHandler('\r');
+
+    await promise;
+
+    expect(stderrCalls[0]).toBe('Password: ');
+    expect(stderrCalls.filter((c) => c === '*')).toHaveLength(2);
+    expect(stderrCalls[stderrCalls.length - 1]).toBe('\n');
+  });
+
+  it('restores stdin to normal mode after completion', async () => {
+    const fakeStdin = Object.assign(new EventEmitter(), {
+      setRawMode: vi.fn(),
+      resume: vi.fn(),
+      pause: vi.fn(),
+      setEncoding: vi.fn(),
+      removeListener: vi.fn(),
+    });
+
+    using _stdinSpy = vi.spyOn(process, 'stdin', 'get').mockReturnValue(fakeStdin as never);
+    using _stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+
+    vi.resetModules();
+    const { readHiddenInput } = await import('./input.js');
+
+    const promise = readHiddenInput('Enter: ');
+
+    const dataHandler = fakeStdin.listeners('data')[0] as (key: string) => void;
+    dataHandler('\r');
+
+    await promise;
+
+    expect(fakeStdin.setRawMode).toHaveBeenLastCalledWith(false);
+    expect(fakeStdin.pause).toHaveBeenCalled();
   });
 });
