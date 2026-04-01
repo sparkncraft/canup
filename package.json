@@ -34,6 +34,7 @@
   "scripts": {
     "build": "tsdown",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "test:build": "publint --strict && attw --pack . --profile esm-only",
     "size": "size-limit",
     "size:check": "size-limit --limit",
