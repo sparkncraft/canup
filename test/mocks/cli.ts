@@ -32,9 +32,6 @@ export interface MockCanupClient {
   removeDep: Mock;
   clearDeps: Mock;
   getBuildStatus: Mock;
-  setCreditConfig: Mock;
-  getCreditConfig: Mock;
-  deleteCreditConfig: Mock;
   connectStripe: Mock;
   stripeStatus: Mock;
   disconnectStripe: Mock;
@@ -53,7 +50,11 @@ export function resetMockCanupClient(client: MockCanupClient): void {
     avatarUrl: null,
     createdAt: '2026-01-01T00:00:00Z',
   });
-  client.registerApp.mockResolvedValue({ id: 'app-1', canvaAppId: 'AAFtest12345', name: 'Test App' });
+  client.registerApp.mockResolvedValue({
+    id: 'app-1',
+    canvaAppId: 'AAFtest12345',
+    name: 'Test App',
+  });
   client.getAppInfo.mockResolvedValue({
     id: 'app-1',
     canvaAppId: 'AAFtest12345',
@@ -73,8 +74,14 @@ export function resetMockCanupClient(client: MockCanupClient): void {
   client.listActions.mockResolvedValue([]);
   client.listActionsWithScript.mockResolvedValue([]);
   client.deleteAction.mockResolvedValue({ deleted: 'test-action' });
-  client.testAction.mockResolvedValue({ ok: true, data: { result: null, durationMs: 50, printOutput: '' } });
-  client.runAction.mockResolvedValue({ ok: true, data: { result: null, durationMs: 50, printOutput: '' } });
+  client.testAction.mockResolvedValue({
+    ok: true,
+    data: { result: null, durationMs: 50, printOutput: '' },
+  });
+  client.runAction.mockResolvedValue({
+    ok: true,
+    data: { result: null, durationMs: 50, printOutput: '' },
+  });
   client.listHistory.mockResolvedValue([]);
   client.getHistoryDetail.mockResolvedValue({
     id: 'exec-1',
@@ -95,7 +102,11 @@ export function resetMockCanupClient(client: MockCanupClient): void {
     layerSize: null,
   });
   client.listDeps.mockResolvedValue({ packages: [], layerSize: null, layerArn: null });
-  client.removeDep.mockResolvedValue({ deleted: 'express', buildId: 'build-1', status: 'building' });
+  client.removeDep.mockResolvedValue({
+    deleted: 'express',
+    buildId: 'build-1',
+    status: 'building',
+  });
   client.clearDeps.mockResolvedValue({ cleared: true });
   client.getBuildStatus.mockResolvedValue({
     id: 'build-1',
@@ -106,17 +117,6 @@ export function resetMockCanupClient(client: MockCanupClient): void {
     createdAt: '2026-01-01T00:00:00Z',
     updatedAt: '2026-01-01T00:00:00Z',
   });
-  client.setCreditConfig.mockResolvedValue({
-    id: 'cc-1',
-    actionSlug: 'test-action',
-    quota: 50,
-    interval: 'monthly',
-    plan: 'free',
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z',
-  });
-  client.getCreditConfig.mockResolvedValue(null);
-  client.deleteCreditConfig.mockResolvedValue({ deleted: 'test-action' });
   client.connectStripe.mockResolvedValue({ connected: true });
   client.stripeStatus.mockResolvedValue({ connected: false });
   client.disconnectStripe.mockResolvedValue({ disconnected: true });
@@ -211,19 +211,6 @@ export function createMockCanupClient(overrides?: Partial<MockCanupClient>): Moc
       createdAt: '2026-01-01T00:00:00Z',
       updatedAt: '2026-01-01T00:00:00Z',
     }),
-
-    // Credits
-    setCreditConfig: vi.fn().mockResolvedValue({
-      id: 'cc-1',
-      actionSlug: 'test-action',
-      quota: 50,
-      interval: 'monthly',
-      plan: 'free',
-      createdAt: '2026-01-01T00:00:00Z',
-      updatedAt: '2026-01-01T00:00:00Z',
-    }),
-    getCreditConfig: vi.fn().mockResolvedValue(null),
-    deleteCreditConfig: vi.fn().mockResolvedValue({ deleted: 'test-action' }),
 
     // Stripe
     connectStripe: vi.fn().mockResolvedValue({ connected: true }),
