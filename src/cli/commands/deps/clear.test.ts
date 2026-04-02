@@ -33,6 +33,22 @@ describe('deps clear command', () => {
     expect(output.success).toHaveBeenCalledWith('All nodejs packages cleared');
   });
 
+  test('rejects invalid language', async ({ output, processMocks }) => {
+    const { Command } = await import('commander');
+    const { registerDepsClearAction } = await import('../../commands/deps/clear.js');
+
+    const program = new Command();
+    const deps = program.command('deps');
+    registerDepsClearAction(deps);
+
+    await program.parseAsync(['deps', 'clear', '--language', 'ruby'], { from: 'user' });
+
+    expect(output.error).toHaveBeenCalledWith(
+      'Invalid language: "ruby". Must be "python" or "nodejs".',
+    );
+    expect(processMocks.exit).toHaveBeenCalledWith(1);
+  });
+
   test('handles API error', async ({ client, output, processMocks }) => {
     const apiError = new Error('Server error') as Error & { statusCode: number };
     apiError.statusCode = 500;

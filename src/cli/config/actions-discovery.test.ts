@@ -88,6 +88,16 @@ describe('discoverActions', () => {
     expect(names).toContain('other-action');
   });
 
+  it('returns empty array when readdirSync throws (e.g. permission error)', () => {
+    const actionsDir = join(tempDir, 'actions');
+    mkdirSync(actionsDir);
+    // Create a file where a directory is expected — readdirSync on a file throws ENOTDIR
+    const fakePath = join(actionsDir, 'not-a-dir');
+    writeFileSync(fakePath, '');
+    const result = discoverActions(fakePath);
+    expect(result).toEqual([]);
+  });
+
   it('handles mixed file types in one directory', () => {
     const actionsDir = join(tempDir, 'actions');
     mkdirSync(actionsDir);

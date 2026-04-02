@@ -52,6 +52,15 @@ describe('createSpinner', () => {
     expect(mockSpinnerInst.succeed).toHaveBeenCalledWith(expect.stringContaining('Deployed'));
   });
 
+  test('succeed() formats duration as seconds when >= 1000ms', () => {
+    vi.useFakeTimers();
+    const spin = createSpinner('Building');
+    vi.advanceTimersByTime(2500);
+    spin.succeed('Built');
+    expect(mockSpinnerInst.succeed).toHaveBeenCalledWith(expect.stringContaining('2.5s'));
+    vi.useRealTimers();
+  });
+
   test('fail() calls ora fail with the text', () => {
     const spin = createSpinner('Deploying');
     spin.fail('Deploy failed');

@@ -21,8 +21,7 @@ describe('secrets delete command', () => {
     client.deleteSecret.mockResolvedValue({ deleted: 'MY_KEY', synced: true });
 
     const { Command } = await import('commander');
-    const { registerSecretsDeleteAction } =
-      await import('../../commands/secrets/delete.js');
+    const { registerSecretsDeleteAction } = await import('../../commands/secrets/delete.js');
 
     const program = new Command();
     const secrets = program.command('secrets');
@@ -40,8 +39,7 @@ describe('secrets delete command', () => {
     client.deleteSecret.mockRejectedValue(apiError);
 
     const { Command } = await import('commander');
-    const { registerSecretsDeleteAction } =
-      await import('../../commands/secrets/delete.js');
+    const { registerSecretsDeleteAction } = await import('../../commands/secrets/delete.js');
 
     const program = new Command();
     const secrets = program.command('secrets');
@@ -53,12 +51,27 @@ describe('secrets delete command', () => {
     expect(processMocks.exit).toHaveBeenCalledWith(1);
   });
 
+  test('handles non-404 API error', async ({ client, output, processMocks }) => {
+    client.deleteSecret.mockRejectedValue(new Error('Connection timeout'));
+
+    const { Command } = await import('commander');
+    const { registerSecretsDeleteAction } = await import('../../commands/secrets/delete.js');
+
+    const program = new Command();
+    const secrets = program.command('secrets');
+    registerSecretsDeleteAction(secrets);
+
+    await program.parseAsync(['secrets', 'delete', 'MY_KEY'], { from: 'user' });
+
+    expect(output.error).toHaveBeenCalledWith('Connection timeout');
+    expect(processMocks.exit).toHaveBeenCalledWith(1);
+  });
+
   test('shows sync failure warning on delete', async ({ client, output }) => {
     client.deleteSecret.mockResolvedValue({ deleted: 'MY_KEY', synced: false });
 
     const { Command } = await import('commander');
-    const { registerSecretsDeleteAction } =
-      await import('../../commands/secrets/delete.js');
+    const { registerSecretsDeleteAction } = await import('../../commands/secrets/delete.js');
 
     const program = new Command();
     const secrets = program.command('secrets');
