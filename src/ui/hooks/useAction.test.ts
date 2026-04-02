@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 import { describe, expect, vi } from 'vitest';
 import { test as baseTest } from 'vitest';
 import { renderHook, act, waitFor, cleanup } from '@testing-library/react';

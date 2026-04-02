@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { getJwt, _resetCache } from '../internal/jwt-cache.js';
 
