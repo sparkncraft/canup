@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, expect, vi } from 'vitest';
+import { test as baseTest } from 'vitest';
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import React from 'react';
 import { ActionButton } from '../components/ActionButton.js';
@@ -44,17 +45,11 @@ vi.mock('../hooks/useCredits.js', () => ({
 vi.mock('../internal/jwt-cache.js', () => ({
   getJwt: vi.fn().mockResolvedValue('mock-jwt'),
 }));
-vi.mock('@canva/user', () => ({
-  auth: { getCanvaUserToken: vi.fn() },
-}));
-
 const mockUseAction = vi.mocked(useAction);
 const mockUseCredits = vi.mocked(useCredits);
 
-describe('ActionButton', () => {
-  afterEach(cleanup);
-
-  beforeEach(() => {
+const test = baseTest.extend('_rtl', [
+  async ({}, use) => {
     mockUseAction.mockReturnValue({
       execute: vi.fn().mockResolvedValue({ result: 'ok', durationMs: 10 }),
       loading: false,
@@ -76,9 +71,14 @@ describe('ActionButton', () => {
       subscribeUrl: null,
       refresh: vi.fn(),
     });
-  });
+    await use();
+    cleanup();
+  },
+  { auto: true },
+]);
 
-  it('renders Canva Button with children text', () => {
+describe('ActionButton', () => {
+  test('renders Canva Button with children text', () => {
     render(
       <ActionButton action="my-action" variant="primary">
         Generate
@@ -89,7 +89,7 @@ describe('ActionButton', () => {
     expect(btn.textContent).toBe('Generate');
   });
 
-  it('calls execute(params) on click', async () => {
+  test('calls execute(params) on click', async () => {
     const mockExecute = vi.fn().mockResolvedValue({ result: 'done', durationMs: 42 });
     mockUseAction.mockReturnValue({ execute: mockExecute, loading: false, error: null });
 
@@ -106,7 +106,7 @@ describe('ActionButton', () => {
     });
   });
 
-  it('shows loading=true during execution (Button loading prop)', () => {
+  test('shows loading=true during execution (Button loading prop)', () => {
     mockUseAction.mockReturnValue({
       execute: vi.fn().mockResolvedValue({ result: 'ok', durationMs: 10 }),
       loading: true,
@@ -123,7 +123,7 @@ describe('ActionButton', () => {
     expect(btn.getAttribute('data-loading')).toBe('true');
   });
 
-  it('disables when credits exhausted', () => {
+  test('disables when credits exhausted', () => {
     mockUseCredits.mockReturnValue({
       data: {
         subscribed: false,
@@ -151,7 +151,7 @@ describe('ActionButton', () => {
     expect(btn.hasAttribute('disabled')).toBe(true);
   });
 
-  it('calls onResult callback with { result, durationMs } on success', async () => {
+  test('calls onResult callback with { result, durationMs } on success', async () => {
     const mockResult = { result: { imageUrl: 'https://example.com/img.png' }, durationMs: 150 };
     const mockExecute = vi.fn().mockResolvedValue(mockResult);
     mockUseAction.mockReturnValue({ execute: mockExecute, loading: false, error: null });
@@ -170,7 +170,7 @@ describe('ActionButton', () => {
     });
   });
 
-  it('calls onError callback with CanupError on failure', async () => {
+  test('calls onError callback with CanupError on failure', async () => {
     const error = new CanupError('CREDITS_EXHAUSTED', 'Credits exhausted');
     const mockExecute = vi.fn().mockRejectedValue(error);
     mockUseAction.mockReturnValue({ execute: mockExecute, loading: false, error: null });
@@ -189,7 +189,7 @@ describe('ActionButton', () => {
     });
   });
 
-  it('forwards variant, stretch, and other Canva Button props', () => {
+  test('forwards variant, stretch, and other Canva Button props', () => {
     render(
       <ActionButton action="my-action" variant="secondary" stretch>
         Go

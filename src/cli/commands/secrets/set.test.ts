@@ -1,28 +1,32 @@
 import { describe, expect, vi } from 'vitest';
 import { test, client, output, project } from '#test/fixtures.js';
+import { mockIsTTY } from '#test/mocks/cli.js';
 
-// Mock require-project
+const { mockReadStdinPipe, mockReadHiddenInput } = vi.hoisted(() => ({
+  mockReadStdinPipe: vi.fn(),
+  mockReadHiddenInput: vi.fn(),
+}));
+
 vi.mock('../../config/require-project.js', () => ({
   requireProject: vi.fn(() => project),
 }));
-
-// Mock api-client
 vi.mock('../../api-client.js', () => ({
   CanupClient: vi.fn(function () {
     return client;
   }),
 }));
-
-// Mock output
 vi.mock('../../ui/output.js', () => output);
+vi.mock('../../lib/input.js', () => ({
+  readStdinPipe: mockReadStdinPipe,
+  readHiddenInput: mockReadHiddenInput,
+}));
 
 describe('secrets set command', () => {
   test('sets a new secret with --value flag', async ({ client, output }) => {
     client.setSecret.mockResolvedValue({ name: 'MY_KEY', created: true, synced: true });
 
     const { Command } = await import('commander');
-    const { registerSecretsSetAction } =
-      await import('../../commands/secrets/set.js');
+    const { registerSecretsSetAction } = await import('../../commands/secrets/set.js');
 
     const program = new Command();
     const secrets = program.command('secrets');
@@ -40,8 +44,7 @@ describe('secrets set command', () => {
     client.setSecret.mockResolvedValue({ name: 'MY_KEY', created: false, synced: true });
 
     const { Command } = await import('commander');
-    const { registerSecretsSetAction } =
-      await import('../../commands/secrets/set.js');
+    const { registerSecretsSetAction } = await import('../../commands/secrets/set.js');
 
     const program = new Command();
     const secrets = program.command('secrets');
@@ -58,8 +61,7 @@ describe('secrets set command', () => {
     client.setSecret.mockResolvedValue({ name: 'MY_KEY', created: true, synced: false });
 
     const { Command } = await import('commander');
-    const { registerSecretsSetAction } =
-      await import('../../commands/secrets/set.js');
+    const { registerSecretsSetAction } = await import('../../commands/secrets/set.js');
 
     const program = new Command();
     const secrets = program.command('secrets');
@@ -70,67 +72,14 @@ describe('secrets set command', () => {
     expect(output.hint).toHaveBeenCalledWith(expect.stringContaining('Lambda sync failed'));
   });
 
-  test('reads value from interactive prompt when no --value flag (TTY mode)', async ({
-    client,
-    output,
-  }) => {
+  test('reads value from interactive prompt when TTY', async ({ client, output }) => {
     client.setSecret.mockResolvedValue({ name: 'MY_KEY', created: true, synced: true });
+    mockReadHiddenInput.mockResolvedValue('secret');
 
-    // Set up TTY mode
-    const originalIsTTY = process.stdin.isTTY;
-    process.stdin.isTTY = true as boolean;
-
-    // Mock stdin raw mode methods
-    const mockSetRawMode = vi.fn();
-    const originalSetRawMode = process.stdin.setRawMode;
-    process.stdin.setRawMode = mockSetRawMode as typeof process.stdin.setRawMode;
-
-    const originalResume = process.stdin.resume;
-    process.stdin.resume = vi.fn().mockReturnValue(process.stdin) as typeof process.stdin.resume;
-
-    const originalPause = process.stdin.pause;
-    process.stdin.pause = vi.fn().mockReturnValue(process.stdin) as typeof process.stdin.pause;
-
-    const originalSetEncoding = process.stdin.setEncoding;
-    process.stdin.setEncoding = vi.fn().mockReturnValue(process.stdin);
-
-    // Capture the data listener and emit keys after it's registered
-    const originalOn = process.stdin.on.bind(process.stdin);
-    const originalRemoveListener = process.stdin.removeListener.bind(process.stdin);
-    let dataHandler: ((key: string) => void) | null = null;
-    vi.spyOn(process.stdin, 'on').mockImplementation(((
-      event: string,
-      handler: (...args: unknown[]) => void,
-    ) => {
-      if (event === 'data') {
-        dataHandler = handler as (key: string) => void;
-        // Emit characters asynchronously
-        setTimeout(() => {
-          if (dataHandler) {
-            dataHandler('s');
-            dataHandler('e');
-            dataHandler('c');
-            dataHandler('r');
-            dataHandler('e');
-            dataHandler('t');
-            dataHandler('\r'); // Enter
-          }
-        }, 0);
-      }
-      return process.stdin;
-    }) as typeof process.stdin.on);
-
-    vi.spyOn(process.stdin, 'removeListener').mockImplementation(((event: string) => {
-      if (event === 'data') dataHandler = null;
-      return process.stdin;
-    }) as typeof process.stdin.removeListener);
-
-    // Suppress stderr writes from readHiddenInput
-    vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    using _tty = mockIsTTY(true);
 
     const { Command } = await import('commander');
-    const { registerSecretsSetAction } =
-      await import('../../commands/secrets/set.js');
+    const { registerSecretsSetAction } = await import('../../commands/secrets/set.js');
 
     const program = new Command();
     const secrets = program.command('secrets');
@@ -138,25 +87,53 @@ describe('secrets set command', () => {
 
     await program.parseAsync(['secrets', 'set', 'MY_KEY'], { from: 'user' });
 
+    expect(mockReadHiddenInput).toHaveBeenCalledWith('Enter value: ');
     expect(client.setSecret).toHaveBeenCalledWith('test-app-id', 'MY_KEY', 'secret');
     expect(output.success).toHaveBeenCalledWith('Secret MY_KEY set and synced.');
+  });
 
-    // Restore
-    process.stdin.isTTY = originalIsTTY;
-    process.stdin.setRawMode = originalSetRawMode;
-    process.stdin.resume = originalResume;
-    process.stdin.pause = originalPause;
-    process.stdin.setEncoding = originalSetEncoding;
-    process.stdin.on = originalOn as typeof process.stdin.on;
-    process.stdin.removeListener = originalRemoveListener as typeof process.stdin.removeListener;
+  test('reads value from stdin pipe when not TTY', async ({ client, output }) => {
+    client.setSecret.mockResolvedValue({ name: 'MY_KEY', created: true, synced: true });
+    mockReadStdinPipe.mockResolvedValue('piped-secret');
+
+    using _tty = mockIsTTY(undefined);
+
+    const { Command } = await import('commander');
+    const { registerSecretsSetAction } = await import('../../commands/secrets/set.js');
+
+    const program = new Command();
+    const secrets = program.command('secrets');
+    registerSecretsSetAction(secrets);
+
+    await program.parseAsync(['secrets', 'set', 'MY_KEY'], { from: 'user' });
+
+    expect(mockReadStdinPipe).toHaveBeenCalled();
+    expect(client.setSecret).toHaveBeenCalledWith('test-app-id', 'MY_KEY', 'piped-secret');
+  });
+
+  test('exits with error when value is empty', async ({ output, processMocks }) => {
+    mockReadStdinPipe.mockResolvedValue('');
+
+    using _tty = mockIsTTY(undefined);
+
+    const { Command } = await import('commander');
+    const { registerSecretsSetAction } = await import('../../commands/secrets/set.js');
+
+    const program = new Command();
+    const secrets = program.command('secrets');
+    registerSecretsSetAction(secrets);
+
+    await program.parseAsync(['secrets', 'set', 'MY_KEY'], { from: 'user' });
+
+    expect(output.error).toHaveBeenCalledWith('Secret value cannot be empty');
+    expect(processMocks.exit).toHaveBeenCalledWith(1);
   });
 
   test('handles API error', async ({ client, output, processMocks }) => {
     client.setSecret.mockRejectedValue(new Error('Server error'));
 
     const { Command } = await import('commander');
-    const { registerSecretsSetAction } =
-      await import('../../commands/secrets/set.js');
+    const { registerSecretsSetAction } = await import('../../commands/secrets/set.js');
 
     const program = new Command();
     const secrets = program.command('secrets');

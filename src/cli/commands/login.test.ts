@@ -42,6 +42,21 @@ describe('login command', () => {
     expect(processMocks.exit).toHaveBeenCalledWith(1);
   });
 
+  test('handles non-Error thrown value', async ({ processMocks }) => {
+    mockPerformLogin.mockRejectedValue('raw string error');
+
+    const { Command } = await import('commander');
+    const { registerLoginCommand } = await import('../commands/login.js');
+
+    const program = new Command();
+    registerLoginCommand(program);
+
+    await program.parseAsync(['login'], { from: 'user' });
+
+    expect(processMocks.error).toHaveBeenCalledWith('Login failed: raw string error');
+    expect(processMocks.exit).toHaveBeenCalledWith(1);
+  });
+
   test('handles general login error', async ({ processMocks }) => {
     mockPerformLogin.mockRejectedValue(new Error('Port in use'));
 

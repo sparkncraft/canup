@@ -31,8 +31,7 @@ describe('actions list command', () => {
     const { formatTable } = await import('../../ui/output.js');
 
     const { Command } = await import('commander');
-    const { registerActionsListAction } =
-      await import('../../commands/actions/list.js');
+    const { registerActionsListAction } = await import('../../commands/actions/list.js');
 
     const program = new Command();
     const actions = program.command('actions');
@@ -47,12 +46,42 @@ describe('actions list command', () => {
     expect(processMocks.log).toHaveBeenCalledWith('table-output');
   });
 
+  test('shows "no" for undeployed actions', async ({ client, output, processMocks }) => {
+    output.formatTable.mockReturnValue('table-output');
+
+    client.listActions.mockResolvedValue([
+      {
+        id: '1',
+        slug: 'draft-action',
+        language: 'python',
+        deployed: false,
+        createdAt: '2026-01-01T00:00:00Z',
+        updatedAt: '2026-01-02T00:00:00Z',
+      },
+    ]);
+
+    const { formatTable } = await import('../../ui/output.js');
+
+    const { Command } = await import('commander');
+    const { registerActionsListAction } = await import('../../commands/actions/list.js');
+
+    const program = new Command();
+    const actions = program.command('actions');
+    registerActionsListAction(actions);
+
+    await program.parseAsync(['actions', 'list'], { from: 'user' });
+
+    expect(formatTable).toHaveBeenCalledWith(
+      ['Name', 'Language', 'Deployed', 'Updated'],
+      expect.arrayContaining([expect.arrayContaining(['draft-action', 'python', 'no'])]),
+    );
+  });
+
   test('shows info message when no actions exist', async ({ client, output, processMocks }) => {
     client.listActions.mockResolvedValue([]);
 
     const { Command } = await import('commander');
-    const { registerActionsListAction } =
-      await import('../../commands/actions/list.js');
+    const { registerActionsListAction } = await import('../../commands/actions/list.js');
 
     const program = new Command();
     const actions = program.command('actions');

@@ -28,8 +28,7 @@ describe('stripe status command', () => {
     });
 
     const { Command } = await import('commander');
-    const { registerStripeStatusAction } =
-      await import('../../commands/stripe/status.js');
+    const { registerStripeStatusAction } = await import('../../commands/stripe/status.js');
 
     const program = new Command();
     const stripe = program.command('stripe');
@@ -48,8 +47,7 @@ describe('stripe status command', () => {
     client.stripeStatus.mockResolvedValue({ connected: false });
 
     const { Command } = await import('commander');
-    const { registerStripeStatusAction } =
-      await import('../../commands/stripe/status.js');
+    const { registerStripeStatusAction } = await import('../../commands/stripe/status.js');
 
     const program = new Command();
     const stripe = program.command('stripe');
@@ -59,5 +57,39 @@ describe('stripe status command', () => {
 
     expect(processMocks.log).toHaveBeenCalledWith(expect.stringContaining('Not connected'));
     expect(output.hint).toHaveBeenCalledWith(expect.stringContaining('canup stripe connect'));
+  });
+
+  test('shows connected status without key or webhook details', async ({
+    client,
+    processMocks,
+  }) => {
+    client.stripeStatus.mockResolvedValue({ connected: true });
+
+    const { Command } = await import('commander');
+    const { registerStripeStatusAction } = await import('../../commands/stripe/status.js');
+
+    const program = new Command();
+    const stripe = program.command('stripe');
+    registerStripeStatusAction(stripe);
+
+    await program.parseAsync(['stripe', 'status'], { from: 'user' });
+
+    expect(processMocks.log).toHaveBeenCalledWith(expect.stringContaining('Connected'));
+  });
+
+  test('handles API error', async ({ client, output, processMocks }) => {
+    client.stripeStatus.mockRejectedValue(new Error('Network timeout'));
+
+    const { Command } = await import('commander');
+    const { registerStripeStatusAction } = await import('../../commands/stripe/status.js');
+
+    const program = new Command();
+    const stripe = program.command('stripe');
+    registerStripeStatusAction(stripe);
+
+    await program.parseAsync(['stripe', 'status'], { from: 'user' });
+
+    expect(output.error).toHaveBeenCalledWith('Network timeout');
+    expect(processMocks.exit).toHaveBeenCalledWith(1);
   });
 });

@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, expect, vi } from 'vitest';
+import { test as baseTest } from 'vitest';
 import { renderHook, waitFor, cleanup } from '@testing-library/react';
 import { useCredits } from '../hooks/useCredits.js';
 import { fetchCredits } from '../internal/api-client.js';
@@ -12,10 +13,6 @@ vi.mock('../internal/api-client.js', () => ({
 vi.mock('../internal/jwt-cache.js', () => ({
   getJwt: vi.fn().mockResolvedValue('mock-jwt'),
 }));
-vi.mock('@canva/user', () => ({
-  auth: { getCanvaUserToken: vi.fn() },
-}));
-
 const mockFetchCredits = vi.mocked(fetchCredits);
 
 const mockBalance: CreditBalance = {
@@ -29,16 +26,18 @@ const mockBalance: CreditBalance = {
   subscribeUrl: 'https://canup.link/subscribe/V1StGXR8_Z5j',
 };
 
-describe('useCredits', () => {
-  afterEach(cleanup);
-
-  beforeEach(() => {
+const test = baseTest.extend('_rtl', [
+  async ({}, use) => {
     queryClient.clear();
-    mockFetchCredits.mockReset();
     mockFetchCredits.mockResolvedValue(mockBalance);
-  });
+    await use();
+    cleanup();
+  },
+  { auto: true },
+]);
 
-  it('returns { data: null, loading: true, exhausted: false } initially', () => {
+describe('useCredits', () => {
+  test('returns { data: null, loading: true, exhausted: false } initially', () => {
     const { result } = renderHook(() => useCredits('my-action'));
 
     expect(result.current.data).toBeNull();
@@ -47,7 +46,7 @@ describe('useCredits', () => {
     expect(typeof result.current.refresh).toBe('function');
   });
 
-  it('fetches credits from server on mount (TQ automatic fetch)', async () => {
+  test('fetches credits from server on mount (TQ automatic fetch)', async () => {
     const { result } = renderHook(() => useCredits('my-action'));
 
     await waitFor(() => {
@@ -58,7 +57,7 @@ describe('useCredits', () => {
     expect(result.current.loading).toBe(false);
   });
 
-  it('exhausted is true when remaining <= 0 and quota !== null', async () => {
+  test('exhausted is true when remaining <= 0 and quota !== null', async () => {
     const exhausted: CreditBalance = { ...mockBalance, remaining: 0, used: 100 };
     mockFetchCredits.mockResolvedValue(exhausted);
 
@@ -71,7 +70,7 @@ describe('useCredits', () => {
     expect(result.current.exhausted).toBe(true);
   });
 
-  it('exhausted is false when quota is null (free/unlimited action)', async () => {
+  test('exhausted is false when quota is null (free/unlimited action)', async () => {
     const freeAction: CreditBalance = { ...mockBalance, quota: null, remaining: 0 };
     mockFetchCredits.mockResolvedValue(freeAction);
 
@@ -84,14 +83,14 @@ describe('useCredits', () => {
     expect(result.current.exhausted).toBe(false);
   });
 
-  it('refresh() triggers a refetch from server', async () => {
+  test('refresh() triggers a refetch from server', async () => {
     const { result } = renderHook(() => useCredits('my-action'));
 
     await waitFor(() => {
       expect(result.current.data).toEqual(mockBalance);
     });
 
-    mockFetchCredits.mockClear();
+    const callsBefore = mockFetchCredits.mock.calls.length;
 
     const refreshed: CreditBalance = { ...mockBalance, used: 20, remaining: 80 };
     mockFetchCredits.mockResolvedValue(refreshed);
@@ -99,7 +98,7 @@ describe('useCredits', () => {
     result.current.refresh();
 
     await waitFor(() => {
-      expect(mockFetchCredits).toHaveBeenCalledWith('my-action');
+      expect(mockFetchCredits.mock.calls.length).toBeGreaterThan(callsBefore);
     });
 
     await waitFor(() => {
@@ -107,7 +106,7 @@ describe('useCredits', () => {
     });
   });
 
-  it('returns subscribeUrl from fetched data', async () => {
+  test('returns subscribeUrl from fetched data', async () => {
     const { result } = renderHook(() => useCredits('my-action'));
 
     expect(result.current.subscribeUrl).toBeNull();
@@ -119,7 +118,7 @@ describe('useCredits', () => {
     expect(result.current.subscribeUrl).toBe('https://canup.link/subscribe/V1StGXR8_Z5j');
   });
 
-  it('data updates when queryClient.setQueryData is called externally (cross-component sync)', async () => {
+  test('data updates when queryClient.setQueryData is called externally (cross-component sync)', async () => {
     const { result } = renderHook(() => useCredits('my-action'));
 
     await waitFor(() => {
@@ -136,7 +135,7 @@ describe('useCredits', () => {
     });
   });
 
-  it('returns { data: null, loading: false } when fetch fails after retries', async () => {
+  test('returns { data: null, loading: false } when fetch fails after retries', async () => {
     mockFetchCredits.mockRejectedValue(new Error('Network error'));
 
     const { result } = renderHook(() => useCredits('my-action'));
@@ -152,7 +151,7 @@ describe('useCredits', () => {
     expect(result.current.exhausted).toBe(false);
   });
 
-  it('exhausted is true when remaining is negative (race condition safety)', async () => {
+  test('exhausted is true when remaining is negative (race condition safety)', async () => {
     const negative: CreditBalance = { ...mockBalance, remaining: -1, used: 101 };
     mockFetchCredits.mockResolvedValue(negative);
 

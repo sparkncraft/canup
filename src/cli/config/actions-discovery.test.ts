@@ -1,30 +1,23 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, expect } from 'vitest';
+import { test as baseTest } from 'vitest';
 import { mkdtempSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { discoverActions, resolveActionByName } from '../config/actions-discovery.js';
 
-let tempDir: string;
-
-beforeEach(() => {
-  tempDir = mkdtempSync(join(tmpdir(), 'canup-actions-test-'));
-});
-
-afterEach(() => {
-  try {
-    rmSync(tempDir, { recursive: true, force: true });
-  } catch {
-    // ignore
-  }
+const test = baseTest.extend('tempDir', async ({}, { onCleanup }) => {
+  const dir = mkdtempSync(join(tmpdir(), 'canup-actions-test-'));
+  onCleanup(() => rmSync(dir, { recursive: true, force: true }));
+  return dir;
 });
 
 describe('discoverActions', () => {
-  it('returns empty array when directory does not exist', () => {
+  test('returns empty array when directory does not exist', ({ tempDir }) => {
     const result = discoverActions(join(tempDir, 'nonexistent'));
     expect(result).toEqual([]);
   });
 
-  it('returns empty array for empty directory', () => {
+  test('returns empty array for empty directory', ({ tempDir }) => {
     const actionsDir = join(tempDir, 'actions');
     mkdirSync(actionsDir);
 
@@ -32,7 +25,7 @@ describe('discoverActions', () => {
     expect(result).toEqual([]);
   });
 
-  it('discovers .py files as python', () => {
+  test('discovers .py files as python', ({ tempDir }) => {
     const actionsDir = join(tempDir, 'actions');
     mkdirSync(actionsDir);
     writeFileSync(join(actionsDir, 'hello.py'), 'print("hi")');
@@ -47,7 +40,7 @@ describe('discoverActions', () => {
     ]);
   });
 
-  it('discovers .js, .ts, .mjs, .mts files as nodejs', () => {
+  test('discovers .js, .ts, .mjs, .mts files as nodejs', ({ tempDir }) => {
     const actionsDir = join(tempDir, 'actions');
     mkdirSync(actionsDir);
     writeFileSync(join(actionsDir, 'a.js'), '');
@@ -64,7 +57,7 @@ describe('discoverActions', () => {
     }
   });
 
-  it('ignores non-action files (.txt, .json, .md, directories)', () => {
+  test('ignores non-action files (.txt, .json, .md, directories)', ({ tempDir }) => {
     const actionsDir = join(tempDir, 'actions');
     mkdirSync(actionsDir);
     writeFileSync(join(actionsDir, 'notes.txt'), '');
@@ -76,7 +69,7 @@ describe('discoverActions', () => {
     expect(result).toEqual([]);
   });
 
-  it('returns name without extension', () => {
+  test('returns name without extension', ({ tempDir }) => {
     const actionsDir = join(tempDir, 'actions');
     mkdirSync(actionsDir);
     writeFileSync(join(actionsDir, 'my-action.py'), '');
@@ -88,7 +81,16 @@ describe('discoverActions', () => {
     expect(names).toContain('other-action');
   });
 
-  it('handles mixed file types in one directory', () => {
+  test('returns empty array when readdirSync throws (e.g. permission error)', ({ tempDir }) => {
+    const actionsDir = join(tempDir, 'actions');
+    mkdirSync(actionsDir);
+    const fakePath = join(actionsDir, 'not-a-dir');
+    writeFileSync(fakePath, '');
+    const result = discoverActions(fakePath);
+    expect(result).toEqual([]);
+  });
+
+  test('handles mixed file types in one directory', ({ tempDir }) => {
     const actionsDir = join(tempDir, 'actions');
     mkdirSync(actionsDir);
     writeFileSync(join(actionsDir, 'fetch.py'), '');
@@ -115,12 +117,12 @@ describe('discoverActions', () => {
 });
 
 describe('resolveActionByName', () => {
-  it('returns null when directory does not exist', () => {
+  test('returns null when directory does not exist', ({ tempDir }) => {
     const result = resolveActionByName(join(tempDir, 'nonexistent'), 'hello');
     expect(result).toBeNull();
   });
 
-  it('returns null when no matching file found', () => {
+  test('returns null when no matching file found', ({ tempDir }) => {
     const actionsDir = join(tempDir, 'actions');
     mkdirSync(actionsDir);
     writeFileSync(join(actionsDir, 'other.py'), '');
@@ -129,7 +131,7 @@ describe('resolveActionByName', () => {
     expect(result).toBeNull();
   });
 
-  it('resolves .py file and returns python language', () => {
+  test('resolves .py file and returns python language', ({ tempDir }) => {
     const actionsDir = join(tempDir, 'actions');
     mkdirSync(actionsDir);
     writeFileSync(join(actionsDir, 'greet.py'), '');
@@ -142,7 +144,7 @@ describe('resolveActionByName', () => {
     });
   });
 
-  it('resolves .js file and returns nodejs language', () => {
+  test('resolves .js file and returns nodejs language', ({ tempDir }) => {
     const actionsDir = join(tempDir, 'actions');
     mkdirSync(actionsDir);
     writeFileSync(join(actionsDir, 'run.js'), '');
@@ -155,7 +157,7 @@ describe('resolveActionByName', () => {
     });
   });
 
-  it('respects search order (.py before .js when both exist)', () => {
+  test('respects search order (.py before .js when both exist)', ({ tempDir }) => {
     const actionsDir = join(tempDir, 'actions');
     mkdirSync(actionsDir);
     writeFileSync(join(actionsDir, 'dual.py'), '');
@@ -167,11 +169,10 @@ describe('resolveActionByName', () => {
     expect(result!.language).toBe('python');
   });
 
-  it('resolves .ts, .mjs, .mts correctly', () => {
+  test('resolves .ts, .mjs, .mts correctly', ({ tempDir }) => {
     const actionsDir = join(tempDir, 'actions');
     mkdirSync(actionsDir);
 
-    // Test .ts
     writeFileSync(join(actionsDir, 'alpha.ts'), '');
     const tsResult = resolveActionByName(actionsDir, 'alpha');
     expect(tsResult).toEqual({
@@ -180,7 +181,6 @@ describe('resolveActionByName', () => {
       language: 'nodejs',
     });
 
-    // Test .mjs
     writeFileSync(join(actionsDir, 'beta.mjs'), '');
     const mjsResult = resolveActionByName(actionsDir, 'beta');
     expect(mjsResult).toEqual({
@@ -189,7 +189,6 @@ describe('resolveActionByName', () => {
       language: 'nodejs',
     });
 
-    // Test .mts
     writeFileSync(join(actionsDir, 'gamma.mts'), '');
     const mtsResult = resolveActionByName(actionsDir, 'gamma');
     expect(mtsResult).toEqual({

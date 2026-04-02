@@ -58,13 +58,7 @@ export function startCallbackServer(): Promise<CallbackServerResult> {
     tokenPromise.catch(() => {});
 
     const server: Server = createServer((req, res) => {
-      if (!req.url) {
-        res.writeHead(404);
-        res.end('Not found');
-        return;
-      }
-
-      const url = new URL(req.url, `http://127.0.0.1`);
+      const url = new URL(req.url!, `http://127.0.0.1`);
 
       if (url.pathname === '/callback') {
         const token = url.searchParams.get('token');
@@ -130,16 +124,12 @@ export function startCallbackServer(): Promise<CallbackServerResult> {
 
     // Listen on 127.0.0.1 with port 0 (OS-assigned)
     server.listen(0, '127.0.0.1', () => {
-      const addr = server.address();
-      if (typeof addr === 'object' && addr !== null) {
-        resolveStart({
-          port: addr.port,
-          tokenPromise,
-          close,
-        });
-      } else {
-        rejectStart(new Error('Failed to get server address'));
-      }
+      const addr = server.address() as { port: number };
+      resolveStart({
+        port: addr.port,
+        tokenPromise,
+        close,
+      });
     });
 
     server.on('error', (err) => {

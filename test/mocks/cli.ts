@@ -32,12 +32,94 @@ export interface MockCanupClient {
   removeDep: Mock;
   clearDeps: Mock;
   getBuildStatus: Mock;
-  setCreditConfig: Mock;
-  getCreditConfig: Mock;
-  deleteCreditConfig: Mock;
   connectStripe: Mock;
   stripeStatus: Mock;
   disconnectStripe: Mock;
+}
+
+/**
+ * Re-apply default mock implementations on an existing MockCanupClient.
+ * Called after vitest's mockReset clears implementations between tests.
+ */
+export function resetMockCanupClient(client: MockCanupClient): void {
+  client.getAuthUrl.mockResolvedValue({ url: 'https://github.com/login/oauth' });
+  client.getMe.mockResolvedValue({
+    id: 'usr-1',
+    email: 'test@example.com',
+    name: 'Test User',
+    avatarUrl: null,
+    createdAt: '2026-01-01T00:00:00Z',
+  });
+  client.registerApp.mockResolvedValue({
+    id: 'app-1',
+    canvaAppId: 'AAFtest12345',
+    name: 'Test App',
+  });
+  client.getAppInfo.mockResolvedValue({
+    id: 'app-1',
+    canvaAppId: 'AAFtest12345',
+    name: 'Test App',
+    createdAt: '2026-01-01T00:00:00Z',
+  });
+  client.listApps.mockResolvedValue([]);
+  client.createApiKey.mockResolvedValue({ key: 'cnup_testkey_secret', prefix: 'cnup_testkey' });
+  client.deployAction.mockResolvedValue({
+    id: 'act-1',
+    slug: 'test-action',
+    language: 'python',
+    lambdaReady: true,
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
+  });
+  client.listActions.mockResolvedValue([]);
+  client.listActionsWithScript.mockResolvedValue([]);
+  client.deleteAction.mockResolvedValue({ deleted: 'test-action' });
+  client.testAction.mockResolvedValue({
+    ok: true,
+    data: { result: null, durationMs: 50, printOutput: '' },
+  });
+  client.runAction.mockResolvedValue({
+    ok: true,
+    data: { result: null, durationMs: 50, printOutput: '' },
+  });
+  client.listHistory.mockResolvedValue([]);
+  client.getHistoryDetail.mockResolvedValue({
+    id: 'exec-1',
+    actionSlug: 'test-action',
+    status: 'success',
+    durationMs: 50,
+    executedAt: '2026-01-01T00:00:00Z',
+    source: 'api',
+  });
+  client.setSecret.mockResolvedValue({ name: 'MY_SECRET', created: true, synced: true });
+  client.listSecrets.mockResolvedValue([]);
+  client.deleteSecret.mockResolvedValue({ deleted: 'MY_SECRET', synced: true });
+  client.addDeps.mockResolvedValue({
+    cached: false,
+    buildId: 'build-1',
+    status: 'building',
+    packages: [],
+    layerSize: null,
+  });
+  client.listDeps.mockResolvedValue({ packages: [], layerSize: null, layerArn: null });
+  client.removeDep.mockResolvedValue({
+    deleted: 'express',
+    buildId: 'build-1',
+    status: 'building',
+  });
+  client.clearDeps.mockResolvedValue({ cleared: true });
+  client.getBuildStatus.mockResolvedValue({
+    id: 'build-1',
+    status: 'success',
+    layerVersionArn: null,
+    sizeBytes: null,
+    errorMessage: null,
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
+  });
+  client.connectStripe.mockResolvedValue({ connected: true });
+  client.stripeStatus.mockResolvedValue({ connected: false });
+  client.disconnectStripe.mockResolvedValue({ disconnected: true });
 }
 
 /**
@@ -130,19 +212,6 @@ export function createMockCanupClient(overrides?: Partial<MockCanupClient>): Moc
       updatedAt: '2026-01-01T00:00:00Z',
     }),
 
-    // Credits
-    setCreditConfig: vi.fn().mockResolvedValue({
-      id: 'cc-1',
-      actionSlug: 'test-action',
-      quota: 50,
-      interval: 'monthly',
-      plan: 'free',
-      createdAt: '2026-01-01T00:00:00Z',
-      updatedAt: '2026-01-01T00:00:00Z',
-    }),
-    getCreditConfig: vi.fn().mockResolvedValue(null),
-    deleteCreditConfig: vi.fn().mockResolvedValue({ deleted: 'test-action' }),
-
     // Stripe
     connectStripe: vi.fn().mockResolvedValue({ connected: true }),
     stripeStatus: vi.fn().mockResolvedValue({ connected: false }),
@@ -168,6 +237,14 @@ export interface MockOutput {
   label: Mock;
   dim: Mock;
   formatTable: Mock;
+}
+
+/**
+ * Re-apply default mock implementations on an existing MockOutput.
+ */
+export function resetMockOutput(output: MockOutput): void {
+  output.dim.mockImplementation((msg: string) => msg);
+  output.formatTable.mockImplementation((_headers: string[], _rows: string[][]) => '');
 }
 
 /**
@@ -232,6 +309,20 @@ export interface MockSpinner {
 }
 
 /**
+ * Re-apply default mock implementations on an existing MockSpinner.
+ */
+export function resetMockSpinner(spinner: MockSpinner): void {
+  spinner.withSpinner.mockImplementation(
+    async <T>(_text: string, fn: () => Promise<T>, _success?: string): Promise<T> => fn(),
+  );
+  spinner.createSpinner.mockImplementation((_text: string) => ({
+    update: vi.fn(),
+    succeed: vi.fn(),
+    fail: vi.fn(),
+  }));
+}
+
+/**
  * Mock factory for withSpinner.
  *
  * The default implementation executes the wrapped function immediately
@@ -249,5 +340,26 @@ export function createMockSpinner(): MockSpinner {
       succeed: vi.fn(),
       fail: vi.fn(),
     })),
+  };
+}
+
+// =============================================================================
+// MockIsTTY — Disposable helper for process.stdin.isTTY
+// =============================================================================
+
+/**
+ * Create a Disposable that temporarily overrides process.stdin.isTTY.
+ *
+ * Usage with `using`:
+ *   using _tty = mockIsTTY(true);
+ *   // process.stdin.isTTY is now true
+ *   // auto-restored when _tty goes out of scope
+ */
+export function mockIsTTY(value: boolean | undefined): Disposable {
+  const original = process.stdin.isTTY;
+  Object.defineProperty(process.stdin, 'isTTY', { value, configurable: true });
+  return {
+    [Symbol.dispose]: () =>
+      Object.defineProperty(process.stdin, 'isTTY', { value: original, configurable: true }),
   };
 }

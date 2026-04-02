@@ -25,8 +25,7 @@ describe('deps remove command', () => {
     client.removeDep.mockResolvedValue({ deleted: 'express' });
 
     const { Command } = await import('commander');
-    const { registerDepsRemoveAction } =
-      await import('../../commands/deps/remove.js');
+    const { registerDepsRemoveAction } = await import('../../commands/deps/remove.js');
 
     const program = new Command();
     const deps = program.command('deps');
@@ -50,8 +49,7 @@ describe('deps remove command', () => {
     });
 
     const { Command } = await import('commander');
-    const { registerDepsRemoveAction } =
-      await import('../../commands/deps/remove.js');
+    const { registerDepsRemoveAction } = await import('../../commands/deps/remove.js');
 
     const program = new Command();
     const deps = program.command('deps');
@@ -72,14 +70,57 @@ describe('deps remove command', () => {
     expect(client.removeDep).toHaveBeenCalledWith('test-app-id', 'nodejs', 'lodash');
   });
 
+  test('shows "?" when rebuild sizeBytes is null', async ({ client, timers }) => {
+    client.removeDep.mockResolvedValue({ deleted: 'express', buildId: 'build-null' });
+    client.getBuildStatus.mockResolvedValue({ status: 'success', sizeBytes: null });
+
+    const { Command } = await import('commander');
+    const { registerDepsRemoveAction } = await import('../../commands/deps/remove.js');
+
+    const program = new Command();
+    const deps = program.command('deps');
+    registerDepsRemoveAction(deps);
+
+    const p = program.parseAsync(['deps', 'remove', 'express', '--language', 'nodejs'], {
+      from: 'user',
+    });
+    await timers.advance(3000);
+    await p;
+  });
+
+  test('shows "Unknown error" when rebuild errorMessage is null', async ({
+    client,
+    processMocks,
+    timers,
+  }) => {
+    client.removeDep.mockResolvedValue({ deleted: 'express', buildId: 'build-null-err' });
+    client.getBuildStatus
+      .mockResolvedValueOnce({ status: 'failed', errorMessage: null })
+      .mockResolvedValue({ status: 'success', sizeBytes: 0 });
+
+    const { Command } = await import('commander');
+    const { registerDepsRemoveAction } = await import('../../commands/deps/remove.js');
+
+    const program = new Command();
+    const deps = program.command('deps');
+    registerDepsRemoveAction(deps);
+
+    const p = program.parseAsync(['deps', 'remove', 'express', '--language', 'nodejs'], {
+      from: 'user',
+    });
+    await timers.advance(5000);
+    await p;
+
+    expect(processMocks.exit).toHaveBeenCalledWith(1);
+  });
+
   test('handles package not found (404)', async ({ client, output, processMocks }) => {
     const apiError = new Error('Not found') as Error & { statusCode: number };
     apiError.statusCode = 404;
     client.removeDep.mockRejectedValue(apiError);
 
     const { Command } = await import('commander');
-    const { registerDepsRemoveAction } =
-      await import('../../commands/deps/remove.js');
+    const { registerDepsRemoveAction } = await import('../../commands/deps/remove.js');
 
     const program = new Command();
     const deps = program.command('deps');
@@ -95,8 +136,7 @@ describe('deps remove command', () => {
 
   test('exits with error for invalid language', async ({ output, processMocks }) => {
     const { Command } = await import('commander');
-    const { registerDepsRemoveAction } =
-      await import('../../commands/deps/remove.js');
+    const { registerDepsRemoveAction } = await import('../../commands/deps/remove.js');
 
     const program = new Command();
     const deps = program.command('deps');
@@ -105,6 +145,83 @@ describe('deps remove command', () => {
     await program.parseAsync(['deps', 'remove', 'express', '--language', 'ruby'], { from: 'user' });
 
     expect(output.error).toHaveBeenCalledWith(expect.stringContaining('Invalid language'));
+    expect(processMocks.exit).toHaveBeenCalledWith(1);
+  });
+
+  test('handles build failure during layer rebuild', async ({ client, processMocks, timers }) => {
+    client.removeDep.mockResolvedValue({ deleted: 'express', buildId: 'build-fail' });
+    client.getBuildStatus
+      .mockResolvedValueOnce({ status: 'failed', errorMessage: 'Out of space' })
+      .mockResolvedValue({ status: 'success', sizeBytes: 1024 });
+
+    const { Command } = await import('commander');
+    const { registerDepsRemoveAction } = await import('../../commands/deps/remove.js');
+
+    const program = new Command();
+    const deps = program.command('deps');
+    registerDepsRemoveAction(deps);
+
+    const parsePromise = program.parseAsync(['deps', 'remove', 'express', '--language', 'nodejs'], {
+      from: 'user',
+    });
+
+    await timers.advance(3000);
+    await timers.advance(3000);
+    await parsePromise;
+
+    expect(processMocks.exit).toHaveBeenCalledWith(1);
+  });
+
+  test('updates spinner text during build polling', async ({ client, spinner, timers }) => {
+    client.removeDep.mockResolvedValue({ deleted: 'express', buildId: 'build-poll' });
+
+    let callCount = 0;
+    client.getBuildStatus.mockImplementation(() => {
+      callCount++;
+      if (callCount === 1) return Promise.resolve({ status: 'building' });
+      return Promise.resolve({ status: 'success', sizeBytes: 1024 });
+    });
+
+    const mockSpin = { update: vi.fn(), succeed: vi.fn(), fail: vi.fn() };
+    spinner.createSpinner.mockReturnValue(mockSpin);
+
+    const { Command } = await import('commander');
+    const { registerDepsRemoveAction } = await import('../../commands/deps/remove.js');
+
+    const program = new Command();
+    const deps = program.command('deps');
+    registerDepsRemoveAction(deps);
+
+    const parsePromise = program.parseAsync(['deps', 'remove', 'express', '--language', 'nodejs'], {
+      from: 'user',
+    });
+
+    await timers.advance(3000);
+    await timers.advance(3000);
+    await parsePromise;
+
+    expect(mockSpin.update).toHaveBeenCalledWith(expect.stringContaining('Rebuilding layer'));
+    expect(mockSpin.succeed).toHaveBeenCalled();
+  });
+
+  test('shows auth hint on 401 error', async ({ client, output, processMocks }) => {
+    const apiError = new Error('Unauthorized') as Error & { statusCode: number };
+    apiError.statusCode = 401;
+    client.removeDep.mockRejectedValue(apiError);
+
+    const { Command } = await import('commander');
+    const { registerDepsRemoveAction } = await import('../../commands/deps/remove.js');
+
+    const program = new Command();
+    const deps = program.command('deps');
+    registerDepsRemoveAction(deps);
+
+    await program.parseAsync(['deps', 'remove', 'express', '--language', 'nodejs'], {
+      from: 'user',
+    });
+
+    expect(output.error).toHaveBeenCalledWith('Unauthorized');
+    expect(output.info).toHaveBeenCalledWith('Run `canup init` to re-authenticate.');
     expect(processMocks.exit).toHaveBeenCalledWith(1);
   });
 });

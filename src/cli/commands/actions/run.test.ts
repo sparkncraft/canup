@@ -2,7 +2,19 @@ import { describe, expect, vi } from 'vitest';
 import { writeFileSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { test, output, client, spinner, project } from '#test/fixtures.js';
+import { test as baseTest, output, client, spinner, project } from '#test/fixtures.js';
+
+const test = baseTest.extend('tmpFile', async ({}, { onCleanup }) => {
+  const file = join(tmpdir(), `canup-run-test-${Date.now()}.json`);
+  onCleanup(() => {
+    try {
+      unlinkSync(file);
+    } catch {
+      /* file may not exist */
+    }
+  });
+  return file;
+});
 
 vi.mock('../../config/require-project.js', () => ({
   requireProject: vi.fn(() => project),
@@ -29,8 +41,7 @@ describe('actions run command', () => {
       });
 
       const { Command } = await import('commander');
-      const { registerActionsRunAction } =
-        await import('../../commands/actions/run.js');
+      const { registerActionsRunAction } = await import('../../commands/actions/run.js');
 
       const program = new Command();
       const actions = program.command('actions');
@@ -48,8 +59,7 @@ describe('actions run command', () => {
       });
 
       const { Command } = await import('commander');
-      const { registerActionsRunAction } =
-        await import('../../commands/actions/run.js');
+      const { registerActionsRunAction } = await import('../../commands/actions/run.js');
 
       const program = new Command();
       const actions = program.command('actions');
@@ -62,35 +72,33 @@ describe('actions run command', () => {
       expect(client.runAction).toHaveBeenCalledWith('test-app-id', 'my-action', { key: 'val' });
     });
 
-    test('runs action with JSON file path for params', async ({ client, processMocks }) => {
-      const tmpFile = join(tmpdir(), `canup-run-test-${Date.now()}.json`);
+    test('runs action with JSON file path for params', async ({
+      client,
+      tmpFile,
+      processMocks,
+    }) => {
       writeFileSync(tmpFile, JSON.stringify({ fromFile: true, count: 3 }));
 
-      try {
-        client.runAction.mockResolvedValue({
-          ok: true,
-          data: { result: null, durationMs: 50, printOutput: '' },
-        });
+      client.runAction.mockResolvedValue({
+        ok: true,
+        data: { result: null, durationMs: 50, printOutput: '' },
+      });
 
-        const { Command } = await import('commander');
-        const { registerActionsRunAction } =
-          await import('../../commands/actions/run.js');
+      const { Command } = await import('commander');
+      const { registerActionsRunAction } = await import('../../commands/actions/run.js');
 
-        const program = new Command();
-        const actions = program.command('actions');
-        registerActionsRunAction(actions);
+      const program = new Command();
+      const actions = program.command('actions');
+      registerActionsRunAction(actions);
 
-        await program.parseAsync(['actions', 'run', 'my-action', '--params', tmpFile], {
-          from: 'user',
-        });
+      await program.parseAsync(['actions', 'run', 'my-action', '--params', tmpFile], {
+        from: 'user',
+      });
 
-        expect(client.runAction).toHaveBeenCalledWith('test-app-id', 'my-action', {
-          fromFile: true,
-          count: 3,
-        });
-      } finally {
-        unlinkSync(tmpFile);
-      }
+      expect(client.runAction).toHaveBeenCalledWith('test-app-id', 'my-action', {
+        fromFile: true,
+        count: 3,
+      });
     });
 
     test('displays success result with return value and duration', async ({
@@ -104,8 +112,7 @@ describe('actions run command', () => {
       });
 
       const { Command } = await import('commander');
-      const { registerActionsRunAction } =
-        await import('../../commands/actions/run.js');
+      const { registerActionsRunAction } = await import('../../commands/actions/run.js');
 
       const program = new Command();
       const actions = program.command('actions');
@@ -125,8 +132,7 @@ describe('actions run command', () => {
       });
 
       const { Command } = await import('commander');
-      const { registerActionsRunAction } =
-        await import('../../commands/actions/run.js');
+      const { registerActionsRunAction } = await import('../../commands/actions/run.js');
 
       const program = new Command();
       const actions = program.command('actions');
@@ -154,8 +160,7 @@ describe('actions run command', () => {
       });
 
       const { Command } = await import('commander');
-      const { registerActionsRunAction } =
-        await import('../../commands/actions/run.js');
+      const { registerActionsRunAction } = await import('../../commands/actions/run.js');
 
       const program = new Command();
       const actions = program.command('actions');
@@ -180,8 +185,7 @@ describe('actions run command', () => {
       });
 
       const { Command } = await import('commander');
-      const { registerActionsRunAction } =
-        await import('../../commands/actions/run.js');
+      const { registerActionsRunAction } = await import('../../commands/actions/run.js');
 
       const program = new Command();
       const actions = program.command('actions');
@@ -191,6 +195,43 @@ describe('actions run command', () => {
 
       expect(processMocks.error).toHaveBeenCalledWith('at line 10\n  at handler');
       expect(processMocks.exit).toHaveBeenCalledWith(1);
+    });
+
+    test('displays error print output before error message', async ({ client, processMocks }) => {
+      client.runAction.mockResolvedValue({
+        ok: false,
+        error: { type: 'Error', message: 'fail', durationMs: 10, printOutput: 'debug output here' },
+      });
+
+      const { Command } = await import('commander');
+      const { registerActionsRunAction } = await import('../../commands/actions/run.js');
+
+      const program = new Command();
+      const actions = program.command('actions');
+      registerActionsRunAction(actions);
+
+      await program.parseAsync(['actions', 'run', 'my-action'], { from: 'user' });
+
+      expect(processMocks.log).toHaveBeenCalledWith('Output:');
+      expect(processMocks.log).toHaveBeenCalledWith('debug output here');
+    });
+
+    test('formats duration in seconds when >= 1000ms', async ({ client, processMocks }) => {
+      client.runAction.mockResolvedValue({
+        ok: true,
+        data: { result: { value: 1 }, durationMs: 2500, printOutput: '' },
+      });
+
+      const { Command } = await import('commander');
+      const { registerActionsRunAction } = await import('../../commands/actions/run.js');
+
+      const program = new Command();
+      const actions = program.command('actions');
+      registerActionsRunAction(actions);
+
+      await program.parseAsync(['actions', 'run', 'my-action'], { from: 'user' });
+
+      expect(processMocks.log).toHaveBeenCalledWith(expect.stringContaining('2.5s'));
     });
 
     test('handles 401 error with authentication message', async ({
@@ -203,8 +244,7 @@ describe('actions run command', () => {
       client.runAction.mockRejectedValue(apiError);
 
       const { Command } = await import('commander');
-      const { registerActionsRunAction } =
-        await import('../../commands/actions/run.js');
+      const { registerActionsRunAction } = await import('../../commands/actions/run.js');
 
       const program = new Command();
       const actions = program.command('actions');
@@ -223,8 +263,7 @@ describe('actions run command', () => {
       client.runAction.mockRejectedValue(apiError);
 
       const { Command } = await import('commander');
-      const { registerActionsRunAction } =
-        await import('../../commands/actions/run.js');
+      const { registerActionsRunAction } = await import('../../commands/actions/run.js');
 
       const program = new Command();
       const actions = program.command('actions');
@@ -243,8 +282,7 @@ describe('actions run command', () => {
       client.runAction.mockRejectedValue(new Error('Network timeout'));
 
       const { Command } = await import('commander');
-      const { registerActionsRunAction } =
-        await import('../../commands/actions/run.js');
+      const { registerActionsRunAction } = await import('../../commands/actions/run.js');
 
       const program = new Command();
       const actions = program.command('actions');
@@ -265,8 +303,7 @@ describe('actions run command', () => {
       });
 
       const { Command } = await import('commander');
-      const { registerActionsRunAction } =
-        await import('../../commands/actions/run.js');
+      const { registerActionsRunAction } = await import('../../commands/actions/run.js');
 
       const program = new Command();
       const actions = program.command('actions');
@@ -283,36 +320,31 @@ describe('actions run command', () => {
     test('exits with error for file containing invalid JSON', async ({
       client,
       output,
+      tmpFile,
       processMocks,
     }) => {
-      const tmpFile = join(tmpdir(), `canup-run-test-bad-${Date.now()}.json`);
       writeFileSync(tmpFile, 'not valid json content');
 
-      try {
-        client.runAction.mockResolvedValue({
-          ok: true,
-          data: { result: null, durationMs: 10, printOutput: '' },
-        });
+      client.runAction.mockResolvedValue({
+        ok: true,
+        data: { result: null, durationMs: 10, printOutput: '' },
+      });
 
-        const { Command } = await import('commander');
-        const { registerActionsRunAction } =
-          await import('../../commands/actions/run.js');
+      const { Command } = await import('commander');
+      const { registerActionsRunAction } = await import('../../commands/actions/run.js');
 
-        const program = new Command();
-        const actions = program.command('actions');
-        registerActionsRunAction(actions);
+      const program = new Command();
+      const actions = program.command('actions');
+      registerActionsRunAction(actions);
 
-        await program.parseAsync(['actions', 'run', 'my-action', '--params', tmpFile], {
-          from: 'user',
-        });
+      await program.parseAsync(['actions', 'run', 'my-action', '--params', tmpFile], {
+        from: 'user',
+      });
 
-        expect(output.error).toHaveBeenCalledWith(
-          expect.stringContaining('Invalid --params: failed to parse JSON from file'),
-        );
-        expect(processMocks.exit).toHaveBeenCalledWith(1);
-      } finally {
-        unlinkSync(tmpFile);
-      }
+      expect(output.error).toHaveBeenCalledWith(
+        expect.stringContaining('Invalid --params: failed to parse JSON from file'),
+      );
+      expect(processMocks.exit).toHaveBeenCalledWith(1);
     });
 
     test('exits with error for non-existent file path that does not look like JSON', async ({
@@ -326,8 +358,7 @@ describe('actions run command', () => {
       });
 
       const { Command } = await import('commander');
-      const { registerActionsRunAction } =
-        await import('../../commands/actions/run.js');
+      const { registerActionsRunAction } = await import('../../commands/actions/run.js');
 
       const program = new Command();
       const actions = program.command('actions');

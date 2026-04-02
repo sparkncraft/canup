@@ -8,6 +8,7 @@ const {
   mockMkdirSync,
   mockExistsSync,
   mockReadFileSync,
+  mockWriteFileSync,
   mockSelect,
   mockCreateInterface,
 } = vi.hoisted(() => ({
@@ -16,6 +17,7 @@ const {
   mockMkdirSync: vi.fn(),
   mockExistsSync: vi.fn().mockReturnValue(false),
   mockReadFileSync: vi.fn(),
+  mockWriteFileSync: vi.fn(),
   mockSelect: vi.fn(),
   mockCreateInterface: vi.fn(),
 }));
@@ -53,6 +55,7 @@ vi.mock('node:fs', async () => {
     mkdirSync: mockMkdirSync,
     existsSync: mockExistsSync,
     readFileSync: mockReadFileSync,
+    writeFileSync: mockWriteFileSync,
   };
 });
 
@@ -452,5 +455,118 @@ describe('init command', () => {
     // Should NOT suggest pull since no deployed actions
     const hintCalls = output.hint.mock.calls.map((c: string[]) => c[0]);
     expect(hintCalls).not.toEqual(expect.arrayContaining([expect.stringContaining('canup pull')]));
+  });
+
+  test('handles .env read error gracefully', async ({ output, processMocks }) => {
+    tokenStore.loadToken.mockReturnValue('valid-token');
+    projectConfig.loadProjectConfig.mockReturnValue(null);
+    client.listApps.mockResolvedValue([]);
+    client.registerApp.mockResolvedValue({ id: 'app-new-1' });
+    client.createApiKey.mockResolvedValue({ key: 'cnup_k', prefix: 'cnup' });
+
+    mockExistsSync.mockReturnValueOnce(true).mockReturnValue(false);
+    mockReadFileSync.mockImplementation(() => {
+      throw new Error('EACCES');
+    });
+
+    mockCreateInterface.mockReturnValue({
+      question: vi.fn().mockResolvedValue('AAFnew'),
+      close: vi.fn(),
+    });
+
+    const { Command } = await import('commander');
+    const { registerInitCommand } = await import('../commands/init.js');
+    const program = new Command();
+    registerInitCommand(program);
+    await program.parseAsync(['init'], { from: 'user' });
+
+    expect(client.registerApp).toHaveBeenCalledWith('AAFnew');
+  });
+
+  test('exits when user enters empty Canva App ID', async ({ output, processMocks }) => {
+    tokenStore.loadToken.mockReturnValue('valid-token');
+    projectConfig.loadProjectConfig.mockReturnValue(null);
+    client.listApps.mockResolvedValue([]);
+
+    mockCreateInterface.mockReturnValue({
+      question: vi.fn().mockResolvedValue('   '),
+      close: vi.fn(),
+    });
+
+    const { Command } = await import('commander');
+    const { registerInitCommand } = await import('../commands/init.js');
+    const program = new Command();
+    registerInitCommand(program);
+    await program.parseAsync(['init'], { from: 'user' });
+
+    expect(output.error).toHaveBeenCalledWith('Canva App ID is required.');
+    expect(processMocks.exit).toHaveBeenCalledWith(1);
+  });
+
+  test('adds canup dependency to package.json when not present', async ({
+    output,
+    processMocks,
+  }) => {
+    tokenStore.loadToken.mockReturnValue('valid-token');
+    projectConfig.loadProjectConfig.mockReturnValue(null);
+    client.registerApp.mockResolvedValue({ id: 'app-1' });
+    client.createApiKey.mockResolvedValue({ key: 'cnup_k', prefix: 'cnup' });
+
+    mockReadFileSync
+      .mockReturnValueOnce(JSON.stringify({ version: '1.0.0' }))
+      .mockReturnValueOnce(JSON.stringify({ name: 'my-app', dependencies: {} }));
+    mockExistsSync.mockReturnValueOnce(true).mockReturnValue(false);
+
+    const { Command } = await import('commander');
+    const { registerInitCommand } = await import('../commands/init.js');
+    const program = new Command();
+    registerInitCommand(program);
+    await program.parseAsync(['init', '--app-id', 'AAFtest'], { from: 'user' });
+
+    expect(mockWriteFileSync).toHaveBeenCalledWith(
+      expect.stringContaining('package.json'),
+      expect.stringContaining('"canup"'),
+    );
+    expect(output.info).toHaveBeenCalledWith('Added "canup" to package.json dependencies');
+  });
+
+  test('skips adding canup when already in package.json dependencies', async ({
+    output,
+    processMocks,
+  }) => {
+    tokenStore.loadToken.mockReturnValue('valid-token');
+    projectConfig.loadProjectConfig.mockReturnValue(null);
+    client.registerApp.mockResolvedValue({ id: 'app-1' });
+    client.createApiKey.mockResolvedValue({ key: 'cnup_k', prefix: 'cnup' });
+
+    mockReadFileSync
+      .mockReturnValueOnce(JSON.stringify({ version: '1.0.0' }))
+      .mockReturnValueOnce(JSON.stringify({ name: 'my-app', dependencies: { canup: '^0.9.0' } }));
+    mockExistsSync.mockReturnValueOnce(true).mockReturnValue(false);
+
+    const { Command } = await import('commander');
+    const { registerInitCommand } = await import('../commands/init.js');
+    const program = new Command();
+    registerInitCommand(program);
+    await program.parseAsync(['init', '--app-id', 'AAFtest'], { from: 'user' });
+
+    expect(mockWriteFileSync).not.toHaveBeenCalled();
+  });
+
+  test('suggests install command when lockfile is detected', async ({ output, processMocks }) => {
+    tokenStore.loadToken.mockReturnValue('valid-token');
+    projectConfig.loadProjectConfig.mockReturnValue(null);
+    client.registerApp.mockResolvedValue({ id: 'app-1' });
+    client.createApiKey.mockResolvedValue({ key: 'cnup_k', prefix: 'cnup' });
+
+    mockExistsSync.mockReturnValueOnce(true).mockReturnValue(false);
+
+    const { Command } = await import('commander');
+    const { registerInitCommand } = await import('../commands/init.js');
+    const program = new Command();
+    registerInitCommand(program);
+    await program.parseAsync(['init', '--app-id', 'AAFtest'], { from: 'user' });
+
+    expect(output.hint).toHaveBeenCalledWith('Run: pnpm install');
   });
 });

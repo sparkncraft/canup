@@ -8,7 +8,6 @@ import { registerActionsTestAction } from './test.js';
 import { registerActionsRunAction } from './run.js';
 import { registerActionsLogsAction } from './logs.js';
 import { registerActionsRemoveAction } from './remove.js';
-import { registerCreditsCommand } from './credits/index.js';
 
 export function registerActionsCommand(program: CommandType): void {
   const actions = new Command('actions').description('Manage actions');
@@ -21,7 +20,6 @@ export function registerActionsCommand(program: CommandType): void {
   registerActionsLogsAction(actions);
   registerActionsRemoveAction(actions);
   registerActionsDeleteAction(actions); // Backward compat (same as remove)
-  registerCreditsCommand(actions);
 
   program.addCommand(actions);
 }

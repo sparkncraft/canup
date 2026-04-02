@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, expect, vi } from 'vitest';
+import { test as baseTest } from 'vitest';
 import { renderHook, act, waitFor, cleanup } from '@testing-library/react';
 import { useAction } from '../hooks/useAction.js';
 import { runAction } from '../internal/api-client.js';
@@ -13,24 +14,21 @@ vi.mock('../internal/api-client.js', () => ({
 vi.mock('../internal/jwt-cache.js', () => ({
   getJwt: vi.fn().mockResolvedValue('mock-jwt'),
 }));
-vi.mock('@canva/user', () => ({
-  auth: { getCanvaUserToken: vi.fn() },
-}));
-
 const mockRunAction = vi.mocked(runAction);
 
 const setQueryDataSpy = vi.spyOn(queryClient, 'setQueryData');
 
-describe('useAction', () => {
-  afterEach(cleanup);
-
-  beforeEach(() => {
+const test = baseTest.extend('_rtl', [
+  async ({}, use) => {
     queryClient.clear();
-    mockRunAction.mockReset();
-    setQueryDataSpy.mockClear();
-  });
+    await use();
+    cleanup();
+  },
+  { auto: true },
+]);
 
-  it('returns { execute, loading: false, error: null } initially', () => {
+describe('useAction', () => {
+  test('returns { execute, loading: false, error: null } initially', () => {
     const { result } = renderHook(() => useAction('my-action'));
 
     expect(result.current.loading).toBe(false);
@@ -38,7 +36,7 @@ describe('useAction', () => {
     expect(typeof result.current.execute).toBe('function');
   });
 
-  it('loading becomes true during execution, false after', async () => {
+  test('loading becomes true during execution, false after', async () => {
     let resolveAction!: (value: { result: unknown; durationMs: number }) => void;
     mockRunAction.mockReturnValue(
       new Promise((resolve) => {
@@ -67,7 +65,7 @@ describe('useAction', () => {
     });
   });
 
-  it('execute(params) calls runAction(action, params) and returns result', async () => {
+  test('execute(params) calls runAction(action, params) and returns result', async () => {
     const mockResult = { result: { imageUrl: 'https://example.com/img.png' }, durationMs: 150 };
     mockRunAction.mockResolvedValue(mockResult);
 
@@ -82,7 +80,7 @@ describe('useAction', () => {
     expect(actionResult!).toEqual(mockResult);
   });
 
-  it('on success with credits, queryClient.setQueryData is called with creditKey and balance', async () => {
+  test('on success with credits, queryClient.setQueryData is called with creditKey and balance', async () => {
     const credits: CreditBalance = {
       subscribed: false,
       quota: 10,
@@ -104,7 +102,7 @@ describe('useAction', () => {
     expect(setQueryDataSpy).toHaveBeenCalledWith(creditKey('my-action'), credits);
   });
 
-  it('on success without credits, queryClient.setQueryData is NOT called', async () => {
+  test('on success without credits, queryClient.setQueryData is NOT called', async () => {
     mockRunAction.mockResolvedValue({ result: 'ok', durationMs: 10 });
 
     const { result } = renderHook(() => useAction('my-action'));
@@ -116,7 +114,7 @@ describe('useAction', () => {
     expect(setQueryDataSpy).not.toHaveBeenCalled();
   });
 
-  it('on CanupError, error is set to the CanupError instance', async () => {
+  test('on CanupError, error is set to the CanupError instance', async () => {
     const error = new CanupError('ACTION_NOT_FOUND', 'Action not found');
     mockRunAction.mockRejectedValue(error);
 
@@ -136,7 +134,7 @@ describe('useAction', () => {
     expect(result.current.error!.type).toBe('ACTION_NOT_FOUND');
   });
 
-  it('on non-CanupError, error is wrapped in CanupError("NETWORK_ERROR")', async () => {
+  test('on non-CanupError, error is wrapped in CanupError("NETWORK_ERROR")', async () => {
     mockRunAction.mockRejectedValue(new Error('Network timeout'));
 
     const { result } = renderHook(() => useAction('my-action'));
@@ -156,7 +154,7 @@ describe('useAction', () => {
     expect(result.current.error!.message).toBe('Network timeout');
   });
 
-  it('execute() re-throws the error (mutateAsync behavior)', async () => {
+  test('execute() re-throws the error (mutateAsync behavior)', async () => {
     const error = new CanupError('CREDITS_EXHAUSTED', 'No credits');
     mockRunAction.mockRejectedValue(error);
 
