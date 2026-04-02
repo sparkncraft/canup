@@ -43,8 +43,7 @@ export function CreditCounter({ action, footer, formatText }: CreditCounterProps
   const { data, loading, subscribeUrl } = useCredits(action);
 
   const openUrl = useCallback(() => {
-    if (!subscribeUrl) return;
-    void requestOpenExternalUrl({ url: subscribeUrl });
+    void requestOpenExternalUrl({ url: subscribeUrl! });
   }, [subscribeUrl]);
 
   if (loading) {

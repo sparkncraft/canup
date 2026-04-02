@@ -46,6 +46,35 @@ describe('actions logs command', () => {
     expect(processMocks.log).toHaveBeenCalledWith('table-output');
   });
 
+  test('shows detail view for successful execution (no error fields)', async ({
+    client,
+    output,
+    processMocks,
+  }) => {
+    client.getHistoryDetail.mockResolvedValue({
+      id: 'exec-uuid-success',
+      actionSlug: 'my-action',
+      status: 'success',
+      durationMs: 42,
+      executedAt: '2026-01-15T12:00:00Z',
+      source: 'api',
+    });
+
+    const { Command } = await import('commander');
+    const { registerActionsLogsAction } = await import('../../commands/actions/logs.js');
+
+    const program = new Command();
+    const actions = program.command('actions');
+    registerActionsLogsAction(actions);
+
+    await program.parseAsync(['actions', 'logs', '--id', 'exec-uuid-success'], { from: 'user' });
+
+    expect(output.label).toHaveBeenCalledWith('Execution', 'exec-uuid-success');
+    expect(output.label).toHaveBeenCalledWith('Duration', '42ms');
+    expect(output.label).not.toHaveBeenCalledWith('Error Type', expect.anything());
+    expect(output.label).not.toHaveBeenCalledWith('Error', expect.anything());
+  });
+
   test('shows detail view with --id flag', async ({ client, output, processMocks }) => {
     client.getHistoryDetail.mockResolvedValue({
       id: 'exec-uuid-1234-5678',

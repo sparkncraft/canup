@@ -530,6 +530,29 @@ describe('init command', () => {
     expect(output.info).toHaveBeenCalledWith('Added "canup" to package.json dependencies');
   });
 
+  test('skips adding canup when already in package.json dependencies', async ({
+    output,
+    processMocks,
+  }) => {
+    tokenStore.loadToken.mockReturnValue('valid-token');
+    projectConfig.loadProjectConfig.mockReturnValue(null);
+    client.registerApp.mockResolvedValue({ id: 'app-1' });
+    client.createApiKey.mockResolvedValue({ key: 'cnup_k', prefix: 'cnup' });
+
+    mockReadFileSync
+      .mockReturnValueOnce(JSON.stringify({ version: '1.0.0' }))
+      .mockReturnValueOnce(JSON.stringify({ name: 'my-app', dependencies: { canup: '^0.9.0' } }));
+    mockExistsSync.mockReturnValueOnce(true).mockReturnValue(false);
+
+    const { Command } = await import('commander');
+    const { registerInitCommand } = await import('../commands/init.js');
+    const program = new Command();
+    registerInitCommand(program);
+    await program.parseAsync(['init', '--app-id', 'AAFtest'], { from: 'user' });
+
+    expect(mockWriteFileSync).not.toHaveBeenCalled();
+  });
+
   test('suggests install command when lockfile is detected', async ({ output, processMocks }) => {
     tokenStore.loadToken.mockReturnValue('valid-token');
     projectConfig.loadProjectConfig.mockReturnValue(null);
