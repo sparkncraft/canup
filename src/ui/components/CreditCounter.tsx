@@ -15,14 +15,10 @@ const INTERVAL_TEXT: Record<string, string> = {
  */
 function formatResetDate(resetAt: string | null): string | null {
   if (!resetAt) return null;
-  try {
-    return new Date(resetAt).toLocaleDateString(undefined, {
-      month: 'short',
-      day: 'numeric',
-    });
-  } catch {
-    return resetAt;
-  }
+  return new Date(resetAt).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+  });
 }
 
 /**
