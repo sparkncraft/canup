@@ -1,18 +1,31 @@
-import { defineConfig } from 'vitest/config';
-import path from 'node:path';
+import { defineConfig, defineProject } from 'vitest/config';
+
+const shared = {
+  mockReset: true,
+  unstubGlobals: true,
+  unstubEnvs: true,
+} as const;
 
 export default defineConfig({
-  resolve: {
-    alias: {
-      '#test': path.resolve(import.meta.dirname, 'test'),
-    },
-  },
   test: {
-    mockReset: true,
-    unstubGlobals: true,
-    unstubEnvs: true,
-    setupFiles: ['test/setup.ts'],
-    include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
+    projects: [
+      defineProject({
+        test: {
+          ...shared,
+          name: 'cli',
+          include: ['src/cli/**/*.test.ts'],
+        },
+      }),
+      defineProject({
+        test: {
+          ...shared,
+          name: 'ui',
+          environment: 'jsdom',
+          include: ['src/ui/**/*.test.ts', 'src/ui/**/*.test.tsx'],
+          setupFiles: ['test/setup/ui.ts'],
+        },
+      }),
+    ],
     coverage: {
       provider: 'v8',
       include: ['src/**/*.ts', 'src/**/*.tsx'],

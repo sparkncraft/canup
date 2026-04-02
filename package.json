@@ -30,6 +30,9 @@
   "files": [
     "dist"
   ],
+  "imports": {
+    "#test/*": "./test/*"
+  },
   "sideEffects": false,
   "scripts": {
     "build": "tsdown",

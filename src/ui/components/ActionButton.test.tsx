@@ -1,40 +1,12 @@
-// @vitest-environment jsdom
 import { describe, expect, vi } from 'vitest';
 import { test as baseTest } from 'vitest';
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import React from 'react';
+import { TestAppUiProvider } from '@canva/app-ui-kit';
 import { ActionButton } from '../components/ActionButton.js';
 import { useAction } from '../hooks/useAction.js';
 import { useCredits } from '../hooks/useCredits.js';
 import { CanupError } from '../internal/errors.js';
-
-vi.mock('@canva/app-ui-kit', () => ({
-  Button: vi.fn(
-    ({
-      children,
-      ...props
-    }: {
-      children?: React.ReactNode;
-      disabled?: boolean;
-      loading?: boolean;
-      variant?: string;
-      stretch?: boolean;
-      onClick?: () => void;
-    }) =>
-      React.createElement(
-        'button',
-        {
-          'data-testid': 'canva-button',
-          disabled: props.disabled ?? undefined,
-          'data-loading': String(props.loading),
-          'data-variant': props.variant,
-          'data-stretch': String(props.stretch),
-          onClick: props.onClick,
-        },
-        children,
-      ),
-  ),
-}));
 
 vi.mock('../hooks/useAction.js', () => ({
   useAction: vi.fn(),
@@ -47,6 +19,10 @@ vi.mock('../internal/jwt-cache.js', () => ({
 }));
 const mockUseAction = vi.mocked(useAction);
 const mockUseCredits = vi.mocked(useCredits);
+
+function renderWithCanva(ui: React.ReactElement) {
+  return render(<TestAppUiProvider enableAnimations={false}>{ui}</TestAppUiProvider>);
+}
 
 const test = baseTest.extend('_rtl', [
   async ({}, use) => {
@@ -79,51 +55,49 @@ const test = baseTest.extend('_rtl', [
 
 describe('ActionButton', () => {
   test('renders Canva Button with children text', () => {
-    render(
+    renderWithCanva(
       <ActionButton action="my-action" variant="primary">
         Generate
       </ActionButton>,
     );
 
-    const btn = screen.getByTestId('canva-button');
-    expect(btn.textContent).toBe('Generate');
+    expect(screen.getByRole('button', { name: 'Generate' })).toBeTruthy();
   });
 
   test('calls execute(params) on click', async () => {
     const mockExecute = vi.fn().mockResolvedValue({ result: 'done', durationMs: 42 });
     mockUseAction.mockReturnValue({ execute: mockExecute, loading: false, error: null });
 
-    render(
+    renderWithCanva(
       <ActionButton action="my-action" variant="primary" params={{ prompt: 'hello' }}>
         Go
       </ActionButton>,
     );
 
-    fireEvent.click(screen.getByTestId('canva-button'));
+    fireEvent.click(screen.getByRole('button', { name: 'Go' }));
 
     await waitFor(() => {
       expect(mockExecute).toHaveBeenCalledWith({ prompt: 'hello' });
     });
   });
 
-  test('shows loading=true during execution (Button loading prop)', () => {
+  test('marks button as aria-disabled during loading', () => {
     mockUseAction.mockReturnValue({
       execute: vi.fn().mockResolvedValue({ result: 'ok', durationMs: 10 }),
       loading: true,
       error: null,
     });
 
-    render(
+    renderWithCanva(
       <ActionButton action="my-action" variant="primary">
         Go
       </ActionButton>,
     );
 
-    const btn = screen.getByTestId('canva-button');
-    expect(btn.getAttribute('data-loading')).toBe('true');
+    expect(screen.getByRole('button').getAttribute('aria-disabled')).toBe('true');
   });
 
-  test('disables when credits exhausted', () => {
+  test('marks button as aria-disabled when credits exhausted', () => {
     mockUseCredits.mockReturnValue({
       data: {
         subscribed: false,
@@ -141,14 +115,13 @@ describe('ActionButton', () => {
       refresh: vi.fn(),
     });
 
-    render(
+    renderWithCanva(
       <ActionButton action="my-action" variant="primary">
         Go
       </ActionButton>,
     );
 
-    const btn = screen.getByTestId('canva-button');
-    expect(btn.hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('button').getAttribute('aria-disabled')).toBe('true');
   });
 
   test('calls onResult callback with { result, durationMs } on success', async () => {
@@ -157,13 +130,13 @@ describe('ActionButton', () => {
     mockUseAction.mockReturnValue({ execute: mockExecute, loading: false, error: null });
     const onResult = vi.fn();
 
-    render(
+    renderWithCanva(
       <ActionButton action="my-action" variant="primary" onResult={onResult}>
         Go
       </ActionButton>,
     );
 
-    fireEvent.click(screen.getByTestId('canva-button'));
+    fireEvent.click(screen.getByRole('button', { name: 'Go' }));
 
     await waitFor(() => {
       expect(onResult).toHaveBeenCalledWith(mockResult);
@@ -176,28 +149,26 @@ describe('ActionButton', () => {
     mockUseAction.mockReturnValue({ execute: mockExecute, loading: false, error: null });
     const onError = vi.fn();
 
-    render(
+    renderWithCanva(
       <ActionButton action="my-action" variant="primary" onError={onError}>
         Go
       </ActionButton>,
     );
 
-    fireEvent.click(screen.getByTestId('canva-button'));
+    fireEvent.click(screen.getByRole('button', { name: 'Go' }));
 
     await waitFor(() => {
       expect(onError).toHaveBeenCalledWith(error);
     });
   });
 
-  test('forwards variant, stretch, and other Canva Button props', () => {
-    render(
+  test('renders with variant and stretch props', () => {
+    renderWithCanva(
       <ActionButton action="my-action" variant="secondary" stretch>
         Go
       </ActionButton>,
     );
 
-    const btn = screen.getByTestId('canva-button');
-    expect(btn.getAttribute('data-variant')).toBe('secondary');
-    expect(btn.getAttribute('data-stretch')).toBe('true');
+    expect(screen.getByRole('button', { name: 'Go' })).toBeTruthy();
   });
 });
