@@ -83,6 +83,16 @@ describe('Token Store', () => {
     expect(existsSync(join(tempDir, '.canup', 'credentials'))).toBe(false);
   });
 
+  test('returns null when credentials JSON lacks token field', async ({ tempDir }) => {
+    const { loadToken } = await import('../auth/token-store.js');
+
+    const canupDir = join(tempDir, '.canup');
+    mkdirSync(canupDir, { recursive: true });
+    writeFileSync(join(canupDir, 'credentials'), JSON.stringify({ savedAt: '2026-01-01' }));
+
+    expect(loadToken()).toBeNull();
+  });
+
   test('clearToken does not error when no credentials exist', async ({ tempDir }) => {
     const { clearToken } = await import('../auth/token-store.js');
     expect(() => clearToken()).not.toThrow();
@@ -140,6 +150,16 @@ describe('API Key Store', () => {
 
     expect(loadApiKey('app-a')).toBe('key-a');
     expect(loadApiKey('app-b')).toBe('key-b');
+  });
+
+  test('returns null when API key JSON lacks apiKey field', async ({ tempDir }) => {
+    const { loadApiKey } = await import('../auth/token-store.js');
+
+    const keysDir = join(tempDir, '.canup', 'keys');
+    mkdirSync(keysDir, { recursive: true });
+    writeFileSync(join(keysDir, 'app-no-key'), JSON.stringify({ savedAt: '2026-01-01' }));
+
+    expect(loadApiKey('app-no-key')).toBeNull();
   });
 
   test('returns null for corrupted key file', async ({ tempDir }) => {

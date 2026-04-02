@@ -1,8 +1,8 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, test, expect, vi } from 'vitest';
 import { EventEmitter } from 'node:events';
 
 describe('readStdinPipe', () => {
-  it('concatenates chunks, trims, and resolves', async () => {
+  test('concatenates chunks, trims, and resolves', async () => {
     const fakeStdin = new EventEmitter();
     using _spy = vi.spyOn(process, 'stdin', 'get').mockReturnValue(fakeStdin as never);
 
@@ -19,7 +19,7 @@ describe('readStdinPipe', () => {
     expect(result).toBe('hello world');
   });
 
-  it('rejects on stdin error', async () => {
+  test('rejects on stdin error', async () => {
     const fakeStdin = new EventEmitter();
     using _spy = vi.spyOn(process, 'stdin', 'get').mockReturnValue(fakeStdin as never);
 
@@ -35,7 +35,7 @@ describe('readStdinPipe', () => {
 });
 
 describe('readHiddenInput', () => {
-  it('resolves with typed characters on Enter', async () => {
+  test('resolves with typed characters on Enter', async () => {
     const fakeStdin = Object.assign(new EventEmitter(), {
       setRawMode: vi.fn(),
       resume: vi.fn(),
@@ -63,7 +63,33 @@ describe('readHiddenInput', () => {
     expect(fakeStdin.setRawMode).toHaveBeenCalledWith(true);
   });
 
-  it('handles backspace correctly', async () => {
+  test('handles backspace on empty input without error', async () => {
+    const fakeStdin = Object.assign(new EventEmitter(), {
+      setRawMode: vi.fn(),
+      resume: vi.fn(),
+      pause: vi.fn(),
+      setEncoding: vi.fn(),
+      removeListener: vi.fn(),
+    });
+
+    using _stdinSpy = vi.spyOn(process, 'stdin', 'get').mockReturnValue(fakeStdin as never);
+    using _stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+
+    vi.resetModules();
+    const { readHiddenInput } = await import('./input.js');
+
+    const promise = readHiddenInput('Enter: ');
+
+    const dataHandler = fakeStdin.listeners('data')[0] as (key: string) => void;
+    dataHandler('\x7f');
+    dataHandler('a');
+    dataHandler('\r');
+
+    const result = await promise;
+    expect(result).toBe('a');
+  });
+
+  test('handles backspace correctly', async () => {
     const fakeStdin = Object.assign(new EventEmitter(), {
       setRawMode: vi.fn(),
       resume: vi.fn(),
@@ -91,7 +117,7 @@ describe('readHiddenInput', () => {
     expect(result).toBe('ac');
   });
 
-  it('calls process.exit on Ctrl+C', async () => {
+  test('calls process.exit on Ctrl+C', async () => {
     const fakeStdin = Object.assign(new EventEmitter(), {
       setRawMode: vi.fn(),
       resume: vi.fn(),
@@ -115,7 +141,7 @@ describe('readHiddenInput', () => {
     expect(exitSpy).toHaveBeenCalledWith(1);
   });
 
-  it('echoes * for each character and writes prompt to stderr', async () => {
+  test('echoes * for each character and writes prompt to stderr', async () => {
     const fakeStdin = Object.assign(new EventEmitter(), {
       setRawMode: vi.fn(),
       resume: vi.fn(),
@@ -148,7 +174,7 @@ describe('readHiddenInput', () => {
     expect(stderrCalls[stderrCalls.length - 1]).toBe('\n');
   });
 
-  it('restores stdin to normal mode after completion', async () => {
+  test('restores stdin to normal mode after completion', async () => {
     const fakeStdin = Object.assign(new EventEmitter(), {
       setRawMode: vi.fn(),
       resume: vi.fn(),

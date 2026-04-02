@@ -1,12 +1,5 @@
 import { describe, expect, vi } from 'vitest';
-import {
-  test,
-  output,
-  client,
-  project,
-  projectConfig,
-  actionsDiscovery,
-} from '#test/fixtures.js';
+import { test, output, client, project, projectConfig, actionsDiscovery } from '#test/fixtures.js';
 
 vi.mock('../config/require-project.js', () => ({
   requireProject: vi.fn(() => project),
@@ -229,6 +222,127 @@ describe('status command', () => {
     expect(consoleOutput).toContain('Deps:');
     expect(consoleOutput).toContain('none');
     expect(processMocks.exit).not.toHaveBeenCalled();
+  });
+
+  test('shows deployed action without updatedAt', async ({ client, processMocks }) => {
+    projectConfig.getActionsDir.mockReturnValue('/project/canup/actions');
+    actionsDiscovery.discoverActions.mockReturnValue([]);
+
+    client.getAppInfo.mockResolvedValue({ name: 'Test App', canvaAppId: 'AAFtest123' });
+    client.listActions.mockResolvedValue([
+      {
+        id: 'act-1',
+        slug: 'my_action',
+        language: 'python',
+        deployed: true,
+        contentHash: 'abc',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: undefined,
+      },
+    ]);
+    client.listSecrets.mockResolvedValue([]);
+    client.listDeps.mockResolvedValue({ packages: [], layerSize: null, layerArn: null });
+
+    const { Command } = await import('commander');
+    const { registerStatusCommand } = await import('../commands/status.js');
+    const program = new Command();
+    registerStatusCommand(program);
+    await program.parseAsync(['status'], { from: 'user' });
+
+    const consoleOutput = allConsoleOutput(processMocks.log);
+    expect(consoleOutput).toContain('my_action');
+    expect(consoleOutput).toContain('deployed');
+  });
+
+  test('shows singular and plural dep counts correctly', async ({ client, processMocks }) => {
+    projectConfig.getActionsDir.mockReturnValue('/project/canup/actions');
+    actionsDiscovery.discoverActions.mockReturnValue([]);
+
+    client.getAppInfo.mockResolvedValue({ name: 'Test App', canvaAppId: 'AAFtest123' });
+    client.listActions.mockResolvedValue([]);
+    client.listSecrets.mockResolvedValue([]);
+    client.listDeps.mockImplementation((_appId: string, language: string) => {
+      if (language === 'python') {
+        return Promise.resolve({
+          packages: [{ name: 'requests', version: '2.31.0' }],
+          layerSize: 512,
+          layerArn: null,
+        });
+      }
+      if (language === 'nodejs') {
+        return Promise.resolve({
+          packages: [
+            { name: 'lodash', version: '4.17.21' },
+            { name: 'express', version: '4.18.2' },
+          ],
+          layerSize: 1024,
+          layerArn: null,
+        });
+      }
+      return Promise.resolve({ packages: [], layerSize: null, layerArn: null });
+    });
+
+    const { Command } = await import('commander');
+    const { registerStatusCommand } = await import('../commands/status.js');
+    const program = new Command();
+    registerStatusCommand(program);
+    await program.parseAsync(['status'], { from: 'user' });
+
+    const consoleOutput = allConsoleOutput(processMocks.log);
+    expect(consoleOutput).toContain('python (1 package)');
+    expect(consoleOutput).toContain('nodejs (2 packages)');
+  });
+
+  test('exercises all timeAgo branches with recent timestamps', async ({
+    client,
+    processMocks,
+  }) => {
+    projectConfig.getActionsDir.mockReturnValue('/project/canup/actions');
+    actionsDiscovery.discoverActions.mockReturnValue([]);
+
+    client.getAppInfo.mockResolvedValue({ name: 'Test App', canvaAppId: 'AAFtest123' });
+    client.listActions.mockResolvedValue([
+      {
+        id: 'act-1',
+        slug: 'recent',
+        language: 'python',
+        deployed: true,
+        contentHash: 'a',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: new Date(Date.now() - 30_000).toISOString(),
+      },
+      {
+        id: 'act-2',
+        slug: 'minutes_ago',
+        language: 'python',
+        deployed: true,
+        contentHash: 'b',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: new Date(Date.now() - 120_000).toISOString(),
+      },
+      {
+        id: 'act-3',
+        slug: 'hours_ago',
+        language: 'nodejs',
+        deployed: true,
+        contentHash: 'c',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: new Date(Date.now() - 7_200_000).toISOString(),
+      },
+    ]);
+    client.listSecrets.mockResolvedValue([]);
+    client.listDeps.mockResolvedValue({ packages: [], layerSize: null, layerArn: null });
+
+    const { Command } = await import('commander');
+    const { registerStatusCommand } = await import('../commands/status.js');
+    const program = new Command();
+    registerStatusCommand(program);
+    await program.parseAsync(['status'], { from: 'user' });
+
+    const consoleOutput = allConsoleOutput(processMocks.log);
+    expect(consoleOutput).toContain('just now');
+    expect(consoleOutput).toContain('m ago');
+    expect(consoleOutput).toContain('h ago');
   });
 
   test('handles 401 auth error', async ({ client, output, processMocks }) => {

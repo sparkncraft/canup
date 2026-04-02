@@ -342,3 +342,24 @@ export function createMockSpinner(): MockSpinner {
     })),
   };
 }
+
+// =============================================================================
+// MockIsTTY — Disposable helper for process.stdin.isTTY
+// =============================================================================
+
+/**
+ * Create a Disposable that temporarily overrides process.stdin.isTTY.
+ *
+ * Usage with `using`:
+ *   using _tty = mockIsTTY(true);
+ *   // process.stdin.isTTY is now true
+ *   // auto-restored when _tty goes out of scope
+ */
+export function mockIsTTY(value: boolean | undefined): Disposable {
+  const original = process.stdin.isTTY;
+  Object.defineProperty(process.stdin, 'isTTY', { value, configurable: true });
+  return {
+    [Symbol.dispose]: () =>
+      Object.defineProperty(process.stdin, 'isTTY', { value: original, configurable: true }),
+  };
+}

@@ -108,6 +108,25 @@ describe('deps add command', () => {
     expect(processMocks.exit).toHaveBeenCalledWith(1);
   });
 
+  test('shows packages when no build triggered and not cached', async ({ client, output }) => {
+    client.addDeps.mockResolvedValue({
+      cached: false,
+      buildId: undefined,
+      packages: [{ name: 'express', version: '4.18.2' }],
+    });
+
+    const { Command } = await import('commander');
+    const { registerDepsAddAction } = await import('../../commands/deps/add.js');
+
+    const program = new Command();
+    const deps = program.command('deps');
+    registerDepsAddAction(deps);
+
+    await program.parseAsync(['deps', 'add', 'express', '--language', 'nodejs'], { from: 'user' });
+
+    expect(output.label).toHaveBeenCalledWith('Package', 'express@4.18.2');
+  });
+
   test('handles build failure', async ({ client, processMocks, timers }) => {
     client.addDeps.mockResolvedValue({
       cached: false,

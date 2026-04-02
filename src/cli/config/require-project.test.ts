@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, test, expect, vi } from 'vitest';
 
 const { mockLoadProjectConfig } = vi.hoisted(() => ({ mockLoadProjectConfig: vi.fn() }));
 const { mockLoadApiKey } = vi.hoisted(() => ({ mockLoadApiKey: vi.fn() }));
@@ -11,7 +11,7 @@ vi.mock('../ui/output.js', () => ({ error: mockError, hint: mockHint }));
 import { requireProject } from './require-project.js';
 
 describe('requireProject', () => {
-  it('exits with 1 when no project config is found', () => {
+  test('exits with 1 when no project config is found', () => {
     using exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {
       throw new Error('process.exit');
     });
@@ -22,7 +22,7 @@ describe('requireProject', () => {
     expect(exitSpy).toHaveBeenCalledWith(1);
   });
 
-  it('exits with 1 when no API key is found', () => {
+  test('exits with 1 when no API key is found', () => {
     using exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {
       throw new Error('process.exit');
     });
@@ -38,7 +38,7 @@ describe('requireProject', () => {
     expect(exitSpy).toHaveBeenCalledWith(1);
   });
 
-  it('returns config, apiKey, projectRoot, and canupDir when both exist', () => {
+  test('returns config, apiKey, projectRoot, and canupDir when both exist', () => {
     mockLoadProjectConfig.mockReturnValue({
       config: { appId: 'app-1' },
       projectRoot: '/root',

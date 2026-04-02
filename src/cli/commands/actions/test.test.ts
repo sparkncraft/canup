@@ -232,6 +232,20 @@ describe('actions test command', () => {
         {},
       );
     });
+
+    test('displays print output for successful remote test', async ({ client, processMocks }) => {
+      mockExistsSync.mockReturnValue(true);
+      client.testAction.mockResolvedValue({
+        ok: true,
+        data: { result: null, durationMs: 50, printOutput: 'debug log' },
+      });
+      mockReadFileSync.mockReturnValue('def handler(p, c): pass');
+
+      await runTest('my-script.py', '--remote');
+
+      expect(processMocks.log).toHaveBeenCalledWith('Output:');
+      expect(processMocks.log).toHaveBeenCalledWith('debug log');
+    });
   });
 
   describe('local test (default)', () => {
@@ -321,6 +335,79 @@ describe('actions test command', () => {
       await runTest('my-script.py');
 
       expect(mockUnlinkSync).toHaveBeenCalled();
+    });
+
+    test('reads params from a JSON file path', async ({ processMocks }) => {
+      mockExistsSync.mockReturnValue(true);
+      mockReadFileSync.mockReturnValue('{"fromFile": true}');
+
+      const resultJson = JSON.stringify({ ok: true, data: { fromFile: true }, duration_ms: 5 });
+      mockSpawn.mockReturnValue(createMockProcess(`\n__CANUP_RESULT__${resultJson}`, ''));
+
+      await runTest('my-script.py', '--params', '/tmp/test-params.json');
+
+      expect(mockReadFileSync).toHaveBeenCalledWith('/tmp/test-params.json', 'utf-8');
+      const wrapperContent = mockWriteFileSync.mock.calls[0]?.[1] as string;
+      expect(wrapperContent).toContain('fromFile');
+    });
+
+    test('resolves bare action name via CWD fallback', async ({ output, processMocks }) => {
+      mockExistsSync.mockReturnValue(true);
+      actionsDiscovery.resolveActionByName.mockReturnValue(null);
+
+      const resultJson = JSON.stringify({ ok: true, data: null, duration_ms: 5 });
+      mockSpawn.mockReturnValue(createMockProcess(`\n__CANUP_RESULT__${resultJson}`, ''));
+
+      await runTest('my-action');
+
+      expect(output.success).toHaveBeenCalledWith('Test passed');
+    });
+
+    test('silently ignores cleanup errors when deleting temp file', async ({
+      output,
+      processMocks,
+    }) => {
+      mockExistsSync.mockReturnValue(true);
+      mockUnlinkSync.mockImplementation(() => {
+        throw new Error('EACCES');
+      });
+
+      const resultJson = JSON.stringify({ ok: true, data: null, duration_ms: 5 });
+      mockSpawn.mockReturnValue(createMockProcess(`\n__CANUP_RESULT__${resultJson}`, ''));
+
+      await runTest('my-script.py');
+
+      expect(mockUnlinkSync).toHaveBeenCalled();
+      expect(output.success).toHaveBeenCalledWith('Test passed');
+    });
+
+    test('streams non-marker stdout and stderr to terminal', async ({ output, processMocks }) => {
+      mockExistsSync.mockReturnValue(true);
+      using _stdoutSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+      using _stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+
+      const resultJson = JSON.stringify({ ok: true, data: 'hello', duration_ms: 5 });
+      mockSpawn.mockReturnValue(
+        createMockProcess('Handler output\n', `Warning: deprecated\n__CANUP_RESULT__${resultJson}`),
+      );
+
+      await runTest('my-script.py');
+
+      expect(_stdoutSpy).toHaveBeenCalledWith('Handler output\n');
+      expect(_stderrSpy).toHaveBeenCalledWith('Warning: deprecated\n');
+      expect(output.success).toHaveBeenCalledWith('Test passed');
+    });
+
+    test('merges --context overrides into mock context', async ({ processMocks }) => {
+      mockExistsSync.mockReturnValue(true);
+
+      const resultJson = JSON.stringify({ ok: true, data: null, duration_ms: 5 });
+      mockSpawn.mockReturnValue(createMockProcess(`\n__CANUP_RESULT__${resultJson}`, ''));
+
+      await runTest('my-script.py', '--context', '{"user_id": "custom-user"}');
+
+      const wrapperContent = mockWriteFileSync.mock.calls[0]?.[1] as string;
+      expect(wrapperContent).toContain('custom-user');
     });
   });
 
@@ -414,6 +501,87 @@ describe('actions test command', () => {
         'nodejs',
         {},
       );
+    });
+
+    test('exits when params file contains invalid JSON', async ({ output, processMocks }) => {
+      mockExistsSync.mockReturnValue(true);
+      mockReadFileSync.mockReturnValue('not valid json');
+
+      const resultJson = JSON.stringify({ ok: true, data: null, duration_ms: 5 });
+      mockSpawn.mockReturnValue(createMockProcess(`\n__CANUP_RESULT__${resultJson}`, ''));
+
+      await runTest('my-script.py', '--params', '/tmp/bad-params.json');
+
+      expect(output.error).toHaveBeenCalledWith(
+        expect.stringContaining('Invalid --params: failed to parse JSON from file'),
+      );
+      expect(processMocks.exit).toHaveBeenCalledWith(1);
+    });
+
+    test('exits when action path with separator does not exist', async ({
+      output,
+      processMocks,
+    }) => {
+      mockExistsSync.mockReturnValue(false);
+
+      await runTest('scripts/handler');
+
+      expect(output.error).toHaveBeenCalledWith(expect.stringContaining('Action file not found'));
+      expect(processMocks.exit).toHaveBeenCalledWith(1);
+    });
+
+    test('handles spawn error when command is not found', async ({ output, processMocks }) => {
+      mockExistsSync.mockReturnValue(true);
+
+      const proc = new EventEmitter() as EventEmitter & {
+        stdout: EventEmitter;
+        stderr: EventEmitter;
+      };
+      proc.stdout = new EventEmitter();
+      proc.stderr = new EventEmitter();
+      setTimeout(() => {
+        proc.emit('error', new Error('spawn python3 ENOENT'));
+      }, 5);
+      mockSpawn.mockReturnValue(proc);
+
+      await runTest('my-script.py');
+
+      expect(output.error).toHaveBeenCalledWith(expect.stringContaining('Failed to start'));
+      expect(processMocks.exit).toHaveBeenCalledWith(1);
+    });
+
+    test('handles missing result marker in subprocess output', async ({ output, processMocks }) => {
+      mockExistsSync.mockReturnValue(true);
+
+      const proc = new EventEmitter() as EventEmitter & {
+        stdout: EventEmitter;
+        stderr: EventEmitter;
+      };
+      proc.stdout = new EventEmitter();
+      proc.stderr = new EventEmitter();
+      setTimeout(() => {
+        proc.stdout.emit('data', Buffer.from('some output without marker\n'));
+        proc.emit('close', 1);
+      }, 5);
+      mockSpawn.mockReturnValue(proc);
+
+      await runTest('my-script.py');
+
+      expect(output.error).toHaveBeenCalledWith(expect.stringContaining('No test result received'));
+      expect(processMocks.exit).toHaveBeenCalledWith(1);
+    });
+
+    test('handles malformed JSON after result marker', async ({ output, processMocks }) => {
+      mockExistsSync.mockReturnValue(true);
+
+      mockSpawn.mockReturnValue(createMockProcess('\n__CANUP_RESULT__not-valid-json', ''));
+
+      await runTest('my-script.py');
+
+      expect(output.error).toHaveBeenCalledWith(
+        expect.stringContaining('Failed to parse test result'),
+      );
+      expect(processMocks.exit).toHaveBeenCalledWith(1);
     });
   });
 

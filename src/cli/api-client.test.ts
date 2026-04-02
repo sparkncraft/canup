@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, test as baseTest, expect, vi } from 'vitest';
 import { parsePackageSpecs, formatBytes, CanupClient } from './api-client.js';
 
 // ──────────────────────────────────────────────
@@ -7,7 +7,7 @@ import { parsePackageSpecs, formatBytes, CanupClient } from './api-client.js';
 
 const mockFetch = vi.fn();
 
-const test = it.extend<{ _fetch: void }>({
+const test = baseTest.extend<{ _fetch: void }>({
   _fetch: [
     async ({}, use) => {
       vi.stubGlobal('fetch', mockFetch);

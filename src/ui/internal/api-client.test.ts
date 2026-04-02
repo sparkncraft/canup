@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, beforeEach, beforeAll, afterAll, afterEach } from 'vitest';
+import { describe, test, expect, vi, beforeEach, beforeAll, afterAll, afterEach } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 import { CanupError } from '../internal/errors.js';
@@ -34,7 +34,7 @@ describe('api-client', () => {
   const getModule = async () => import('../internal/api-client.js');
 
   describe('runAction', () => {
-    it('sends POST with params and Authorization header', async () => {
+    test('sends POST with params and Authorization header', async () => {
       let capturedHeaders: Headers | null = null;
       let capturedBody: unknown = null;
 
@@ -54,7 +54,7 @@ describe('api-client', () => {
       expect(capturedBody).toEqual({ params: { prompt: 'hello' } });
     });
 
-    it('sends { params: {} } when no params provided', async () => {
+    test('sends { params: {} } when no params provided', async () => {
       let capturedBody: unknown = null;
 
       server.use(
@@ -70,7 +70,7 @@ describe('api-client', () => {
       expect(capturedBody).toEqual({ params: {} });
     });
 
-    it('returns { result, durationMs } on success', async () => {
+    test('returns { result, durationMs } on success', async () => {
       server.use(
         http.post(`${BASE_URL}/run/my-action`, () =>
           HttpResponse.json({
@@ -89,7 +89,7 @@ describe('api-client', () => {
       });
     });
 
-    it('throws CanupError with type CREDITS_EXHAUSTED on 403', async () => {
+    test('throws CanupError with type CREDITS_EXHAUSTED on 403', async () => {
       server.use(
         http.post(`${BASE_URL}/run/my-action`, () =>
           HttpResponse.json(
@@ -118,7 +118,7 @@ describe('api-client', () => {
       }
     });
 
-    it('throws CanupError with type ACTION_NOT_FOUND on 404', async () => {
+    test('throws CanupError with type ACTION_NOT_FOUND on 404', async () => {
       server.use(
         http.post(`${BASE_URL}/run/missing`, () =>
           HttpResponse.json(
@@ -141,7 +141,7 @@ describe('api-client', () => {
   });
 
   describe('fetchCredits', () => {
-    it('sends GET with Authorization header', async () => {
+    test('sends GET with Authorization header', async () => {
       let capturedHeaders: Headers | null = null;
 
       server.use(
@@ -167,7 +167,7 @@ describe('api-client', () => {
       expect(capturedHeaders!.get('Authorization')).toBe(`Bearer ${TEST_TOKEN}`);
     });
 
-    it('returns CreditBalance on success', async () => {
+    test('returns CreditBalance on success', async () => {
       server.use(
         http.get(`${BASE_URL}/run/my-action/credits`, () =>
           HttpResponse.json({
@@ -197,7 +197,7 @@ describe('api-client', () => {
       });
     });
 
-    it('throws CanupError on error', async () => {
+    test('throws CanupError on error', async () => {
       server.use(
         http.get(`${BASE_URL}/run/my-action/credits`, () =>
           HttpResponse.json(
@@ -220,7 +220,23 @@ describe('api-client', () => {
   });
 
   describe('base URL', () => {
-    it('uses globalThis.__canup_url override when set', async () => {
+    test('defaults to https://canup.link when __canup_url is not set', async () => {
+      vi.stubGlobal('__canup_url', undefined);
+
+      server.use(
+        http.post('https://canup.link/run/my-action', () =>
+          HttpResponse.json({ ok: true, data: { result: 'default', durationMs: 1 } }),
+        ),
+      );
+
+      vi.resetModules();
+      const { runAction } = await import('../internal/api-client.js');
+      const result = await runAction('my-action');
+
+      expect(result).toEqual({ result: 'default', durationMs: 1 });
+    });
+
+    test('uses globalThis.__canup_url override when set', async () => {
       vi.stubGlobal('__canup_url', 'http://custom-url.local');
 
       server.use(

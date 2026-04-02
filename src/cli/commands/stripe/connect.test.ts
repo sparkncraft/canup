@@ -1,25 +1,18 @@
 import { describe, expect, vi } from 'vitest';
 import { test, client, output, project, spinner } from '#test/fixtures.js';
+import { mockIsTTY } from '#test/mocks/cli.js';
 
-// Mock require-project
 vi.mock('../../config/require-project.js', () => ({
   requireProject: vi.fn(() => project),
 }));
-
-// Mock api-client
 vi.mock('../../api-client.js', () => ({
   CanupClient: vi.fn(function () {
     return client;
   }),
 }));
-
-// Mock output
 vi.mock('../../ui/output.js', () => output);
-
-// Mock spinner
 vi.mock('../../ui/spinner.js', () => spinner);
 
-// Mock input utilities
 const { mockReadHiddenInput, mockReadStdinPipe } = vi.hoisted(() => ({
   mockReadHiddenInput: vi.fn(),
   mockReadStdinPipe: vi.fn(),
@@ -34,8 +27,7 @@ describe('stripe connect command', () => {
     client.connectStripe.mockResolvedValue({ connected: true });
 
     const { Command } = await import('commander');
-    const { registerStripeConnectAction } =
-      await import('../../commands/stripe/connect.js');
+    const { registerStripeConnectAction } = await import('../../commands/stripe/connect.js');
 
     const program = new Command();
     const stripe = program.command('stripe');
@@ -51,13 +43,10 @@ describe('stripe connect command', () => {
     client.connectStripe.mockResolvedValue({ connected: true });
     mockReadHiddenInput.mockResolvedValue('sk_test_interactive');
 
-    // Set up TTY mode
-    const originalIsTTY = process.stdin.isTTY;
-    process.stdin.isTTY = true as boolean;
+    using _tty = mockIsTTY(true);
 
     const { Command } = await import('commander');
-    const { registerStripeConnectAction } =
-      await import('../../commands/stripe/connect.js');
+    const { registerStripeConnectAction } = await import('../../commands/stripe/connect.js');
 
     const program = new Command();
     const stripe = program.command('stripe');
@@ -66,22 +55,16 @@ describe('stripe connect command', () => {
     await program.parseAsync(['stripe', 'connect'], { from: 'user' });
 
     expect(client.connectStripe).toHaveBeenCalledWith('test-app-id', 'sk_test_interactive');
-
-    // Restore
-    process.stdin.isTTY = originalIsTTY;
   });
 
   test('connects stripe via stdin pipe', async ({ client }) => {
     client.connectStripe.mockResolvedValue({ connected: true });
     mockReadStdinPipe.mockResolvedValue('sk_test_piped');
 
-    // Non-TTY mode (pipe)
-    const originalIsTTY = process.stdin.isTTY;
-    process.stdin.isTTY = undefined;
+    using _tty = mockIsTTY(undefined);
 
     const { Command } = await import('commander');
-    const { registerStripeConnectAction } =
-      await import('../../commands/stripe/connect.js');
+    const { registerStripeConnectAction } = await import('../../commands/stripe/connect.js');
 
     const program = new Command();
     const stripe = program.command('stripe');
@@ -90,9 +73,6 @@ describe('stripe connect command', () => {
     await program.parseAsync(['stripe', 'connect'], { from: 'user' });
 
     expect(client.connectStripe).toHaveBeenCalledWith('test-app-id', 'sk_test_piped');
-
-    // Restore
-    process.stdin.isTTY = originalIsTTY;
   });
 
   test('shows error for invalid Stripe key', async ({ client, output, processMocks }) => {
@@ -101,8 +81,7 @@ describe('stripe connect command', () => {
     client.connectStripe.mockRejectedValue(err);
 
     const { Command } = await import('commander');
-    const { registerStripeConnectAction } =
-      await import('../../commands/stripe/connect.js');
+    const { registerStripeConnectAction } = await import('../../commands/stripe/connect.js');
 
     const program = new Command();
     const stripe = program.command('stripe');
@@ -124,8 +103,7 @@ describe('stripe connect command', () => {
     client.connectStripe.mockRejectedValue(err);
 
     const { Command } = await import('commander');
-    const { registerStripeConnectAction } =
-      await import('../../commands/stripe/connect.js');
+    const { registerStripeConnectAction } = await import('../../commands/stripe/connect.js');
 
     const program = new Command();
     const stripe = program.command('stripe');
@@ -141,19 +119,36 @@ describe('stripe connect command', () => {
     expect(processMocks.exit).toHaveBeenCalledWith(1);
   });
 
+  test('shows generic error message for unknown errors', async ({
+    client,
+    output,
+    processMocks,
+  }) => {
+    client.connectStripe.mockRejectedValue(new Error('Network timeout'));
+
+    const { Command } = await import('commander');
+    const { registerStripeConnectAction } = await import('../../commands/stripe/connect.js');
+
+    const program = new Command();
+    const stripe = program.command('stripe');
+    registerStripeConnectAction(stripe);
+
+    await program.parseAsync(['stripe', 'connect', '--value', 'sk_test_xxx'], { from: 'user' });
+
+    expect(output.error).toHaveBeenCalledWith('Network timeout');
+    expect(processMocks.exit).toHaveBeenCalledWith(1);
+  });
+
   test('shows error when stdin pipe returns empty (no input source)', async ({
     output,
     processMocks,
   }) => {
-    const originalIsTTY = process.stdin.isTTY;
-    process.stdin.isTTY = undefined;
+    using _tty = mockIsTTY(undefined);
 
-    // Return empty string for this test
     mockReadStdinPipe.mockResolvedValueOnce('');
 
     const { Command } = await import('commander');
-    const { registerStripeConnectAction } =
-      await import('../../commands/stripe/connect.js');
+    const { registerStripeConnectAction } = await import('../../commands/stripe/connect.js');
 
     const program = new Command();
     const stripe = program.command('stripe');
@@ -163,14 +158,11 @@ describe('stripe connect command', () => {
 
     expect(output.error).toHaveBeenCalledWith('Stripe API key cannot be empty.');
     expect(processMocks.exit).toHaveBeenCalledWith(1);
-
-    process.stdin.isTTY = originalIsTTY;
   });
 
   test('shows error for empty value', async ({ output, processMocks }) => {
     const { Command } = await import('commander');
-    const { registerStripeConnectAction } =
-      await import('../../commands/stripe/connect.js');
+    const { registerStripeConnectAction } = await import('../../commands/stripe/connect.js');
 
     const program = new Command();
     const stripe = program.command('stripe');

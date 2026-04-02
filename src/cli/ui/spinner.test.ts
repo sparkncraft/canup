@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, test as baseTest, expect, vi } from 'vitest';
 
 const { mockOra, mockSpinnerInst } = vi.hoisted(() => {
   const inst = {
@@ -14,7 +14,7 @@ vi.mock('ora', () => ({ default: mockOra }));
 
 import { createSpinner, withSpinner } from './spinner.js';
 
-const test = it.extend<{ _ora: void }>({
+const test = baseTest.extend<{ _ora: void }>({
   _ora: [
     async ({}, use) => {
       mockSpinnerInst.text = '';

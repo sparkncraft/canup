@@ -1,5 +1,6 @@
 import { describe, expect, vi } from 'vitest';
 import { test, client, output, project } from '#test/fixtures.js';
+import { mockIsTTY } from '#test/mocks/cli.js';
 
 const { mockCreateInterface } = vi.hoisted(() => ({
   mockCreateInterface: vi.fn(),
@@ -23,8 +24,7 @@ vi.mock('../../ui/output.js', () => output);
 
 async function runDisconnect(...extraArgs: string[]) {
   const { Command } = await import('commander');
-  const { registerStripeDisconnectAction } =
-    await import('../../commands/stripe/disconnect.js');
+  const { registerStripeDisconnectAction } = await import('../../commands/stripe/disconnect.js');
 
   const program = new Command();
   const stripe = program.command('stripe');
@@ -53,8 +53,7 @@ describe('stripe disconnect command', () => {
   });
 
   test('prompts for confirmation in TTY mode and proceeds on "y"', async ({ client, output }) => {
-    const originalIsTTY = process.stdin.isTTY;
-    Object.defineProperty(process.stdin, 'isTTY', { value: true, configurable: true });
+    using _tty = mockIsTTY(true);
 
     mockCreateInterface.mockReturnValue({
       question: vi.fn((_q: string, cb: (answer: string) => void) => cb('y')),
@@ -68,13 +67,10 @@ describe('stripe disconnect command', () => {
     expect(mockCreateInterface).toHaveBeenCalled();
     expect(client.disconnectStripe).toHaveBeenCalledWith('test-app-id');
     expect(output.success).toHaveBeenCalledWith('Stripe disconnected. Webhook endpoint removed.');
-
-    Object.defineProperty(process.stdin, 'isTTY', { value: originalIsTTY, configurable: true });
   });
 
   test('prompts for confirmation in TTY mode and aborts on "n"', async ({ client }) => {
-    const originalIsTTY = process.stdin.isTTY;
-    Object.defineProperty(process.stdin, 'isTTY', { value: true, configurable: true });
+    using _tty = mockIsTTY(true);
 
     mockCreateInterface.mockReturnValue({
       question: vi.fn((_q: string, cb: (answer: string) => void) => cb('n')),
@@ -85,13 +81,10 @@ describe('stripe disconnect command', () => {
 
     expect(mockCreateInterface).toHaveBeenCalled();
     expect(client.disconnectStripe).not.toHaveBeenCalled();
-
-    Object.defineProperty(process.stdin, 'isTTY', { value: originalIsTTY, configurable: true });
   });
 
   test('accepts "yes" as confirmation answer', async ({ client, output }) => {
-    const originalIsTTY = process.stdin.isTTY;
-    Object.defineProperty(process.stdin, 'isTTY', { value: true, configurable: true });
+    using _tty = mockIsTTY(true);
 
     mockCreateInterface.mockReturnValue({
       question: vi.fn((_q: string, cb: (answer: string) => void) => cb('yes')),
@@ -103,13 +96,10 @@ describe('stripe disconnect command', () => {
     await runDisconnect();
 
     expect(client.disconnectStripe).toHaveBeenCalledWith('test-app-id');
-
-    Object.defineProperty(process.stdin, 'isTTY', { value: originalIsTTY, configurable: true });
   });
 
   test('non-TTY mode bypasses confirmation and proceeds directly', async ({ client, output }) => {
-    const originalIsTTY = process.stdin.isTTY;
-    Object.defineProperty(process.stdin, 'isTTY', { value: undefined, configurable: true });
+    using _tty = mockIsTTY(undefined);
 
     client.disconnectStripe.mockResolvedValue({ disconnected: true });
 
@@ -118,7 +108,5 @@ describe('stripe disconnect command', () => {
     expect(mockCreateInterface).not.toHaveBeenCalled();
     expect(client.disconnectStripe).toHaveBeenCalledWith('test-app-id');
     expect(output.success).toHaveBeenCalledWith('Stripe disconnected. Webhook endpoint removed.');
-
-    Object.defineProperty(process.stdin, 'isTTY', { value: originalIsTTY, configurable: true });
   });
 });
