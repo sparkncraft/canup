@@ -70,6 +70,50 @@ describe('deps remove command', () => {
     expect(client.removeDep).toHaveBeenCalledWith('test-app-id', 'nodejs', 'lodash');
   });
 
+  test('shows "?" when rebuild sizeBytes is null', async ({ client, timers }) => {
+    client.removeDep.mockResolvedValue({ deleted: 'express', buildId: 'build-null' });
+    client.getBuildStatus.mockResolvedValue({ status: 'success', sizeBytes: null });
+
+    const { Command } = await import('commander');
+    const { registerDepsRemoveAction } = await import('../../commands/deps/remove.js');
+
+    const program = new Command();
+    const deps = program.command('deps');
+    registerDepsRemoveAction(deps);
+
+    const p = program.parseAsync(['deps', 'remove', 'express', '--language', 'nodejs'], {
+      from: 'user',
+    });
+    await timers.advance(3000);
+    await p;
+  });
+
+  test('shows "Unknown error" when rebuild errorMessage is null', async ({
+    client,
+    processMocks,
+    timers,
+  }) => {
+    client.removeDep.mockResolvedValue({ deleted: 'express', buildId: 'build-null-err' });
+    client.getBuildStatus
+      .mockResolvedValueOnce({ status: 'failed', errorMessage: null })
+      .mockResolvedValue({ status: 'success', sizeBytes: 0 });
+
+    const { Command } = await import('commander');
+    const { registerDepsRemoveAction } = await import('../../commands/deps/remove.js');
+
+    const program = new Command();
+    const deps = program.command('deps');
+    registerDepsRemoveAction(deps);
+
+    const p = program.parseAsync(['deps', 'remove', 'express', '--language', 'nodejs'], {
+      from: 'user',
+    });
+    await timers.advance(5000);
+    await p;
+
+    expect(processMocks.exit).toHaveBeenCalledWith(1);
+  });
+
   test('handles package not found (404)', async ({ client, output, processMocks }) => {
     const apiError = new Error('Not found') as Error & { statusCode: number };
     apiError.statusCode = 404;

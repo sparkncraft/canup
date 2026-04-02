@@ -607,6 +607,34 @@ describe('CanupClient', () => {
       expect(err.statusCode).toBe(404);
       expect(err.errorType).toBe('NotFoundError');
     });
+
+    test('omits Authorization header when no token', async () => {
+      mockFetch.mockResolvedValueOnce(
+        rawResponse({ ok: true, data: { result: null, durationMs: 0, printOutput: '' } }),
+      );
+      const client = new CanupClient({ apiUrl: 'https://test.api' });
+      await client.runAction('a1', 'greet');
+
+      expect(fetchOpts().headers).not.toHaveProperty('Authorization');
+    });
+
+    test('falls back to statusText when response is not JSON', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 502,
+        statusText: 'Bad Gateway',
+        json: () => Promise.reject(new SyntaxError('Unexpected token')),
+      });
+      const client = createClient();
+
+      const err: Error & { statusCode?: number; errorType?: string } = await client
+        .runAction('a1', 'greet')
+        .catch((e: unknown) => e as Error & { statusCode?: number; errorType?: string });
+
+      expect(err.message).toBe('Bad Gateway');
+      expect(err.statusCode).toBe(502);
+      expect(err.errorType).toBe('HttpError');
+    });
   });
 
   // ──── listHistory ────

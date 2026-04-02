@@ -89,6 +89,86 @@ describe('deps add command', () => {
     expect(processMocks.exit).toHaveBeenCalledWith(1);
   });
 
+  test('shows cached packages without version and without layer size', async ({
+    client,
+    output,
+  }) => {
+    client.addDeps.mockResolvedValue({
+      cached: true,
+      packages: [{ name: 'flask' }],
+      layerSize: null,
+    });
+
+    const { Command } = await import('commander');
+    const { registerDepsAddAction } = await import('../../commands/deps/add.js');
+
+    const program = new Command();
+    const deps = program.command('deps');
+    registerDepsAddAction(deps);
+
+    await program.parseAsync(['deps', 'add', 'flask', '--language', 'python'], { from: 'user' });
+
+    expect(output.success).toHaveBeenCalledWith('All packages already installed');
+    expect(output.label).toHaveBeenCalledWith('Package', 'flask');
+  });
+
+  test('shows "?" when build sizeBytes is null', async ({ client, spinner, timers }) => {
+    client.addDeps.mockResolvedValue({
+      cached: false,
+      buildId: 'build-null-size',
+      packages: [{ name: 'express' }],
+    });
+    client.getBuildStatus.mockResolvedValue({ status: 'success', sizeBytes: null });
+
+    const mockSpin = { update: vi.fn(), succeed: vi.fn(), fail: vi.fn() };
+    spinner.createSpinner.mockReturnValue(mockSpin);
+
+    const { Command } = await import('commander');
+    const { registerDepsAddAction } = await import('../../commands/deps/add.js');
+
+    const program = new Command();
+    const deps = program.command('deps');
+    registerDepsAddAction(deps);
+
+    const p = program.parseAsync(['deps', 'add', 'express', '--language', 'nodejs'], {
+      from: 'user',
+    });
+    await timers.advance(3000);
+    await p;
+
+    expect(mockSpin.succeed).toHaveBeenCalledWith(expect.stringContaining('?'));
+  });
+
+  test('shows "Unknown error" when build errorMessage is null', async ({
+    client,
+    processMocks,
+    timers,
+  }) => {
+    client.addDeps.mockResolvedValue({
+      cached: false,
+      buildId: 'build-no-msg',
+      packages: [{ name: 'express' }],
+    });
+    client.getBuildStatus
+      .mockResolvedValueOnce({ status: 'failed', errorMessage: null })
+      .mockResolvedValue({ status: 'success', sizeBytes: 0 });
+
+    const { Command } = await import('commander');
+    const { registerDepsAddAction } = await import('../../commands/deps/add.js');
+
+    const program = new Command();
+    const deps = program.command('deps');
+    registerDepsAddAction(deps);
+
+    const p = program.parseAsync(['deps', 'add', 'express', '--language', 'nodejs'], {
+      from: 'user',
+    });
+    await timers.advance(5000);
+    await p;
+
+    expect(processMocks.exit).toHaveBeenCalledWith(1);
+  });
+
   test('handles API error with 401 status', async ({ client, output, processMocks }) => {
     const apiError = new Error('Unauthorized') as Error & { statusCode: number };
     apiError.statusCode = 401;

@@ -345,6 +345,26 @@ describe('status command', () => {
     expect(consoleOutput).toContain('h ago');
   });
 
+  test('handles non-array secrets response gracefully', async ({ client, processMocks }) => {
+    projectConfig.getActionsDir.mockReturnValue('/project/canup/actions');
+    actionsDiscovery.discoverActions.mockReturnValue([]);
+
+    client.getAppInfo.mockResolvedValue({ name: 'Test App', canvaAppId: 'AAFtest123' });
+    client.listActions.mockResolvedValue([]);
+    client.listSecrets.mockResolvedValue(null);
+    client.listDeps.mockResolvedValue({ packages: [], layerSize: null, layerArn: null });
+
+    const { Command } = await import('commander');
+    const { registerStatusCommand } = await import('../commands/status.js');
+    const program = new Command();
+    registerStatusCommand(program);
+    await program.parseAsync(['status'], { from: 'user' });
+
+    const consoleOutput = allConsoleOutput(processMocks.log);
+    expect(consoleOutput).toContain('Secrets:');
+    expect(consoleOutput).toContain('none');
+  });
+
   test('handles 401 auth error', async ({ client, output, processMocks }) => {
     projectConfig.getActionsDir.mockReturnValue('/project/canup/actions');
 

@@ -93,6 +93,35 @@ describe('actions logs command', () => {
     expect(output.info).toHaveBeenCalledWith('No executions found.');
   });
 
+  test('renders non-standard status without coloring', async ({ client, output, processMocks }) => {
+    output.formatTable.mockReturnValue('table-output');
+
+    client.listHistory.mockResolvedValue([
+      {
+        id: 'exec-uuid-1234-5678',
+        actionSlug: 'my-action',
+        status: 'pending',
+        durationMs: 0,
+        executedAt: '2026-01-15T12:00:00Z',
+        source: 'api',
+      },
+    ]);
+
+    const { formatTable } = await import('../../ui/output.js');
+
+    const { Command } = await import('commander');
+    const { registerActionsLogsAction } = await import('../../commands/actions/logs.js');
+
+    const program = new Command();
+    const actions = program.command('actions');
+    registerActionsLogsAction(actions);
+
+    await program.parseAsync(['actions', 'logs'], { from: 'user' });
+
+    const rows = vi.mocked(formatTable).mock.calls[0][1];
+    expect(rows[0][2]).toBe('pending');
+  });
+
   test('handles 404 error on detail view', async ({ client, output, processMocks }) => {
     const apiError = new Error('Not found') as Error & { statusCode: number };
     apiError.statusCode = 404;

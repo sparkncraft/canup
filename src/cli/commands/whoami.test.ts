@@ -49,6 +49,43 @@ describe('whoami command', () => {
     expect(processMocks.log).toHaveBeenCalledWith(expect.stringContaining('dev@example.com'));
   });
 
+  test('displays "(not set)" when user name is null', async ({ client, processMocks }) => {
+    tokenStore.loadToken.mockReturnValue('valid-token');
+    client.getMe.mockResolvedValue({
+      id: '123',
+      email: 'dev@example.com',
+      name: null,
+      avatarUrl: null,
+      createdAt: '2026-01-15T00:00:00.000Z',
+    });
+
+    const { Command } = await import('commander');
+    const { registerWhoamiCommand } = await import('../commands/whoami.js');
+
+    const program = new Command();
+    registerWhoamiCommand(program);
+
+    await program.parseAsync(['whoami'], { from: 'user' });
+
+    expect(processMocks.log).toHaveBeenCalledWith(expect.stringContaining('(not set)'));
+  });
+
+  test('handles non-Error thrown value', async ({ client, processMocks }) => {
+    tokenStore.loadToken.mockReturnValue('valid-token');
+    client.getMe.mockRejectedValue('raw error string');
+
+    const { Command } = await import('commander');
+    const { registerWhoamiCommand } = await import('../commands/whoami.js');
+
+    const program = new Command();
+    registerWhoamiCommand(program);
+
+    await program.parseAsync(['whoami'], { from: 'user' });
+
+    expect(processMocks.error).toHaveBeenCalledWith('Failed to get user info: raw error string');
+    expect(processMocks.exit).toHaveBeenCalledWith(1);
+  });
+
   test('prints session expired on 401 error', async ({ client, processMocks }) => {
     tokenStore.loadToken.mockReturnValue('expired-token');
 
