@@ -1,4 +1,5 @@
-import { describe, test, expect, vi, beforeEach } from 'vitest';
+import { describe, expect, vi } from 'vitest';
+import { test as baseTest } from 'vitest';
 import { QueryClient } from '@tanstack/react-query';
 
 const instances: MockBC[] = [];
@@ -13,18 +14,17 @@ class MockBC {
   }
 }
 
-describe('query', () => {
-  beforeEach(() => {
+const test = baseTest.extend<{ loadModule: () => Promise<typeof import('../internal/query.js')> }>({
+  loadModule: async ({}, use) => {
     vi.resetModules();
     instances.length = 0;
     vi.stubGlobal('BroadcastChannel', MockBC);
-  });
+    await use(() => import('../internal/query.js'));
+  },
+});
 
-  async function loadModule() {
-    return import('../internal/query.js');
-  }
-
-  test('queryClient is a QueryClient with correct defaults', async () => {
+describe('query', () => {
+  test('queryClient is a QueryClient with correct defaults', async ({ loadModule }) => {
     const { queryClient, POLL_INTERVAL } = await loadModule();
 
     expect(queryClient).toBeInstanceOf(QueryClient);
@@ -35,12 +35,12 @@ describe('query', () => {
     expect(defaults.queries?.retry).toBe(1);
   });
 
-  test('creditKey returns ["credits", action] tuple', async () => {
+  test('creditKey returns ["credits", action] tuple', async ({ loadModule }) => {
     const { creditKey } = await loadModule();
     expect(creditKey('my-action')).toEqual(['credits', 'my-action']);
   });
 
-  test('broadcasts query cache updates to BroadcastChannel', async () => {
+  test('broadcasts query cache updates to BroadcastChannel', async ({ loadModule }) => {
     const { queryClient } = await loadModule();
     const channel = instances[0]!;
 
@@ -54,7 +54,7 @@ describe('query', () => {
     });
   });
 
-  test('applies incoming BroadcastChannel messages to cache', async () => {
+  test('applies incoming BroadcastChannel messages to cache', async ({ loadModule }) => {
     const { queryClient } = await loadModule();
     const channel = instances[0]!;
 
@@ -72,7 +72,9 @@ describe('query', () => {
     });
   });
 
-  test('recursion guard: incoming message does NOT trigger outgoing broadcast', async () => {
+  test('recursion guard: incoming message does NOT trigger outgoing broadcast', async ({
+    loadModule,
+  }) => {
     const { queryClient } = await loadModule();
     const channel = instances[0]!;
     const callsBefore = channel.postMessage.mock.calls.length;
@@ -89,7 +91,7 @@ describe('query', () => {
     expect(channel.postMessage.mock.calls.length).toBe(callsBefore);
   });
 
-  test('skips BroadcastChannel when unavailable', async () => {
+  test('skips BroadcastChannel when unavailable', async ({ loadModule }) => {
     vi.stubGlobal('BroadcastChannel', undefined);
 
     const { queryClient } = await loadModule();

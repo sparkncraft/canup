@@ -1,5 +1,5 @@
-import { describe, test, expect, vi, beforeEach } from 'vitest';
-import { getJwt, _resetCache } from '../internal/jwt-cache.js';
+import { describe, expect, vi } from 'vitest';
+import { test as baseTest } from 'vitest';
 
 function createMockJwt(exp: number): string {
   const header = btoa(JSON.stringify({ alg: 'RS256' }));
@@ -12,17 +12,19 @@ const { mockGetCanvaUserToken } = vi.hoisted(() => ({
 }));
 
 vi.mock('@canva/user', () => ({
-  auth: {
-    getCanvaUserToken: mockGetCanvaUserToken,
-  },
+  auth: { getCanvaUserToken: mockGetCanvaUserToken },
 }));
 
-describe('jwt-cache', () => {
-  beforeEach(() => {
-    _resetCache();
-  });
+const test = baseTest.extend<{ getJwt: typeof import('../internal/jwt-cache.js').getJwt }>({
+  getJwt: async ({}, use) => {
+    vi.resetModules();
+    const { getJwt } = await import('../internal/jwt-cache.js');
+    await use(getJwt);
+  },
+});
 
-  test('calls @canva/user auth on first call and returns token', async () => {
+describe('jwt-cache', () => {
+  test('calls @canva/user auth on first call and returns token', async ({ getJwt }) => {
     const futureExp = Math.floor(Date.now() / 1000) + 3600;
     const token = createMockJwt(futureExp);
     mockGetCanvaUserToken.mockResolvedValue(token);
@@ -33,7 +35,7 @@ describe('jwt-cache', () => {
     expect(mockGetCanvaUserToken).toHaveBeenCalledTimes(1);
   });
 
-  test('returns cached token on second call (no second auth call)', async () => {
+  test('returns cached token on second call (no second auth call)', async ({ getJwt }) => {
     const futureExp = Math.floor(Date.now() / 1000) + 3600;
     const token = createMockJwt(futureExp);
     mockGetCanvaUserToken.mockResolvedValue(token);
@@ -45,7 +47,7 @@ describe('jwt-cache', () => {
     expect(mockGetCanvaUserToken).toHaveBeenCalledTimes(1);
   });
 
-  test('refreshes token when within 30s of expiry', async () => {
+  test('refreshes token when within 30s of expiry', async ({ getJwt }) => {
     const nearExp = Math.floor(Date.now() / 1000) + 20;
     const oldToken = createMockJwt(nearExp);
 
@@ -61,7 +63,7 @@ describe('jwt-cache', () => {
     expect(mockGetCanvaUserToken).toHaveBeenCalledTimes(2);
   });
 
-  test('deduplicates concurrent getJwt() calls (only one auth call)', async () => {
+  test('deduplicates concurrent getJwt() calls (only one auth call)', async ({ getJwt }) => {
     const nearExp = Math.floor(Date.now() / 1000) + 10;
     const primingToken = createMockJwt(nearExp);
     mockGetCanvaUserToken.mockResolvedValueOnce(primingToken);
@@ -81,24 +83,20 @@ describe('jwt-cache', () => {
     expect(mockGetCanvaUserToken.mock.calls.length - callsBefore).toBe(1);
   });
 
-  test('throws when auth function rejects', async () => {
+  test('throws when auth function rejects', async ({ getJwt }) => {
     mockGetCanvaUserToken.mockRejectedValue(new Error('Not authenticated'));
 
     await expect(getJwt()).rejects.toThrow('Not authenticated');
   });
 
-  test('fresh cache state after _resetCache (no cached token)', async () => {
+  test('re-fetches token after module re-import (fresh cache)', async ({ getJwt }) => {
     const futureExp = Math.floor(Date.now() / 1000) + 3600;
-    const token1 = createMockJwt(futureExp);
-    const token2 = createMockJwt(futureExp);
-
-    mockGetCanvaUserToken.mockResolvedValueOnce(token1);
-    await getJwt();
-
-    _resetCache();
-    mockGetCanvaUserToken.mockResolvedValueOnce(token2);
+    const token = createMockJwt(futureExp);
+    mockGetCanvaUserToken.mockResolvedValue(token);
 
     const result = await getJwt();
-    expect(result).toBe(token2);
+
+    expect(result).toBe(token);
+    expect(mockGetCanvaUserToken).toHaveBeenCalledTimes(1);
   });
 });

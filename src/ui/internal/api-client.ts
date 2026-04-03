@@ -28,8 +28,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   return json.data;
 }
 
-export const fetchCredits = (action: string) =>
-  request<CreditBalance>(`/run/${action}/credits`);
+export const fetchCredits = (action: string) => request<CreditBalance>(`/run/${action}/credits`);
 
 export const runAction = (action: string, params?: Record<string, unknown>) =>
   request<ActionResult>(`/run/${action}`, {

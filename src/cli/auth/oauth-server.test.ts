@@ -2,20 +2,25 @@ import { describe, expect, vi } from 'vitest';
 import { test as baseTest } from 'vitest';
 import { startCallbackServer, type CallbackServerResult } from './oauth-server.js';
 
-const test = baseTest.extend('server', async ({}, { onCleanup }) => {
-  const ref: { current: CallbackServerResult | null } = { current: null };
-  onCleanup(async () => {
-    if (ref.current) {
-      const res = await fetch(`http://127.0.0.1:${ref.current.port}/callback?error=cleanup`).catch(
-        () => null,
-      );
-      if (res) await res.text().catch(() => {});
-      await ref.current.tokenPromise.catch(() => {});
-      ref.current.close();
-    }
+const test = baseTest
+  .extend('server', async ({}, { onCleanup }) => {
+    const ref: { current: CallbackServerResult | null } = { current: null };
+    onCleanup(async () => {
+      if (ref.current) {
+        const res = await fetch(
+          `http://127.0.0.1:${ref.current.port}/callback?error=cleanup`,
+        ).catch(() => null);
+        if (res) await res.text().catch(() => {});
+        await ref.current.tokenPromise.catch(() => {});
+        ref.current.close();
+      }
+    });
+    return ref;
+  })
+  .extend('timers', async ({}, { onCleanup }) => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    onCleanup(() => vi.useRealTimers());
   });
-  return ref;
-});
 
 describe('OAuth Callback Server', () => {
   test('starts and listens on 127.0.0.1 with an assigned port', async ({ server }) => {
@@ -60,16 +65,12 @@ describe('OAuth Callback Server', () => {
     await res.text();
   });
 
-  test('rejects with timeout after 120 seconds of no callback', async ({ server }) => {
-    vi.useFakeTimers({ shouldAdvanceTime: true });
-
+  test('rejects with timeout after 120 seconds of no callback', async ({ server, timers: _ }) => {
     server.current = await startCallbackServer();
 
     await vi.advanceTimersByTimeAsync(120_000);
 
     await expect(server.current.tokenPromise).rejects.toThrow('timed out');
-
-    vi.useRealTimers();
   });
 
   test('returns 400 for callback without token or error', async ({ server }) => {

@@ -14,7 +14,7 @@ vi.mock('ora', () => ({ default: mockOra }));
 
 import { createSpinner, withSpinner } from './spinner.js';
 
-const test = baseTest.extend<{ _ora: void }>({
+const test = baseTest.extend<{ _ora: void; timers: void }>({
   _ora: [
     async ({}, use) => {
       mockSpinnerInst.text = '';
@@ -24,6 +24,11 @@ const test = baseTest.extend<{ _ora: void }>({
     },
     { auto: true },
   ],
+  timers: async ({}, use) => {
+    vi.useFakeTimers();
+    await use();
+    vi.useRealTimers();
+  },
 });
 
 describe('createSpinner', () => {
@@ -52,13 +57,11 @@ describe('createSpinner', () => {
     expect(mockSpinnerInst.succeed).toHaveBeenCalledWith(expect.stringContaining('Deployed'));
   });
 
-  test('succeed() formats duration as seconds when >= 1000ms', () => {
-    vi.useFakeTimers();
+  test('succeed() formats duration as seconds when >= 1000ms', ({ timers: _ }) => {
     const spin = createSpinner('Building');
     vi.advanceTimersByTime(2500);
     spin.succeed('Built');
     expect(mockSpinnerInst.succeed).toHaveBeenCalledWith(expect.stringContaining('2.5s'));
-    vi.useRealTimers();
   });
 
   test('fail() calls ora fail with the text', () => {
