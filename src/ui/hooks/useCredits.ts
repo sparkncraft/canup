@@ -1,5 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
-import { queryClient, creditKey, POLL_INTERVAL, POLL_INTERVAL_BACKGROUND } from '../internal/query.js';
+import {
+  queryClient,
+  creditKey,
+  POLL_INTERVAL,
+  POLL_INTERVAL_BACKGROUND,
+} from '../internal/query.js';
 import { fetchCredits } from '../internal/api-client.js';
 import type { CreditBalance } from '../internal/types.js';
 

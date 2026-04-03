@@ -1,4 +1,4 @@
-import { describe, test, expect, vi, beforeEach, beforeAll, afterAll, afterEach } from 'vitest';
+import { describe, test as baseTest, expect, vi, beforeAll, afterAll, afterEach } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 import { CanupError } from '../internal/errors.js';
@@ -24,12 +24,18 @@ beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
-describe('api-client', () => {
-  beforeEach(() => {
-    mockGetJwt.mockResolvedValue(TEST_TOKEN);
-    vi.stubGlobal('__canup_url', BASE_URL);
-  });
+const test = baseTest.extend<{ _setup: void }>({
+  _setup: [
+    async ({}, use) => {
+      mockGetJwt.mockResolvedValue(TEST_TOKEN);
+      vi.stubGlobal('__canup_url', BASE_URL);
+      await use();
+    },
+    { auto: true },
+  ],
+});
 
+describe('api-client', () => {
   const getModule = async () => import('../internal/api-client.js');
 
   describe('runAction', () => {
