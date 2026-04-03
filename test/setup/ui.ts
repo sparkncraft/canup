@@ -2,6 +2,10 @@
 // Initializes Canva SDK test environment and registers shared mocks.
 
 import { vi } from 'vitest';
+import { createElement, type ReactElement } from 'react';
+import { render } from '@testing-library/react';
+import { TestAppI18nProvider } from '@canva/app-i18n-kit';
+import { TestAppUiProvider } from '@canva/app-ui-kit';
 import { initTestEnvironment as initUser } from '@canva/user/test';
 import { initTestEnvironment as initPlatform } from '@canva/platform/test';
 
@@ -16,3 +20,14 @@ initPlatform();
 vi.mock('@canva/user', () => ({
   auth: { getCanvaUserToken: vi.fn() },
 }));
+
+/** Render with full Canva provider stack: i18n + UI. */
+export function renderWithCanva(ui: ReactElement) {
+  return render(
+    createElement(
+      TestAppI18nProvider,
+      null,
+      createElement(TestAppUiProvider, { enableAnimations: false }, ui),
+    ),
+  );
+}

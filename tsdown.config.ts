@@ -11,6 +11,7 @@ export default defineConfig([
       neverBundle: [
         'react',
         'react/jsx-runtime',
+        'react-intl',
         '@canva/app-ui-kit',
         '@canva/platform',
         '@canva/user',

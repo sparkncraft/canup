@@ -46,6 +46,8 @@ function App() {
 
 `ActionButton` and `CreditCounter` share a reactive credit store. When a user clicks an `ActionButton` and consumes credits, every `CreditCounter` on the page updates automatically -- no prop drilling, no context providers, no state management boilerplate.
 
+`CreditCounter` is localized out of the box for all 18 Canva-supported languages. If your app uses [`AppI18nProvider`](https://www.canva.dev/docs/apps/localization/), credit text renders in the user's locale automatically. No configuration needed -- English is the default fallback.
+
 ## Hooks
 
 For full control, use the hooks directly:

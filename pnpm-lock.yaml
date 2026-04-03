@@ -33,6 +33,9 @@ importers:
       '@arethetypeswrong/cli':
         specifier: ^0.18.2
         version: 0.18.2
+      '@canva/app-i18n-kit':
+        specifier: ^1.2.0
+        version: 1.2.0(@formatjs/intl@3.1.8(typescript@5.9.3))(intl-messageformat@10.7.18)(react-dom@19.2.4(react@19.2.4))(react-intl@7.1.14(react@19.2.4)(typescript@5.9.3))(react@19.2.4)
       '@canva/app-ui-kit':
         specifier: ^5.7.0
         version: 5.7.0(@types/react@19.2.14)(mobx@6.15.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -96,6 +99,9 @@ importers:
       react:
         specifier: ^19.0.0
         version: 19.2.4
+      react-intl:
+        specifier: ^7.1.11
+        version: 7.1.14(react@19.2.4)(typescript@5.9.3)
       simple-git-hooks:
         specifier: ^2.13.1
         version: 2.13.1
