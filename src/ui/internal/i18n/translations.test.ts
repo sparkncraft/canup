@@ -23,18 +23,13 @@ const EXPECTED_LOCALES = [
   'vi',
 ];
 
-const EXPECTED_MESSAGE_IDS = Object.values(creditCounterMessages).map(
-  (m) => m.id,
-);
+const EXPECTED_MESSAGE_IDS = Object.values(creditCounterMessages).map((m) => m.id);
 
 describe('translations', () => {
   test('all 18 non-English locales have translations', () => {
     for (const locale of EXPECTED_LOCALES) {
       const messages = getTranslations(locale);
-      expect(
-        Object.keys(messages).length,
-        `${locale} should have translations`,
-      ).toBeGreaterThan(0);
+      expect(Object.keys(messages).length, `${locale} should have translations`).toBeGreaterThan(0);
     }
   });
 
@@ -43,9 +38,7 @@ describe('translations', () => {
       const messages = getTranslations(locale);
       for (const id of EXPECTED_MESSAGE_IDS) {
         expect(messages[id], `${locale} missing ${id}`).toBeDefined();
-        expect(typeof messages[id], `${locale}/${id} should be string`).toBe(
-          'string',
-        );
+        expect(typeof messages[id], `${locale}/${id} should be string`).toBe('string');
       }
     }
   });

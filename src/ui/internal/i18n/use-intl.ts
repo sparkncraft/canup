@@ -12,8 +12,9 @@ const FALLBACK_CONTEXT = createContext<IntlShape | null>(null);
  */
 function getIntlContext(): Context<IntlShape | null> {
   if (typeof window !== 'undefined') {
-    const ctx = (window as unknown as Record<string, unknown>)
-      .__REACT_INTL_CONTEXT__ as Context<IntlShape | null> | undefined;
+    const ctx = (window as unknown as Record<string, unknown>).__REACT_INTL_CONTEXT__ as
+      | Context<IntlShape | null>
+      | undefined;
     if (ctx) return ctx;
   }
   return FALLBACK_CONTEXT;
@@ -27,16 +28,12 @@ const cache = createIntlCache();
  * Locale is auto-detected from the parent AppI18nProvider.
  * Falls back to English ('en') when no provider exists.
  */
-export function useSdkIntl(): IntlShape {
+export function useIntl(): IntlShape {
   const parentIntl = useContext(intlContext);
   const locale = parentIntl?.locale ?? 'en';
 
   return useMemo(
-    () =>
-      createIntl(
-        { locale, defaultLocale: 'en', messages: getTranslations(locale) },
-        cache,
-      ),
+    () => createIntl({ locale, defaultLocale: 'en', messages: getTranslations(locale) }, cache),
     [locale],
   );
 }

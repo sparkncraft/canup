@@ -23,8 +23,7 @@ export const creditCounterMessages = defineMessages({
   },
   usage: {
     id: 'canup.creditCounter.usage',
-    defaultMessage:
-      'Used {used} of {quota} {used, plural, one {credit} other {credits}}.',
+    defaultMessage: 'Used {used} of {quota} {used, plural, one {credit} other {credits}}.',
   },
   refreshInterval: {
     id: 'canup.creditCounter.refreshInterval',

@@ -2,16 +2,13 @@ import { describe, expect, vi } from 'vitest';
 import { test as baseTest } from 'vitest';
 import { render, cleanup, fireEvent } from '@testing-library/react';
 import React from 'react';
+import { IntlProvider } from 'react-intl';
 import { TestAppUiProvider } from '@canva/app-ui-kit';
 import { renderWithCanva } from '#test/setup/ui.js';
 import { CreditCounter } from '../components/CreditCounter.js';
 import { useCredits } from '../hooks/useCredits.js';
 import type { UseCreditsResult } from '../hooks/useCredits.js';
 import type { CreditBalance } from '../internal/types.js';
-
-vi.mock('@canva/platform', () => ({
-  requestOpenExternalUrl: vi.fn(),
-}));
 
 vi.mock('../hooks/useCredits.js', () => ({
   useCredits: vi.fn(),
@@ -62,32 +59,50 @@ describe('CreditCounter', () => {
     expect(container.innerHTML).not.toBe('');
   });
 
-  test('shows usage text with count when remaining > 0', () => {
+  test('shows usage text with used count', () => {
     const { container } = renderWithCanva(<CreditCounter action="my-action" />);
 
     const text = container.textContent;
-    expect(text).toContain('90 of 100');
+    expect(text).toContain('Used 10 of 100');
     expect(text).toContain('credits');
   });
 
-  test('shows "credits" (plural) when remaining !== 1', () => {
+  test('shows "credits" (plural) when used !== 1', () => {
     const { container } = renderWithCanva(<CreditCounter action="my-action" />);
     expect(container.textContent).toContain('credits');
   });
 
-  test('shows "credit" (singular) when remaining === 1', () => {
+  test('shows "credit" (singular) when used === 1', () => {
     mockUseCredits.mockReturnValue(
-      mockCreditsReturn({ data: { ...mockBalance, remaining: 1, used: 99 } }),
+      mockCreditsReturn({ data: { ...mockBalance, remaining: 99, used: 1 } }),
     );
 
     const { container } = renderWithCanva(<CreditCounter action="my-action" />);
-    expect(container.textContent).toContain('credit.');
+    expect(container.textContent).toContain('Used 1 of 100 credit.');
     expect(container.textContent).not.toContain('credits.');
   });
 
   test('shows "Credits refresh {interval}." for monthly', () => {
     const { container } = renderWithCanva(<CreditCounter action="my-action" />);
     expect(container.textContent).toContain('Credits refresh monthly.');
+  });
+
+  test('shows "Credits refresh daily." for daily interval', () => {
+    mockUseCredits.mockReturnValue(
+      mockCreditsReturn({ data: { ...mockBalance, interval: 'daily' } }),
+    );
+
+    const { container } = renderWithCanva(<CreditCounter action="my-action" />);
+    expect(container.textContent).toContain('Credits refresh daily.');
+  });
+
+  test('shows "Credits refresh weekly." for weekly interval', () => {
+    mockUseCredits.mockReturnValue(
+      mockCreditsReturn({ data: { ...mockBalance, interval: 'weekly' } }),
+    );
+
+    const { container } = renderWithCanva(<CreditCounter action="my-action" />);
+    expect(container.textContent).toContain('Credits refresh weekly.');
   });
 
   test('omits refresh text for lifetime interval', () => {
@@ -109,6 +124,7 @@ describe('CreditCounter', () => {
 
     const { container } = renderWithCanva(<CreditCounter action="my-action" />);
     expect(container.textContent).toContain("don't have enough credits left");
+    expect(container.textContent).toContain('Credits refresh');
   });
 
   test('renders nothing (null) when quota === null (free action)', () => {
@@ -246,7 +262,7 @@ describe('CreditCounter', () => {
     );
 
     const { container } = renderWithCanva(<CreditCounter action="my-action" />);
-    expect(container.textContent).toContain('90 of 100');
+    expect(container.textContent).toContain('10 of 100');
     expect(container.textContent).not.toContain('Credits refresh');
   });
 
@@ -263,7 +279,8 @@ describe('CreditCounter', () => {
   });
 
   test('calls requestOpenExternalUrl when link is clicked', async () => {
-    const { requestOpenExternalUrl } = await import('@canva/platform');
+    const platform = await import('@canva/platform');
+    using _spy = vi.spyOn(platform, 'requestOpenExternalUrl');
 
     const { container } = renderWithCanva(<CreditCounter action="my-action" />);
     const link = container.querySelector('a') as HTMLElement;
@@ -271,7 +288,7 @@ describe('CreditCounter', () => {
 
     fireEvent.click(link);
 
-    expect(requestOpenExternalUrl).toHaveBeenCalledWith({
+    expect(platform.requestOpenExternalUrl).toHaveBeenCalledWith({
       url: 'https://canup.link/subscribe/mock-jwt',
     });
   });
@@ -288,7 +305,33 @@ describe('CreditCounter', () => {
         <CreditCounter action="my-action" />
       </TestAppUiProvider>,
     );
-    expect(container.textContent).toContain('90 of 100');
+    expect(container.textContent).toContain('10 of 100');
     expect(container.textContent).toContain('credit');
+  });
+
+  test('renders Spanish translations when locale is es', () => {
+    const { container } = render(
+      <IntlProvider locale="es" messages={{}}>
+        <TestAppUiProvider enableAnimations={false}>
+          <CreditCounter action="my-action" />
+        </TestAppUiProvider>
+      </IntlProvider>,
+    );
+    expect(container.textContent).toContain('Has usado 10 de 100 créditos.');
+    expect(container.textContent).toContain('mensualmente');
+    expect(container.textContent).not.toContain('Used');
+  });
+
+  test('renders Japanese translations when locale is ja', () => {
+    const { container } = render(
+      <IntlProvider locale="ja" messages={{}}>
+        <TestAppUiProvider enableAnimations={false}>
+          <CreditCounter action="my-action" />
+        </TestAppUiProvider>
+      </IntlProvider>,
+    );
+    expect(container.textContent).toContain('10 / 100');
+    expect(container.textContent).toContain('クレジット');
+    expect(container.textContent).not.toContain('Used');
   });
 });

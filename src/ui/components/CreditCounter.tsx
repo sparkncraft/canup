@@ -3,8 +3,8 @@ import { Link, Rows, Text, TextPlaceholder } from '@canva/app-ui-kit';
 import { requestOpenExternalUrl } from '@canva/platform';
 import type { IntlShape } from 'react-intl';
 import { useCredits } from '../hooks/useCredits.js';
-import { useSdkIntl } from '../i18n/use-sdk-intl.js';
-import { creditCounterMessages } from '../i18n/messages.js';
+import { useIntl } from '../internal/i18n/use-intl.js';
+import { creditCounterMessages } from '../internal/i18n/messages.js';
 import type { CreditBalance } from '../internal/types.js';
 
 /**
@@ -38,7 +38,7 @@ export interface CreditCounterProps {
 
 export function CreditCounter({ action, footer, formatText }: CreditCounterProps) {
   const { data, loading, subscribeUrl } = useCredits(action);
-  const intl = useSdkIntl();
+  const intl = useIntl();
 
   const openUrl = useCallback(() => {
     void requestOpenExternalUrl({ url: subscribeUrl! });
@@ -111,7 +111,7 @@ export function CreditCounter({ action, footer, formatText }: CreditCounterProps
       <Rows spacing="0" align="center">
         <Text alignment="center" tone="secondary">
           {intl.formatMessage(creditCounterMessages.usage, {
-            used: data.remaining,
+            used: data.used,
             quota: data.quota,
           })}
           {showInterval
