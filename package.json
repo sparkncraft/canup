@@ -61,13 +61,18 @@
     "zod": "^3.24.2"
   },
   "peerDependencies": {
+    "@canva/app-i18n-kit": "^1.2.0",
     "@canva/app-ui-kit": ">=5.0.0 <7.0.0",
     "@canva/platform": "*",
     "@canva/user": "*",
-    "react": ">=18"
+    "react": ">=18",
+    "react-intl": ">=6.6.8 <=7.1.11"
   },
   "peerDependenciesMeta": {
     "react": {
+      "optional": true
+    },
+    "@canva/app-i18n-kit": {
       "optional": true
     },
     "@canva/app-ui-kit": {
@@ -77,6 +82,9 @@
       "optional": true
     },
     "@canva/user": {
+      "optional": true
+    },
+    "react-intl": {
       "optional": true
     }
   },
@@ -109,6 +117,8 @@
     "simple-git-hooks": "^2.13.1",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.58.0",
-    "vitest": "^4.1.0"
+    "vitest": "^4.1.0",
+    "@canva/app-i18n-kit": "^1.2.0",
+    "react-intl": "^7.1.11"
   }
 }
