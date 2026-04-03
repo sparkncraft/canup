@@ -1,14 +1,11 @@
 import { type ReactNode, useCallback } from 'react';
 import { Link, Rows, Text, TextPlaceholder } from '@canva/app-ui-kit';
 import { requestOpenExternalUrl } from '@canva/platform';
+import type { IntlShape } from 'react-intl';
 import { useCredits } from '../hooks/useCredits.js';
+import { useSdkIntl } from '../i18n/use-sdk-intl.js';
+import { creditCounterMessages } from '../i18n/messages.js';
 import type { CreditBalance } from '../internal/types.js';
-
-const INTERVAL_TEXT: Record<string, string> = {
-  daily: 'daily',
-  weekly: 'weekly',
-  monthly: 'monthly',
-};
 
 /**
  * Format a resetAt ISO string to a human-readable date.
@@ -24,11 +21,11 @@ function formatResetDate(resetAt: string | null): string | null {
 /**
  * Email line component, extracted for reuse across all CreditCounter layouts.
  */
-function EmailLine({ email }: { email: string | null }) {
+function EmailLine({ email, intl }: { email: string | null; intl: IntlShape }) {
   if (!email) return null;
   return (
     <Text alignment="center" size="xsmall" tone="tertiary">
-      You&apos;re logged in as {email}.
+      {intl.formatMessage(creditCounterMessages.loggedInAs, { email })}
     </Text>
   );
 }
@@ -41,6 +38,7 @@ export interface CreditCounterProps {
 
 export function CreditCounter({ action, footer, formatText }: CreditCounterProps) {
   const { data, loading, subscribeUrl } = useCredits(action);
+  const intl = useSdkIntl();
 
   const openUrl = useCallback(() => {
     void requestOpenExternalUrl({ url: subscribeUrl! });
@@ -62,7 +60,9 @@ export function CreditCounter({ action, footer, formatText }: CreditCounterProps
     return null;
   }
 
-  const linkText = data.subscribed ? 'Manage subscription' : 'Upgrade for more credits';
+  const linkText = data.subscribed
+    ? intl.formatMessage(creditCounterMessages.manageSubscription)
+    : intl.formatMessage(creditCounterMessages.upgradeForMore);
   const billingLink = subscribeUrl ? (
     <>
       {' '}
@@ -79,7 +79,7 @@ export function CreditCounter({ action, footer, formatText }: CreditCounterProps
           {formatText(data)}
         </Rows>
         {footer}
-        <EmailLine email={data.email} />
+        <EmailLine email={data.email} intl={intl} />
       </Rows>
     );
   }
@@ -91,35 +91,37 @@ export function CreditCounter({ action, footer, formatText }: CreditCounterProps
       <Rows spacing="1u" align="center">
         <Rows spacing="0" align="center">
           <Text alignment="center" tone="secondary">
-            You don&apos;t have enough credits left.
-            {resetDate ? ` Credits refresh ${resetDate}.` : ''}
+            {intl.formatMessage(creditCounterMessages.exhausted)}
+            {resetDate
+              ? ` ${intl.formatMessage(creditCounterMessages.exhaustedRefresh, { resetDate })}`
+              : ''}
             {billingLink}
           </Text>
         </Rows>
         {footer}
-        <EmailLine email={data.email} />
+        <EmailLine email={data.email} intl={intl} />
       </Rows>
     );
   }
 
-  const intervalText = data.interval ? INTERVAL_TEXT[data.interval] : null;
-  const creditWord = data.remaining === 1 ? 'credit' : 'credits';
+  const showInterval = data.interval && data.interval !== 'lifetime';
 
   return (
     <Rows spacing="1u" align="center">
       <Rows spacing="0" align="center">
         <Text alignment="center" tone="secondary">
-          Use{' '}
-          <strong>
-            {data.remaining} of {data.quota}
-          </strong>{' '}
-          {creditWord}.
-          {intervalText && data.interval !== 'lifetime' ? ` Credits refresh ${intervalText}.` : ''}
+          {intl.formatMessage(creditCounterMessages.usage, {
+            used: data.remaining,
+            quota: data.quota,
+          })}
+          {showInterval
+            ? ` ${intl.formatMessage(creditCounterMessages.refreshInterval, { interval: data.interval })}`
+            : ''}
           {billingLink}
         </Text>
       </Rows>
       {footer}
-      <EmailLine email={data.email} />
+      <EmailLine email={data.email} intl={intl} />
     </Rows>
   );
 }

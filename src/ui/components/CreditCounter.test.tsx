@@ -3,6 +3,7 @@ import { test as baseTest } from 'vitest';
 import { render, cleanup, fireEvent } from '@testing-library/react';
 import React from 'react';
 import { TestAppUiProvider } from '@canva/app-ui-kit';
+import { renderWithCanva } from '#test/setup/ui.js';
 import { CreditCounter } from '../components/CreditCounter.js';
 import { useCredits } from '../hooks/useCredits.js';
 import type { UseCreditsResult } from '../hooks/useCredits.js';
@@ -42,10 +43,6 @@ function mockCreditsReturn(overrides: Partial<UseCreditsResult> = {}): UseCredit
   };
 }
 
-function renderWithCanva(ui: React.ReactElement) {
-  return render(<TestAppUiProvider enableAnimations={false}>{ui}</TestAppUiProvider>);
-}
-
 const test = baseTest.extend('_rtl', [
   async ({}, use) => {
     mockUseCredits.mockReturnValue(mockCreditsReturn());
@@ -65,16 +62,12 @@ describe('CreditCounter', () => {
     expect(container.innerHTML).not.toBe('');
   });
 
-  test('shows "Use X of Y credits" with bold count when remaining > 0', () => {
+  test('shows usage text with count when remaining > 0', () => {
     const { container } = renderWithCanva(<CreditCounter action="my-action" />);
 
     const text = container.textContent;
     expect(text).toContain('90 of 100');
     expect(text).toContain('credits');
-
-    const strong = container.querySelector('strong');
-    expect(strong).toBeTruthy();
-    expect(strong!.textContent).toContain('90 of 100');
   });
 
   test('shows "credits" (plural) when remaining !== 1', () => {
@@ -287,5 +280,15 @@ describe('CreditCounter', () => {
     mockUseCredits.mockReturnValue(mockCreditsReturn({ data: null, loading: false }));
     const { container } = renderWithCanva(<CreditCounter action="my-action" />);
     expect(container.innerHTML).toBe('');
+  });
+
+  test('renders English text when no AppI18nProvider is in the tree', () => {
+    const { container } = render(
+      <TestAppUiProvider enableAnimations={false}>
+        <CreditCounter action="my-action" />
+      </TestAppUiProvider>,
+    );
+    expect(container.textContent).toContain('90 of 100');
+    expect(container.textContent).toContain('credit');
   });
 });

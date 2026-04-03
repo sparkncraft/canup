@@ -2,7 +2,7 @@
   {
     "name": "UI entry (full import)",
     "path": "dist/ui/index.js",
-    "limit": "15 kB",
+    "limit": "17 kB",
     "gzip": true,
     "ignore": [
       "react",
