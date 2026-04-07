@@ -1,4 +1,4 @@
-# canup
+# CanUp
 
 Managed backend for Canva Apps. Deploy serverless actions, manage credits, and drop in React components -- all from one package.
 
