@@ -19,7 +19,7 @@ export function requireProject(): {
   const project = loadProjectConfig();
 
   if (!project) {
-    error('No Canup project found.');
+    error('No CanUp project found.');
     hint('Run `canup init` to link this directory to a Canva App.');
     process.exit(1);
   }

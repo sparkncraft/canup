@@ -1,5 +1,5 @@
 /**
- * HTTP client for the Canup API.
+ * HTTP client for the CanUp API.
  *
  * Uses native fetch (Node.js 18+). Handles structured API response envelopes.
  * All methods for action/secret management take appId and use app-scoped URLs.
@@ -591,7 +591,7 @@ export class CanupClient {
   // ──────────────────────────────────────────────
 
   /**
-   * Make an authenticated request to the Canup API.
+   * Make an authenticated request to the CanUp API.
    */
   private async request<T>(path: string, options?: RequestInit): Promise<T> {
     const url = `${this.apiUrl}${path}`;

@@ -22,7 +22,7 @@ const program = new Command();
 
 program
   .name('canup')
-  .description('Canup CLI - Deploy and manage actions for Canva Apps')
+  .description('CanUp CLI - Deploy and manage actions for Canva Apps')
   .version(pkg.version ?? '0.0.0')
   .option('--cwd <path>', 'Run as if canup was started in <path>')
   .hook('preAction', () => {

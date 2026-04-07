@@ -18,7 +18,7 @@ describe('requireProject', () => {
     mockLoadProjectConfig.mockReturnValue(null);
 
     expect(() => requireProject()).toThrow('process.exit');
-    expect(mockError).toHaveBeenCalledWith(expect.stringContaining('No Canup project'));
+    expect(mockError).toHaveBeenCalledWith(expect.stringContaining('No CanUp project'));
     expect(exitSpy).toHaveBeenCalledWith(1);
   });
 

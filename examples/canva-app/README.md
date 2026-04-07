@@ -24,7 +24,7 @@ A reference Canva app that demonstrates canup components in a realistic project 
    cp .env.template .env
    ```
 
-3. Initialize the Canup project (auto-detects `CANVA_APP_ID` from `.env`):
+3. Initialize the CanUp project (auto-detects `CANVA_APP_ID` from `.env`):
 
    ```bash
    canup init
@@ -51,7 +51,7 @@ A reference Canva app that demonstrates canup components in a realistic project 
 | ----------------------------------- | ---------------------------------------------------- |
 | `src/intents/design_editor/app.tsx` | Main app UI with ActionButton and CreditCounter      |
 | `canup/actions/generate-text.js`    | Server-side action handler (replace with your logic) |
-| `canup/canup.json`                  | Canup project configuration                          |
+| `canup/canup.json`                  | CanUp project configuration                          |
 
 ### Core integration
 
