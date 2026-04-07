@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+
 import type { PackageJson } from 'type-fest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
