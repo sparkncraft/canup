@@ -14,7 +14,7 @@ import { performLogin } from '../auth/perform-login.js';
 export function registerLoginCommand(program: Command): void {
   program
     .command('login')
-    .description('Log in to Canup via GitHub')
+    .description('Log in to CanUp via GitHub')
     .action(async () => {
       try {
         await performLogin();

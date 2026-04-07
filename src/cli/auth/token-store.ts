@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { homedir } from 'node:os';
 
 /**
- * Path to the Canup credentials directory (~/.canup/)
+ * Path to the CanUp credentials directory (~/.canup/)
  */
 function getCanupDir(): string {
   return join(homedir(), '.canup');

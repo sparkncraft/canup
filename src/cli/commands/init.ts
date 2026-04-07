@@ -43,7 +43,7 @@ function detectCanvaAppId(): string | null {
 export function registerInitCommand(program: Command): void {
   program
     .command('init')
-    .description('Initialize a Canup project in this directory')
+    .description('Initialize a CanUp project in this directory')
     .option('--app-id <id>', 'Canva App ID (skip interactive prompt)')
     .action(async (opts: { appId?: string }) => {
       try {

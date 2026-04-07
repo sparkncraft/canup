@@ -97,7 +97,7 @@ export function registerStatusCommand(program: Command): void {
 
         // Header
         console.log();
-        console.log(`  ${appInfo.name ?? 'Canup App'} (${appInfo.canvaAppId})`);
+        console.log(`  ${appInfo.name ?? 'CanUp App'} (${appInfo.canvaAppId})`);
         console.log();
 
         // Actions section

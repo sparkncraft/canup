@@ -10,7 +10,7 @@ import { success } from '../ui/output.js';
 export function registerLogoutCommand(program: Command): void {
   program
     .command('logout')
-    .description('Log out of Canup (clear stored session)')
+    .description('Log out of CanUp (clear stored session)')
     .action(() => {
       clearToken();
       success('Logged out.');
