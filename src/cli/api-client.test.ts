@@ -235,13 +235,13 @@ describe('CanupClient', () => {
   // ──── getAuthUrl ────
 
   describe('getAuthUrl', () => {
-    test('sends GET to /oauth/github with redirect_uri query param', async () => {
+    test('sends GET to /v1/oauth/github with redirect_uri query param', async () => {
       mockFetch.mockResolvedValueOnce(okResponse({ url: 'https://github.com/login/oauth' }));
       const client = createClient();
       const result = await client.getAuthUrl('http://localhost:3000/callback');
 
       expect(fetchUrl()).toBe(
-        'https://test.api/oauth/github?redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fcallback',
+        'https://test.api/v1/oauth/github?redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fcallback',
       );
       expect(result).toEqual({ url: 'https://github.com/login/oauth' });
     });

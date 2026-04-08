@@ -155,7 +155,7 @@ export class CanupClient {
    */
   async getAuthUrl(redirectUri: string): Promise<{ url: string }> {
     const params = new URLSearchParams({ redirect_uri: redirectUri });
-    return this.request<{ url: string }>(`/oauth/github?${params.toString()}`);
+    return this.request<{ url: string }>(`/v1/oauth/github?${params.toString()}`);
   }
 
   /**
