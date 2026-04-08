@@ -3,6 +3,8 @@ import { CanupClient, formatBytes } from '../../api-client.js';
 import { requireProject } from '../../config/require-project.js';
 import { error, info, label, formatTable } from '../../ui/output.js';
 
+const MAX_LAYER_SIZE_DISPLAY = '250MB';
+
 export function registerDepsListAction(depsCommand: Command): void {
   depsCommand
     .command('list')
@@ -33,7 +35,7 @@ export function registerDepsListAction(depsCommand: Command): void {
       console.log(table);
 
       if (result.layerSize != null) {
-        label('Layer', `${formatBytes(result.layerSize)} / 250MB`);
+        label('Layer', `${formatBytes(result.layerSize)} / ${MAX_LAYER_SIZE_DISPLAY}`);
       }
     });
 }

@@ -16,6 +16,8 @@ import {
 } from '../config/project-config.js';
 import { success, error, hint, info, label } from '../ui/output.js';
 
+const API_KEY_SOURCE = 'canup-cli';
+
 /**
  * Detect CANVA_APP_ID from a .env file in the current directory.
  *
@@ -129,7 +131,7 @@ export function registerInitCommand(program: Command): void {
         }
 
         // d. Create API key
-        const { key: fullKey, prefix } = await client.createApiKey(appId, 'canup-cli');
+        const { key: fullKey, prefix } = await client.createApiKey(appId, API_KEY_SOURCE);
 
         // e. Store API key
         saveApiKey(appId, fullKey);

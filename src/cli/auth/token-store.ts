@@ -2,18 +2,24 @@ import { readFileSync, writeFileSync, mkdirSync, unlinkSync, existsSync } from '
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 
+const CONFIG_HOME_DIR = '.canup';
+const CREDENTIALS_FILE = 'credentials';
+const KEYS_DIR = 'keys';
+const DIR_PERMISSION = 0o700;
+const FILE_PERMISSION = 0o600;
+
 /**
  * Path to the CanUp credentials directory (~/.canup/)
  */
 function getCanupDir(): string {
-  return join(homedir(), '.canup');
+  return join(homedir(), CONFIG_HOME_DIR);
 }
 
 /**
  * Path to the credentials file (~/.canup/credentials)
  */
 function getCredentialsPath(): string {
-  return join(getCanupDir(), 'credentials');
+  return join(getCanupDir(), CREDENTIALS_FILE);
 }
 
 /**
@@ -27,11 +33,11 @@ export function saveToken(token: string): void {
   const filePath = getCredentialsPath();
 
   // Create directory with restrictive permissions
-  mkdirSync(dir, { recursive: true, mode: 0o700 });
+  mkdirSync(dir, { recursive: true, mode: DIR_PERMISSION });
 
   // Write credentials with restrictive permissions
   const data = JSON.stringify({ token, savedAt: new Date().toISOString() }, null, 2);
-  writeFileSync(filePath, data, { mode: 0o600 });
+  writeFileSync(filePath, data, { mode: FILE_PERMISSION });
 }
 
 /**
@@ -74,7 +80,7 @@ export function clearToken(): void {
  * Path to the API keys directory (~/.canup/keys/)
  */
 function getKeysDir(): string {
-  return join(getCanupDir(), 'keys');
+  return join(getCanupDir(), KEYS_DIR);
 }
 
 /**
@@ -85,11 +91,11 @@ function getKeysDir(): string {
  */
 export function saveApiKey(appId: string, apiKey: string): void {
   const dir = getKeysDir();
-  mkdirSync(dir, { recursive: true, mode: 0o700 });
+  mkdirSync(dir, { recursive: true, mode: DIR_PERMISSION });
 
   const filePath = join(dir, appId);
   const data = JSON.stringify({ apiKey, savedAt: new Date().toISOString() }, null, 2);
-  writeFileSync(filePath, data, { mode: 0o600 });
+  writeFileSync(filePath, data, { mode: FILE_PERMISSION });
 }
 
 /**
