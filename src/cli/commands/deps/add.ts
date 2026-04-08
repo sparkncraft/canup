@@ -4,6 +4,9 @@ import { requireProject } from '../../config/require-project.js';
 import { success, error, info, label } from '../../ui/output.js';
 import { createSpinner } from '../../ui/spinner.js';
 
+const BUILD_POLL_INTERVAL_MS = 2000;
+const MAX_LAYER_SIZE_DISPLAY = '250MB';
+
 export function registerDepsAddAction(depsCommand: Command): void {
   depsCommand
     .command('add <packages...>')
@@ -31,7 +34,7 @@ export function registerDepsAddAction(depsCommand: Command): void {
             label('Package', `${pkg.name}${pkg.version ? `@${pkg.version}` : ''}`);
           }
           if (result.layerSize != null) {
-            label('Layer', `${formatBytes(result.layerSize)} / 250MB`);
+            label('Layer', `${formatBytes(result.layerSize)} / ${MAX_LAYER_SIZE_DISPLAY}`);
           }
           return;
         }
@@ -41,13 +44,13 @@ export function registerDepsAddAction(depsCommand: Command): void {
           const startTime = Date.now();
 
           while (true) {
-            await new Promise((resolve) => setTimeout(resolve, 2000));
+            await new Promise((resolve) => setTimeout(resolve, BUILD_POLL_INTERVAL_MS));
 
             const build = await client.getBuildStatus(config.appId, language, result.buildId);
 
             if (build.status === 'success') {
               const sizeLabel = build.sizeBytes != null ? formatBytes(build.sizeBytes) : '?';
-              spin.succeed(`Layer built (${sizeLabel} / 250MB)`);
+              spin.succeed(`Layer built (${sizeLabel} / ${MAX_LAYER_SIZE_DISPLAY})`);
               for (const pkg of result.packages) {
                 label('Package', `${pkg.name}${pkg.version ? `@${pkg.version}` : ''}`);
               }

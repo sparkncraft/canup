@@ -6,6 +6,8 @@
  * The API returns camelCase natively -- no client-side mapping needed.
  */
 
+import { DEFAULT_API_URL } from '../constants.js';
+
 export interface UserInfo {
   id: string;
   email: string;
@@ -145,7 +147,7 @@ export class CanupClient {
   private token?: string;
 
   constructor(options?: { apiUrl?: string; token?: string }) {
-    this.apiUrl = options?.apiUrl ?? process.env.CANUP_API_URL ?? 'https://canup.link';
+    this.apiUrl = options?.apiUrl ?? process.env.CANUP_API_URL ?? DEFAULT_API_URL;
     this.token = options?.token;
   }
 

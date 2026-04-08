@@ -6,10 +6,13 @@ import { requireProject } from '../../config/require-project.js';
 import { getActionsDir } from '../../config/project-config.js';
 import { success, error, hint, label } from '../../ui/output.js';
 
+const ACTION_SLUG_MIN_LENGTH = 2;
+const ACTION_SLUG_MAX_LENGTH = 64;
+
 const actionSlugSchema = z
   .string()
-  .min(2, 'Action name must be at least 2 characters')
-  .max(64, 'Action name must be at most 64 characters')
+  .min(ACTION_SLUG_MIN_LENGTH, `Action name must be at least ${ACTION_SLUG_MIN_LENGTH} characters`)
+  .max(ACTION_SLUG_MAX_LENGTH, `Action name must be at most ${ACTION_SLUG_MAX_LENGTH} characters`)
   .regex(
     /^[a-z0-9][a-z0-9-]{0,62}[a-z0-9]$/,
     'Action name must contain only lowercase letters, numbers, and hyphens, and must start and end with a letter or number',

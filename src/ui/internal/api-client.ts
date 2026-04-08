@@ -1,9 +1,10 @@
 import { getJwt } from './jwt-cache.js';
 import { CanupError } from './errors.js';
 import type { CreditBalance, ActionResult, ApiResponse } from './types.js';
+import { DEFAULT_API_URL } from '../../constants.js';
 
 const getBaseUrl = (): string =>
-  ((globalThis as Record<string, unknown>).__canup_url as string) ?? 'https://canup.link';
+  ((globalThis as Record<string, unknown>).__canup_url as string) ?? DEFAULT_API_URL;
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const jwt = await getJwt();

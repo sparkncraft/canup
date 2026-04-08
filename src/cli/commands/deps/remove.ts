@@ -4,6 +4,9 @@ import { requireProject } from '../../config/require-project.js';
 import { success, error, info } from '../../ui/output.js';
 import { createSpinner } from '../../ui/spinner.js';
 
+const BUILD_POLL_INTERVAL_MS = 2000;
+const MAX_LAYER_SIZE_DISPLAY = '250MB';
+
 export function registerDepsRemoveAction(depsCommand: Command): void {
   depsCommand
     .command('remove <packages...>')
@@ -37,13 +40,13 @@ export function registerDepsRemoveAction(depsCommand: Command): void {
           const startTime = Date.now();
 
           while (true) {
-            await new Promise((resolve) => setTimeout(resolve, 2000));
+            await new Promise((resolve) => setTimeout(resolve, BUILD_POLL_INTERVAL_MS));
 
             const build = await client.getBuildStatus(config.appId, language, lastBuildId);
 
             if (build.status === 'success') {
               const sizeLabel = build.sizeBytes != null ? formatBytes(build.sizeBytes) : '?';
-              spin.succeed(`Layer rebuilt (${sizeLabel} / 250MB)`);
+              spin.succeed(`Layer rebuilt (${sizeLabel} / ${MAX_LAYER_SIZE_DISPLAY})`);
               return;
             }
 

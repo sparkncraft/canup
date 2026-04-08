@@ -32,8 +32,11 @@ type CallbackResult = TokenResult | TokenError;
  * - GET /callback?token=... -> resolves tokenPromise, serves success page
  * - GET /callback?error=... -> resolves with error result, serves error page
  *
- * Automatically times out after 120 seconds.
+ * Automatically times out after LOGIN_TIMEOUT_SECONDS.
  */
+const LOGIN_TIMEOUT_MS = 120_000;
+const LOGIN_TIMEOUT_SECONDS = LOGIN_TIMEOUT_MS / 1000;
+
 export function startCallbackServer(): Promise<CallbackServerResult> {
   return new Promise((resolveStart, rejectStart) => {
     let resolveResult: (result: CallbackResult) => void;
@@ -107,10 +110,10 @@ export function startCallbackServer(): Promise<CallbackServerResult> {
     const timeout = setTimeout(() => {
       resolveResult!({
         ok: false,
-        error: 'Login timed out. No callback received within 120 seconds.',
+        error: `Login timed out. No callback received within ${LOGIN_TIMEOUT_SECONDS} seconds.`,
       });
       server.close();
-    }, 120_000);
+    }, LOGIN_TIMEOUT_MS);
 
     // Clear timeout when result is resolved
     void resultPromise.then(() => {
