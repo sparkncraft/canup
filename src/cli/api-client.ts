@@ -6,7 +6,7 @@
  * The API returns camelCase natively -- no client-side mapping needed.
  */
 
-import { DEFAULT_API_URL } from '../constants.js';
+import { DEFAULT_API_URL, API_VERSION } from '../constants.js';
 
 export interface UserInfo {
   id: string;
@@ -157,7 +157,7 @@ export class CanupClient {
    */
   async getAuthUrl(redirectUri: string): Promise<{ url: string }> {
     const params = new URLSearchParams({ redirect_uri: redirectUri });
-    return this.request<{ url: string }>(`/v1/oauth/github?${params.toString()}`);
+    return this.request<{ url: string }>(`/${API_VERSION}/oauth/github?${params.toString()}`);
   }
 
   /**
@@ -165,7 +165,7 @@ export class CanupClient {
    * Requires a valid session token.
    */
   async getMe(): Promise<UserInfo> {
-    return this.request<UserInfo>('/v1/me');
+    return this.request<UserInfo>(`/${API_VERSION}/me`);
   }
 
   // ──────────────────────────────────────────────
@@ -180,7 +180,7 @@ export class CanupClient {
     canvaAppId: string,
     name?: string,
   ): Promise<{ id: string; canvaAppId: string; name: string }> {
-    return this.request<{ id: string; canvaAppId: string; name: string }>('/v1/apps', {
+    return this.request<{ id: string; canvaAppId: string; name: string }>(`/${API_VERSION}/apps`, {
       method: 'POST',
       body: JSON.stringify({ canvaAppId, name }),
     });
@@ -192,7 +192,7 @@ export class CanupClient {
    */
   async listApps(): Promise<{ id: string; canvaAppId: string; name: string; createdAt: string }[]> {
     return this.request<{ id: string; canvaAppId: string; name: string; createdAt: string }[]>(
-      '/v1/apps',
+      `/${API_VERSION}/apps`,
     );
   }
 
@@ -204,7 +204,7 @@ export class CanupClient {
     appId: string,
   ): Promise<{ id: string; canvaAppId: string; name: string; createdAt: string }> {
     return this.request<{ id: string; canvaAppId: string; name: string; createdAt: string }>(
-      `/v1/apps/${encodeURIComponent(appId)}`,
+      `/${API_VERSION}/apps/${encodeURIComponent(appId)}`,
     );
   }
 
@@ -214,7 +214,7 @@ export class CanupClient {
    */
   async createApiKey(appId: string, name?: string): Promise<{ key: string; prefix: string }> {
     return this.request<{ key: string; prefix: string }>(
-      `/v1/apps/${encodeURIComponent(appId)}/api-keys`,
+      `/${API_VERSION}/apps/${encodeURIComponent(appId)}/api-keys`,
       {
         method: 'POST',
         body: JSON.stringify({ name }),
@@ -249,7 +249,7 @@ export class CanupClient {
       lambdaReady: boolean;
       createdAt: string;
       updatedAt: string;
-    }>(`/v1/apps/${encodeURIComponent(appId)}/actions/${encodeURIComponent(slug)}`, {
+    }>(`/${API_VERSION}/apps/${encodeURIComponent(appId)}/actions/${encodeURIComponent(slug)}`, {
       method: 'PUT',
       body: JSON.stringify({ code, language }),
     });
@@ -269,7 +269,7 @@ export class CanupClient {
       updatedAt: string;
     }[]
   > {
-    return this.request(`/v1/apps/${encodeURIComponent(appId)}/actions`);
+    return this.request(`/${API_VERSION}/apps/${encodeURIComponent(appId)}/actions`);
   }
 
   /**
@@ -288,7 +288,7 @@ export class CanupClient {
       updatedAt: string;
     }[]
   > {
-    return this.request(`/v1/apps/${encodeURIComponent(appId)}/actions?include=script`);
+    return this.request(`/${API_VERSION}/apps/${encodeURIComponent(appId)}/actions?include=script`);
   }
 
   /**
@@ -296,7 +296,7 @@ export class CanupClient {
    */
   async deleteAction(appId: string, slug: string): Promise<{ deleted: string }> {
     return this.request<{ deleted: string }>(
-      `/v1/apps/${encodeURIComponent(appId)}/actions/${encodeURIComponent(slug)}`,
+      `/${API_VERSION}/apps/${encodeURIComponent(appId)}/actions/${encodeURIComponent(slug)}`,
       { method: 'DELETE' },
     );
   }
@@ -315,7 +315,7 @@ export class CanupClient {
     language: string,
     params: unknown,
   ): Promise<TestResult> {
-    const url = `${this.apiUrl}/v1/apps/${encodeURIComponent(appId)}/actions/${encodeURIComponent(slug)}/test`;
+    const url = `${this.apiUrl}/${API_VERSION}/apps/${encodeURIComponent(appId)}/actions/${encodeURIComponent(slug)}/test`;
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
@@ -359,7 +359,7 @@ export class CanupClient {
    * The generic request() would throw on ok:false, losing structured error info.
    */
   async runAction(appId: string, slug: string, params?: unknown): Promise<TestResult> {
-    const url = `${this.apiUrl}/v1/apps/${encodeURIComponent(appId)}/actions/${encodeURIComponent(slug)}/run`;
+    const url = `${this.apiUrl}/${API_VERSION}/apps/${encodeURIComponent(appId)}/actions/${encodeURIComponent(slug)}/run`;
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
@@ -422,8 +422,8 @@ export class CanupClient {
     const query = params.toString();
 
     const basePath = slug
-      ? `/v1/apps/${encodeURIComponent(appId)}/actions/${encodeURIComponent(slug)}/history`
-      : `/v1/apps/${encodeURIComponent(appId)}/history`;
+      ? `/${API_VERSION}/apps/${encodeURIComponent(appId)}/actions/${encodeURIComponent(slug)}/history`
+      : `/${API_VERSION}/apps/${encodeURIComponent(appId)}/history`;
 
     return this.request(`${basePath}${query ? `?${query}` : ''}`);
   }
@@ -447,7 +447,9 @@ export class CanupClient {
     executedAt: string;
     source: string;
   }> {
-    return this.request(`/v1/apps/${encodeURIComponent(appId)}/history/${encodeURIComponent(id)}`);
+    return this.request(
+      `/${API_VERSION}/apps/${encodeURIComponent(appId)}/history/${encodeURIComponent(id)}`,
+    );
   }
 
   // ──────────────────────────────────────────────
@@ -463,7 +465,7 @@ export class CanupClient {
     value: string,
   ): Promise<{ name: string; created: boolean; synced: boolean }> {
     return this.request<{ name: string; created: boolean; synced: boolean }>(
-      `/v1/apps/${encodeURIComponent(appId)}/secrets/${encodeURIComponent(name)}`,
+      `/${API_VERSION}/apps/${encodeURIComponent(appId)}/secrets/${encodeURIComponent(name)}`,
       {
         method: 'PUT',
         body: JSON.stringify({ value }),
@@ -478,7 +480,7 @@ export class CanupClient {
   async listSecrets(
     appId: string,
   ): Promise<{ name: string; maskedValue: string; updatedAt: string }[]> {
-    return this.request(`/v1/apps/${encodeURIComponent(appId)}/secrets`);
+    return this.request(`/${API_VERSION}/apps/${encodeURIComponent(appId)}/secrets`);
   }
 
   /**
@@ -486,7 +488,7 @@ export class CanupClient {
    */
   async deleteSecret(appId: string, name: string): Promise<{ deleted: string; synced: boolean }> {
     return this.request<{ deleted: string; synced: boolean }>(
-      `/v1/apps/${encodeURIComponent(appId)}/secrets/${encodeURIComponent(name)}`,
+      `/${API_VERSION}/apps/${encodeURIComponent(appId)}/secrets/${encodeURIComponent(name)}`,
       { method: 'DELETE' },
     );
   }
@@ -505,7 +507,7 @@ export class CanupClient {
     packages: { name: string; version?: string }[],
   ): Promise<AddDepsResult> {
     return this.request<AddDepsResult>(
-      `/v1/apps/${encodeURIComponent(appId)}/deps/${encodeURIComponent(language)}`,
+      `/${API_VERSION}/apps/${encodeURIComponent(appId)}/deps/${encodeURIComponent(language)}`,
       {
         method: 'POST',
         body: JSON.stringify({ packages }),
@@ -518,7 +520,7 @@ export class CanupClient {
    */
   async listDeps(appId: string, language: string): Promise<ListDepsResult> {
     return this.request<ListDepsResult>(
-      `/v1/apps/${encodeURIComponent(appId)}/deps/${encodeURIComponent(language)}`,
+      `/${API_VERSION}/apps/${encodeURIComponent(appId)}/deps/${encodeURIComponent(language)}`,
     );
   }
 
@@ -528,7 +530,7 @@ export class CanupClient {
    */
   async removeDep(appId: string, language: string, packageName: string): Promise<RemoveDepResult> {
     return this.request<RemoveDepResult>(
-      `/v1/apps/${encodeURIComponent(appId)}/deps/${encodeURIComponent(language)}/${encodeURIComponent(packageName)}`,
+      `/${API_VERSION}/apps/${encodeURIComponent(appId)}/deps/${encodeURIComponent(language)}/${encodeURIComponent(packageName)}`,
       { method: 'DELETE' },
     );
   }
@@ -538,7 +540,7 @@ export class CanupClient {
    */
   async clearDeps(appId: string, language: string): Promise<{ cleared: boolean }> {
     return this.request<{ cleared: boolean }>(
-      `/v1/apps/${encodeURIComponent(appId)}/deps/${encodeURIComponent(language)}`,
+      `/${API_VERSION}/apps/${encodeURIComponent(appId)}/deps/${encodeURIComponent(language)}`,
       { method: 'DELETE' },
     );
   }
@@ -548,7 +550,7 @@ export class CanupClient {
    */
   async getBuildStatus(appId: string, language: string, buildId: string): Promise<BuildStatus> {
     return this.request<BuildStatus>(
-      `/v1/apps/${encodeURIComponent(appId)}/deps/${encodeURIComponent(language)}/builds/${encodeURIComponent(buildId)}`,
+      `/${API_VERSION}/apps/${encodeURIComponent(appId)}/deps/${encodeURIComponent(language)}/builds/${encodeURIComponent(buildId)}`,
     );
   }
 
@@ -562,7 +564,7 @@ export class CanupClient {
    */
   async connectStripe(appId: string, apiKey: string): Promise<{ connected: boolean }> {
     return this.request<{ connected: boolean }>(
-      `/v1/apps/${encodeURIComponent(appId)}/stripe/api-key`,
+      `/${API_VERSION}/apps/${encodeURIComponent(appId)}/stripe/api-key`,
       { method: 'PUT', body: JSON.stringify({ apiKey }) },
     );
   }
@@ -575,7 +577,7 @@ export class CanupClient {
     maskedKey?: string;
     webhookUrl?: string;
   }> {
-    return this.request(`/v1/apps/${encodeURIComponent(appId)}/stripe`);
+    return this.request(`/${API_VERSION}/apps/${encodeURIComponent(appId)}/stripe`);
   }
 
   /**
@@ -583,9 +585,12 @@ export class CanupClient {
    * Removes webhook endpoint and clears stored key.
    */
   async disconnectStripe(appId: string): Promise<{ disconnected: boolean }> {
-    return this.request<{ disconnected: boolean }>(`/v1/apps/${encodeURIComponent(appId)}/stripe`, {
-      method: 'DELETE',
-    });
+    return this.request<{ disconnected: boolean }>(
+      `/${API_VERSION}/apps/${encodeURIComponent(appId)}/stripe`,
+      {
+        method: 'DELETE',
+      },
+    );
   }
 
   // ──────────────────────────────────────────────
