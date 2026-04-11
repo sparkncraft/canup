@@ -31,7 +31,7 @@ function errorResponse(type: string, message: string, status = 400) {
   };
 }
 
-/** For testAction/runAction which return raw TestResult (not unwrapped). */
+/** For testCode which returns raw TestResult (not unwrapped). */
 function rawResponse(body: unknown, httpOk = true, status = 200) {
   return { ok: httpOk, status, json: () => Promise.resolve(body) };
 }
@@ -437,16 +437,16 @@ describe('CanupClient', () => {
     });
   });
 
-  // ──── testAction (custom fetch handling) ────
+  // ──── testCode (custom fetch handling) ────
 
-  describe('testAction', () => {
-    test('sends POST to /v1/apps/:appId/actions/:slug/test with code, language, params', async () => {
+  describe('testCode', () => {
+    test('sends POST to /v1/apps/:appId/test with code, language, params', async () => {
       const testResult = { ok: true, data: { result: 42, durationMs: 100, printOutput: '' } };
       mockFetch.mockResolvedValueOnce(rawResponse(testResult));
       const client = createClient();
-      const result = await client.testAction('a1', 'greet', 'console.log(1)', 'nodejs', { x: 1 });
+      const result = await client.testCode('a1', 'console.log(1)', 'nodejs', { x: 1 });
 
-      expect(fetchUrl()).toBe('https://test.api/v1/apps/a1/actions/greet/test');
+      expect(fetchUrl()).toBe('https://test.api/v1/apps/a1/test');
       expect(fetchOpts().method).toBe('POST');
       expect(JSON.parse(fetchOpts().body as string)).toEqual({
         code: 'console.log(1)',
@@ -463,7 +463,7 @@ describe('CanupClient', () => {
       };
       mockFetch.mockResolvedValueOnce(rawResponse(testResult));
       const client = createClient();
-      const result = await client.testAction('a1', 'greet', 'code', 'nodejs', {});
+      const result = await client.testCode('a1', 'code', 'nodejs', {});
 
       expect(result).toEqual(testResult);
       expect(result).toHaveProperty('ok', true);
@@ -477,7 +477,7 @@ describe('CanupClient', () => {
       };
       mockFetch.mockResolvedValueOnce(rawResponse(testError));
       const client = createClient();
-      const result = await client.testAction('a1', 'greet', 'code', 'nodejs', {});
+      const result = await client.testCode('a1', 'code', 'nodejs', {});
 
       expect(result).toEqual(testError);
       expect(result).toHaveProperty('ok', false);
@@ -493,7 +493,7 @@ describe('CanupClient', () => {
       const client = createClient();
 
       const err: Error & { statusCode?: number; errorType?: string } = await client
-        .testAction('a1', 'greet', 'code', 'nodejs', {})
+        .testCode('a1', 'code', 'nodejs', {})
         .catch((e: unknown) => e as Error & { statusCode?: number; errorType?: string });
 
       expect(err).toBeInstanceOf(Error);
@@ -512,7 +512,7 @@ describe('CanupClient', () => {
       const client = createClient();
 
       const err: Error & { statusCode?: number; errorType?: string } = await client
-        .testAction('a1', 'greet', 'code', 'nodejs', {})
+        .testCode('a1', 'code', 'nodejs', {})
         .catch((e: unknown) => e as Error & { statusCode?: number; errorType?: string });
 
       expect(err.message).toBe('Internal Server Error');
@@ -525,7 +525,7 @@ describe('CanupClient', () => {
         rawResponse({ ok: true, data: { result: null, durationMs: 0, printOutput: '' } }),
       );
       const client = createClient();
-      await client.testAction('a1', 'greet', 'code', 'nodejs', {});
+      await client.testCode('a1', 'code', 'nodejs', {});
 
       expect(fetchOpts().headers.Authorization).toBe('Bearer test-token');
     });
@@ -535,105 +535,19 @@ describe('CanupClient', () => {
         rawResponse({ ok: true, data: { result: null, durationMs: 0, printOutput: '' } }),
       );
       const client = new CanupClient({ apiUrl: 'https://test.api' });
-      await client.testAction('a1', 'greet', 'code', 'nodejs', {});
+      await client.testCode('a1', 'code', 'nodejs', {});
 
       expect(fetchOpts().headers).not.toHaveProperty('Authorization');
     });
 
-    test('encodes appId and slug in URL', async () => {
+    test('encodes appId in URL', async () => {
       mockFetch.mockResolvedValueOnce(
         rawResponse({ ok: true, data: { result: null, durationMs: 0, printOutput: '' } }),
       );
       const client = createClient();
-      await client.testAction('a/1', 's/lug', 'code', 'nodejs', {});
+      await client.testCode('a/1', 'code', 'nodejs', {});
 
-      expect(fetchUrl()).toBe('https://test.api/v1/apps/a%2F1/actions/s%2Flug/test');
-    });
-  });
-
-  // ──── runAction (custom fetch handling) ────
-
-  describe('runAction', () => {
-    test('sends POST to /v1/apps/:appId/actions/:slug/run with params', async () => {
-      const runResult = { ok: true, data: { result: 'done', durationMs: 200, printOutput: '' } };
-      mockFetch.mockResolvedValueOnce(rawResponse(runResult));
-      const client = createClient();
-      const result = await client.runAction('a1', 'greet', { input: 'test' });
-
-      expect(fetchUrl()).toBe('https://test.api/v1/apps/a1/actions/greet/run');
-      expect(fetchOpts().method).toBe('POST');
-      expect(JSON.parse(fetchOpts().body as string)).toEqual({ params: { input: 'test' } });
-      expect(result).toEqual(runResult);
-    });
-
-    test('defaults params to empty object when not provided', async () => {
-      mockFetch.mockResolvedValueOnce(
-        rawResponse({ ok: true, data: { result: null, durationMs: 0, printOutput: '' } }),
-      );
-      const client = createClient();
-      await client.runAction('a1', 'greet');
-
-      expect(JSON.parse(fetchOpts().body as string)).toEqual({ params: {} });
-    });
-
-    test('returns raw TestError on script failure', async () => {
-      const runError = {
-        ok: false,
-        error: { type: 'RuntimeError', message: 'crash', durationMs: 5 },
-      };
-      mockFetch.mockResolvedValueOnce(rawResponse(runError));
-      const client = createClient();
-      const result = await client.runAction('a1', 'greet');
-
-      expect(result).toEqual(runError);
-      expect(result).toHaveProperty('ok', false);
-    });
-
-    test('throws on HTTP error with statusCode and errorType', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 404,
-        statusText: 'Not Found',
-        json: () =>
-          Promise.resolve({ error: { type: 'NotFoundError', message: 'Action not found' } }),
-      });
-      const client = createClient();
-
-      const err: Error & { statusCode?: number; errorType?: string } = await client
-        .runAction('a1', 'missing')
-        .catch((e: unknown) => e as Error & { statusCode?: number; errorType?: string });
-
-      expect(err.message).toBe('Action not found');
-      expect(err.statusCode).toBe(404);
-      expect(err.errorType).toBe('NotFoundError');
-    });
-
-    test('omits Authorization header when no token', async () => {
-      mockFetch.mockResolvedValueOnce(
-        rawResponse({ ok: true, data: { result: null, durationMs: 0, printOutput: '' } }),
-      );
-      const client = new CanupClient({ apiUrl: 'https://test.api' });
-      await client.runAction('a1', 'greet');
-
-      expect(fetchOpts().headers).not.toHaveProperty('Authorization');
-    });
-
-    test('falls back to statusText when response is not JSON', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 502,
-        statusText: 'Bad Gateway',
-        json: () => Promise.reject(new SyntaxError('Unexpected token')),
-      });
-      const client = createClient();
-
-      const err: Error & { statusCode?: number; errorType?: string } = await client
-        .runAction('a1', 'greet')
-        .catch((e: unknown) => e as Error & { statusCode?: number; errorType?: string });
-
-      expect(err.message).toBe('Bad Gateway');
-      expect(err.statusCode).toBe(502);
-      expect(err.errorType).toBe('HttpError');
+      expect(fetchUrl()).toBe('https://test.api/v1/apps/a%2F1/test');
     });
   });
 

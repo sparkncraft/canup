@@ -293,7 +293,7 @@ async function runLocalTest(
 /**
  * Run remote test via Lambda (--remote flag).
  *
- * Sends code to POST /v1/apps/:appId/actions/:slug/test for Lambda execution.
+ * Sends inline code to the app's test endpoint for Lambda execution.
  * Deployed code is never affected.
  */
 async function runRemoteTest(
@@ -314,7 +314,7 @@ async function runRemoteTest(
 
   const result = await withSpinner(
     `Testing ${slug} on Lambda...`,
-    () => client.testAction(appId, slug, code, apiLanguage, params),
+    () => client.testCode(appId, code, apiLanguage, params),
     'Test complete',
   );
 
@@ -439,10 +439,8 @@ export function registerActionsTestAction(actionsCommand: Command): void {
           }
 
           if (statusCode === 404) {
-            error('Action not found on server.');
-            hint(
-              'Deploy the action first with `canup actions deploy`, or use local mode (without --remote).',
-            );
+            error('App not found on server.');
+            hint('Check your project config or use local mode (without --remote).');
             process.exit(1);
           }
 

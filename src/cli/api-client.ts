@@ -302,20 +302,21 @@ export class CanupClient {
   }
 
   /**
-   * Test an action with inline code and params (no deploy required).
+   * Execute inline code against an app's Lambda runtime without deploying it.
    *
-   * Bypasses the generic request() helper because the test endpoint returns
-   * HTTP 200 for both success (ok:true) and script errors (ok:false).
-   * The generic request() would throw on ok:false, losing structured error info.
+   * Used by `canup actions test` (sends a local file) and `canup actions run`
+   * (fetches the deployed code first, then invokes it through the same endpoint).
+   * Bypasses the generic request() helper because this endpoint returns HTTP 200
+   * for both success (ok:true) and script errors (ok:false), and the generic
+   * helper would throw on ok:false and lose structured error info.
    */
-  async testAction(
+  async testCode(
     appId: string,
-    slug: string,
     code: string,
-    language: string,
+    language: 'python' | 'nodejs',
     params: unknown,
   ): Promise<TestResult> {
-    const url = `${this.apiUrl}/${API_VERSION}/apps/${encodeURIComponent(appId)}/actions/${encodeURIComponent(slug)}/test`;
+    const url = `${this.apiUrl}/${API_VERSION}/apps/${encodeURIComponent(appId)}/test`;
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
@@ -331,49 +332,6 @@ export class CanupClient {
 
     if (!res.ok) {
       // HTTP-level error (401, 404, 500, etc.)
-      let body: { error?: { type?: string; message?: string } } | undefined;
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Fetch .json() returns any
-        body = await res.json();
-      } catch {
-        // non-JSON error response
-      }
-      const error = new Error(body?.error?.message ?? res.statusText) as Error & {
-        statusCode: number;
-        errorType: string;
-      };
-      error.statusCode = res.status;
-      error.errorType = body?.error?.type ?? 'HttpError';
-      throw error;
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- generic JSON response
-    return await res.json();
-  }
-
-  /**
-   * Run a deployed action with optional params.
-   *
-   * Bypasses the generic request() helper because the run endpoint returns
-   * HTTP 200 for both success (ok:true) and script errors (ok:false).
-   * The generic request() would throw on ok:false, losing structured error info.
-   */
-  async runAction(appId: string, slug: string, params?: unknown): Promise<TestResult> {
-    const url = `${this.apiUrl}/${API_VERSION}/apps/${encodeURIComponent(appId)}/actions/${encodeURIComponent(slug)}/run`;
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-    if (this.token) {
-      headers.Authorization = `Bearer ${this.token}`;
-    }
-
-    const res = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ params: params ?? {} }),
-    });
-
-    if (!res.ok) {
       let body: { error?: { type?: string; message?: string } } | undefined;
       try {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Fetch .json() returns any

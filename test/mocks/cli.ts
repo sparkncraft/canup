@@ -20,8 +20,7 @@ export interface MockCanupClient {
   listActions: Mock;
   listActionsWithScript: Mock;
   deleteAction: Mock;
-  testAction: Mock;
-  runAction: Mock;
+  testCode: Mock;
   listHistory: Mock;
   getHistoryDetail: Mock;
   setSecret: Mock;
@@ -74,14 +73,7 @@ export function resetMockCanupClient(client: MockCanupClient): void {
   client.listActions.mockResolvedValue([]);
   client.listActionsWithScript.mockResolvedValue([]);
   client.deleteAction.mockResolvedValue({ deleted: 'test-action' });
-  client.testAction.mockResolvedValue({
-    ok: true,
-    data: { result: null, durationMs: 50, printOutput: '' },
-  });
-  client.runAction.mockResolvedValue({
-    ok: true,
-    data: { result: null, durationMs: 50, printOutput: '' },
-  });
+  client.testCode.mockResolvedValue({ result: null, durationMs: 0, printOutput: '' });
   client.listHistory.mockResolvedValue([]);
   client.getHistoryDetail.mockResolvedValue({
     id: 'exec-1',
@@ -166,12 +158,7 @@ export function createMockCanupClient(overrides?: Partial<MockCanupClient>): Moc
     listActions: vi.fn().mockResolvedValue([]),
     listActionsWithScript: vi.fn().mockResolvedValue([]),
     deleteAction: vi.fn().mockResolvedValue({ deleted: 'test-action' }),
-    testAction: vi
-      .fn()
-      .mockResolvedValue({ ok: true, data: { result: null, durationMs: 50, printOutput: '' } }),
-    runAction: vi
-      .fn()
-      .mockResolvedValue({ ok: true, data: { result: null, durationMs: 50, printOutput: '' } }),
+    testCode: vi.fn().mockResolvedValue({ result: null, durationMs: 0, printOutput: '' }),
 
     // History
     listHistory: vi.fn().mockResolvedValue([]),
