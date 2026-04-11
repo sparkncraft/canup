@@ -89,9 +89,32 @@ export function registerActionsRunAction(actionsCommand: Command): void {
         const client = new CanupClient({ token: apiKey });
         const params = parseParams(opts.params);
 
+        // Fetch the deployed action's code, then invoke it through the app's
+        // test endpoint. Actions without deployed code (e.g. track-only) have
+        // a null script and cannot be executed from the CLI.
+        const actions = await client.listActionsWithScript(config.appId);
+        const action = actions.find((a) => a.slug === name);
+
+        if (!action) {
+          error(`Action not found: ${name}`);
+          hint('Deploy the action first with `canup actions deploy`.');
+          process.exit(1);
+          return;
+        }
+
+        if (action.script === null || action.language === null) {
+          error(`Action '${name}' has no deployed code to run.`);
+          hint('Deploy code for this action with `canup actions deploy`.');
+          process.exit(1);
+          return;
+        }
+
+        const code = action.script;
+        const language = action.language === 'python' ? 'python' : 'nodejs';
+
         const result = await withSpinner(
           `Running ${name}...`,
-          () => client.runAction(config.appId, name, params),
+          () => client.testCode(config.appId, code, language, params),
           'Run complete',
         );
 

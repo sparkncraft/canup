@@ -105,7 +105,7 @@ describe('actions test command', () => {
     }) => {
       mockExistsSync.mockReturnValue(true);
 
-      client.testAction.mockResolvedValue({
+      client.testCode.mockResolvedValue({
         ok: true,
         data: { result: { answer: 42 }, durationMs: 120, printOutput: '' },
       });
@@ -114,9 +114,8 @@ describe('actions test command', () => {
 
       await runTest('my-script.py', '--remote');
 
-      expect(client.testAction).toHaveBeenCalledWith(
+      expect(client.testCode).toHaveBeenCalledWith(
         'test-app-id',
-        'my-script',
         'def handler(p, c): return {"answer": 42}',
         'python',
         {},
@@ -127,7 +126,7 @@ describe('actions test command', () => {
     test('sends JSON params when --params is provided', async ({ client, processMocks }) => {
       mockExistsSync.mockReturnValue(true);
 
-      client.testAction.mockResolvedValue({
+      client.testCode.mockResolvedValue({
         ok: true,
         data: { result: null, durationMs: 50, printOutput: '' },
       });
@@ -136,9 +135,8 @@ describe('actions test command', () => {
 
       await runTest('my-script.py', '--remote', '--params', '{"key":"val"}');
 
-      expect(client.testAction).toHaveBeenCalledWith(
+      expect(client.testCode).toHaveBeenCalledWith(
         'test-app-id',
-        'my-script',
         'def handler(p, c): pass',
         'python',
         { key: 'val' },
@@ -152,7 +150,7 @@ describe('actions test command', () => {
     }) => {
       mockExistsSync.mockReturnValue(true);
 
-      client.testAction.mockResolvedValue({
+      client.testCode.mockResolvedValue({
         ok: false,
         error: {
           type: 'TypeError',
@@ -179,7 +177,7 @@ describe('actions test command', () => {
     }) => {
       mockExistsSync.mockReturnValue(true);
 
-      client.testAction.mockResolvedValue({
+      client.testCode.mockResolvedValue({
         ok: true,
         data: { result: 'ok', durationMs: 30, printOutput: '' },
       });
@@ -188,9 +186,8 @@ describe('actions test command', () => {
 
       await runTest('handler.ts', '--remote');
 
-      expect(client.testAction).toHaveBeenCalledWith(
+      expect(client.testCode).toHaveBeenCalledWith(
         'test-app-id',
-        'handler',
         expect.any(String),
         'nodejs',
         {},
@@ -211,7 +208,7 @@ describe('actions test command', () => {
         language: 'python',
       });
 
-      client.testAction.mockResolvedValue({
+      client.testCode.mockResolvedValue({
         ok: true,
         data: { result: null, durationMs: 10, printOutput: '' },
       });
@@ -224,9 +221,8 @@ describe('actions test command', () => {
         '/project/canup/actions',
         'my-action',
       );
-      expect(client.testAction).toHaveBeenCalledWith(
+      expect(client.testCode).toHaveBeenCalledWith(
         'test-app-id',
-        'my-action',
         'def handler(p, c): pass',
         'python',
         {},
@@ -235,7 +231,7 @@ describe('actions test command', () => {
 
     test('displays print output for successful remote test', async ({ client, processMocks }) => {
       mockExistsSync.mockReturnValue(true);
-      client.testAction.mockResolvedValue({
+      client.testCode.mockResolvedValue({
         ok: true,
         data: { result: null, durationMs: 50, printOutput: 'debug log' },
       });
@@ -421,13 +417,13 @@ describe('actions test command', () => {
 
       const apiError = new Error('Not found') as Error & { statusCode: number };
       apiError.statusCode = 404;
-      client.testAction.mockRejectedValue(apiError);
+      client.testCode.mockRejectedValue(apiError);
 
       mockReadFileSync.mockReturnValue('code');
 
       await runTest('my-script.py', '--remote');
 
-      expect(output.error).toHaveBeenCalledWith('Action not found on server.');
+      expect(output.error).toHaveBeenCalledWith('App not found on server.');
       expect(processMocks.exit).toHaveBeenCalledWith(1);
     });
 
@@ -436,7 +432,7 @@ describe('actions test command', () => {
 
       const apiError = new Error('Unauthorized') as Error & { statusCode: number };
       apiError.statusCode = 401;
-      client.testAction.mockRejectedValue(apiError);
+      client.testCode.mockRejectedValue(apiError);
 
       mockReadFileSync.mockReturnValue('code');
 
@@ -485,7 +481,7 @@ describe('actions test command', () => {
     }) => {
       mockExistsSync.mockReturnValue(true);
 
-      client.testAction.mockResolvedValue({
+      client.testCode.mockResolvedValue({
         ok: true,
         data: { result: null, durationMs: 10, printOutput: '' },
       });
@@ -494,9 +490,8 @@ describe('actions test command', () => {
 
       await runTest('handler.js', '--remote');
 
-      expect(client.testAction).toHaveBeenCalledWith(
+      expect(client.testCode).toHaveBeenCalledWith(
         'test-app-id',
-        'handler',
         expect.any(String),
         'nodejs',
         {},
@@ -589,7 +584,7 @@ describe('actions test command', () => {
     test('formats millisecond duration for successful result', async ({ client, processMocks }) => {
       mockExistsSync.mockReturnValue(true);
 
-      client.testAction.mockResolvedValue({
+      client.testCode.mockResolvedValue({
         ok: true,
         data: { result: 'value', durationMs: 500, printOutput: '' },
       });
@@ -604,7 +599,7 @@ describe('actions test command', () => {
     test('formats second duration for result over 1000ms', async ({ client, processMocks }) => {
       mockExistsSync.mockReturnValue(true);
 
-      client.testAction.mockResolvedValue({
+      client.testCode.mockResolvedValue({
         ok: true,
         data: { result: 'value', durationMs: 1500, printOutput: '' },
       });
