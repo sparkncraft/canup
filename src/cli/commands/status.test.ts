@@ -26,7 +26,7 @@ describe('status command', () => {
     projectConfig.getActionsDir.mockReturnValue('/project/canup/actions');
     actionsDiscovery.discoverActions.mockReturnValue([]);
 
-    client.getAppInfo.mockResolvedValue({ name: 'Test App', canvaAppId: 'AAFtest123' });
+    client.getAppInfo.mockResolvedValue({ id: 'AAFtest123', name: 'Test App' });
     client.listActions.mockResolvedValue([
       {
         id: 'act-1',
@@ -64,7 +64,7 @@ describe('status command', () => {
       },
     ]);
 
-    client.getAppInfo.mockResolvedValue({ name: 'Test App', canvaAppId: 'AAFtest123' });
+    client.getAppInfo.mockResolvedValue({ id: 'AAFtest123', name: 'Test App' });
     client.listActions.mockResolvedValue([]);
     client.listSecrets.mockResolvedValue([]);
     client.listDeps.mockResolvedValue({ packages: [], layerSize: null, layerArn: null });
@@ -93,7 +93,7 @@ describe('status command', () => {
       },
     ]);
 
-    client.getAppInfo.mockResolvedValue({ name: 'Test App', canvaAppId: 'AAFtest123' });
+    client.getAppInfo.mockResolvedValue({ id: 'AAFtest123', name: 'Test App' });
     client.listActions.mockResolvedValue([
       {
         id: 'act-1',
@@ -124,7 +124,7 @@ describe('status command', () => {
     projectConfig.getActionsDir.mockReturnValue('/project/canup/actions');
     actionsDiscovery.discoverActions.mockReturnValue([]);
 
-    client.getAppInfo.mockResolvedValue({ name: 'Test App', canvaAppId: 'AAFtest123' });
+    client.getAppInfo.mockResolvedValue({ id: 'AAFtest123', name: 'Test App' });
     client.listActions.mockResolvedValue([]);
     client.listSecrets.mockResolvedValue([]);
     client.listDeps.mockResolvedValue({ packages: [], layerSize: null, layerArn: null });
@@ -143,7 +143,7 @@ describe('status command', () => {
     projectConfig.getActionsDir.mockReturnValue('/project/canup/actions');
     actionsDiscovery.discoverActions.mockReturnValue([]);
 
-    client.getAppInfo.mockResolvedValue({ name: 'Test App', canvaAppId: 'AAFtest123' });
+    client.getAppInfo.mockResolvedValue({ id: 'AAFtest123', name: 'Test App' });
     client.listActions.mockResolvedValue([]);
     client.listSecrets.mockResolvedValue([
       { name: 'API_KEY', maskedValue: 'cnup_***', updatedAt: '2026-02-20T00:00:00.000Z' },
@@ -165,7 +165,7 @@ describe('status command', () => {
     projectConfig.getActionsDir.mockReturnValue('/project/canup/actions');
     actionsDiscovery.discoverActions.mockReturnValue([]);
 
-    client.getAppInfo.mockResolvedValue({ name: 'Test App', canvaAppId: 'AAFtest123' });
+    client.getAppInfo.mockResolvedValue({ id: 'AAFtest123', name: 'Test App' });
     client.listActions.mockResolvedValue([]);
     client.listSecrets.mockResolvedValue([]);
     client.listDeps.mockImplementation((_appId: string, language: string) => {
@@ -207,7 +207,7 @@ describe('status command', () => {
     projectConfig.getActionsDir.mockReturnValue('/project/canup/actions');
     actionsDiscovery.discoverActions.mockReturnValue([]);
 
-    client.getAppInfo.mockResolvedValue({ name: 'Test App', canvaAppId: 'AAFtest123' });
+    client.getAppInfo.mockResolvedValue({ id: 'AAFtest123', name: 'Test App' });
     client.listActions.mockResolvedValue([]);
     client.listSecrets.mockResolvedValue([]);
     client.listDeps.mockRejectedValue(new Error('not found'));
@@ -228,7 +228,7 @@ describe('status command', () => {
     projectConfig.getActionsDir.mockReturnValue('/project/canup/actions');
     actionsDiscovery.discoverActions.mockReturnValue([]);
 
-    client.getAppInfo.mockResolvedValue({ name: 'Test App', canvaAppId: 'AAFtest123' });
+    client.getAppInfo.mockResolvedValue({ id: 'AAFtest123', name: 'Test App' });
     client.listActions.mockResolvedValue([
       {
         id: 'act-1',
@@ -258,7 +258,7 @@ describe('status command', () => {
     projectConfig.getActionsDir.mockReturnValue('/project/canup/actions');
     actionsDiscovery.discoverActions.mockReturnValue([]);
 
-    client.getAppInfo.mockResolvedValue({ name: 'Test App', canvaAppId: 'AAFtest123' });
+    client.getAppInfo.mockResolvedValue({ id: 'AAFtest123', name: 'Test App' });
     client.listActions.mockResolvedValue([]);
     client.listSecrets.mockResolvedValue([]);
     client.listDeps.mockImplementation((_appId: string, language: string) => {
@@ -300,7 +300,7 @@ describe('status command', () => {
     projectConfig.getActionsDir.mockReturnValue('/project/canup/actions');
     actionsDiscovery.discoverActions.mockReturnValue([]);
 
-    client.getAppInfo.mockResolvedValue({ name: 'Test App', canvaAppId: 'AAFtest123' });
+    client.getAppInfo.mockResolvedValue({ id: 'AAFtest123', name: 'Test App' });
     client.listActions.mockResolvedValue([
       {
         id: 'act-1',
@@ -349,7 +349,7 @@ describe('status command', () => {
     projectConfig.getActionsDir.mockReturnValue('/project/canup/actions');
     actionsDiscovery.discoverActions.mockReturnValue([]);
 
-    client.getAppInfo.mockResolvedValue({ name: 'Test App', canvaAppId: 'AAFtest123' });
+    client.getAppInfo.mockResolvedValue({ id: 'AAFtest123', name: 'Test App' });
     client.listActions.mockResolvedValue([]);
     client.listSecrets.mockResolvedValue(null);
     client.listDeps.mockResolvedValue({ packages: [], layerSize: null, layerArn: null });

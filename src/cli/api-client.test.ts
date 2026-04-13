@@ -272,7 +272,7 @@ describe('CanupClient', () => {
 
   describe('registerApp', () => {
     test('sends POST to /v1/apps with canvaAppId and name', async () => {
-      const app = { id: 'a1', canvaAppId: 'canva-123', name: 'My App' };
+      const app = { id: 'AAFcanva123', name: 'My App' };
       mockFetch.mockResolvedValueOnce(okResponse(app));
       const client = createClient();
       const result = await client.registerApp('canva-123', 'My App');
@@ -291,7 +291,7 @@ describe('CanupClient', () => {
 
   describe('listApps', () => {
     test('sends GET to /v1/apps and returns array', async () => {
-      const apps = [{ id: 'a1', canvaAppId: 'c1', name: 'App1', createdAt: '' }];
+      const apps = [{ id: 'AAFapp1', name: 'App1', createdAt: '' }];
       mockFetch.mockResolvedValueOnce(okResponse(apps));
       const client = createClient();
       const result = await client.listApps();
@@ -305,7 +305,7 @@ describe('CanupClient', () => {
 
   describe('getAppInfo', () => {
     test('sends GET to /v1/apps/:appId with URL encoding', async () => {
-      const app = { id: 'a1', canvaAppId: 'c1', name: 'App1', createdAt: '' };
+      const app = { id: 'AAFapp1', name: 'App1', createdAt: '' };
       mockFetch.mockResolvedValueOnce(okResponse(app));
       const client = createClient();
       const result = await client.getAppInfo('app/special');
