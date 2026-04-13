@@ -50,13 +50,11 @@ export function resetMockCanupClient(client: MockCanupClient): void {
     createdAt: '2026-01-01T00:00:00Z',
   });
   client.registerApp.mockResolvedValue({
-    id: 'app-1',
-    canvaAppId: 'AAFtest12345',
+    id: 'AAFtest12345',
     name: 'Test App',
   });
   client.getAppInfo.mockResolvedValue({
-    id: 'app-1',
-    canvaAppId: 'AAFtest12345',
+    id: 'AAFtest12345',
     name: 'Test App',
     createdAt: '2026-01-01T00:00:00Z',
   });
@@ -136,10 +134,9 @@ export function createMockCanupClient(overrides?: Partial<MockCanupClient>): Moc
     // App management
     registerApp: vi
       .fn()
-      .mockResolvedValue({ id: 'app-1', canvaAppId: 'AAFtest12345', name: 'Test App' }),
+      .mockResolvedValue({ id: 'AAFtest12345', name: 'Test App' }),
     getAppInfo: vi.fn().mockResolvedValue({
-      id: 'app-1',
-      canvaAppId: 'AAFtest12345',
+      id: 'AAFtest12345',
       name: 'Test App',
       createdAt: '2026-01-01T00:00:00Z',
     }),
