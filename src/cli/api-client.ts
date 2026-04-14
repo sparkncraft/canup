@@ -306,9 +306,10 @@ export class CanupClient {
    *
    * Used by `canup actions test` (sends a local file) and `canup actions run`
    * (fetches the deployed code first, then invokes it through the same endpoint).
-   * Bypasses the generic request() helper because this endpoint returns HTTP 200
-   * for both success (ok:true) and script errors (ok:false), and the generic
-   * helper would throw on ok:false and lose structured error info.
+   *
+   * Script errors return HTTP 422 with { ok: false, error: { ... } } — a
+   * valid test result, not an API failure. We read the body on 422 and return
+   * the TestError envelope. Any other non-2xx status is a real API error.
    */
   async testCode(
     appId: string,
@@ -330,8 +331,14 @@ export class CanupClient {
       body: JSON.stringify({ code, language, params }),
     });
 
+    // 422 = script error — a valid test result, not an API failure
+    if (res.status === 422) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- generic JSON response
+      return await res.json();
+    }
+
     if (!res.ok) {
-      // HTTP-level error (401, 404, 500, etc.)
+      // Real HTTP-level error (401, 404, 500, etc.)
       let body: { error?: { type?: string; message?: string } } | undefined;
       try {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Fetch .json() returns any
