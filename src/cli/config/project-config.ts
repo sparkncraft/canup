@@ -16,9 +16,7 @@ export const CONFIG_FILE = 'canup.json';
 export const DEFAULT_ACTIONS_DIR = 'actions';
 
 const projectConfigSchema = z.object({
-  appId: z.string().uuid(),
-  /** @deprecated Kept optional for backward compatibility with legacy configs. */
-  canvaAppId: z.string().min(1).optional(),
+  appId: z.string().min(1),
   actions: z
     .object({
       dir: z.string(),

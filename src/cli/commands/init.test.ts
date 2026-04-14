@@ -71,8 +71,7 @@ describe('init command', () => {
     tokenStore.loadToken.mockReturnValue('valid-token');
     projectConfig.loadProjectConfig.mockReturnValue(null);
     client.registerApp.mockResolvedValue({
-      id: 'app-uuid-123',
-      canvaAppId: 'AAFtest',
+      id: 'AAFtest',
       name: 'My App',
     });
     client.createApiKey.mockResolvedValue({ key: 'cnup_full_key_123', prefix: 'cnup_full' });
@@ -86,14 +85,14 @@ describe('init command', () => {
     await program.parseAsync(['init', '--app-id', 'AAFtest'], { from: 'user' });
 
     expect(client.registerApp).toHaveBeenCalledWith('AAFtest');
-    expect(client.createApiKey).toHaveBeenCalledWith('app-uuid-123', 'canup-cli');
-    expect(tokenStore.saveApiKey).toHaveBeenCalledWith('app-uuid-123', 'cnup_full_key_123');
+    expect(client.createApiKey).toHaveBeenCalledWith('AAFtest', 'canup-cli');
+    expect(tokenStore.saveApiKey).toHaveBeenCalledWith('AAFtest', 'cnup_full_key_123');
     expect(mockMkdirSync).toHaveBeenCalledWith(expect.stringContaining('canup/actions'), {
       recursive: true,
     });
-    expect(mockSaveProjectConfig).toHaveBeenCalledWith(process.cwd(), { appId: 'app-uuid-123' });
+    expect(mockSaveProjectConfig).toHaveBeenCalledWith(process.cwd(), { appId: 'AAFtest' });
     expect(output.success).toHaveBeenCalledWith('Project initialized');
-    expect(output.label).toHaveBeenCalledWith('App ID', 'app-uuid-123');
+    expect(output.label).toHaveBeenCalledWith('App ID', 'AAFtest');
   });
 
   test('shows re-init message when project already initialized', async ({ output }) => {
@@ -121,8 +120,7 @@ describe('init command', () => {
     mockPerformLogin.mockResolvedValue('auto-login-token');
     projectConfig.loadProjectConfig.mockReturnValue(null);
     client.registerApp.mockResolvedValue({
-      id: 'app-uuid-456',
-      canvaAppId: 'AAFauto',
+      id: 'AAFauto',
       name: 'Auto App',
     });
     client.createApiKey.mockResolvedValue({ key: 'cnup_auto_key', prefix: 'cnup_auto' });
@@ -139,7 +137,7 @@ describe('init command', () => {
     expect(output.info).toHaveBeenCalledWith('Not logged in. Starting login...');
     expect(output.info).toHaveBeenCalledWith('Login successful!');
     expect(client.registerApp).toHaveBeenCalledWith('AAFauto');
-    expect(mockSaveProjectConfig).toHaveBeenCalledWith(process.cwd(), { appId: 'app-uuid-456' });
+    expect(mockSaveProjectConfig).toHaveBeenCalledWith(process.cwd(), { appId: 'AAFauto' });
   });
 
   test('detects CANVA_APP_ID from .env file', async ({ output, processMocks }) => {
@@ -148,8 +146,7 @@ describe('init command', () => {
     mockExistsSync.mockReturnValueOnce(true);
     mockReadFileSync.mockReturnValue('CANVA_APP_ID=AAFdetected\nOTHER_VAR=foo\n');
     client.registerApp.mockResolvedValue({
-      id: 'app-uuid-789',
-      canvaAppId: 'AAFdetected',
+      id: 'AAFdetected',
       name: 'Detected App',
     });
     client.createApiKey.mockResolvedValue({ key: 'cnup_det_key', prefix: 'cnup_det' });
@@ -164,7 +161,7 @@ describe('init command', () => {
 
     expect(output.info).toHaveBeenCalledWith('Detected Canva App ID from .env: AAFdetected');
     expect(client.registerApp).toHaveBeenCalledWith('AAFdetected');
-    expect(mockSaveProjectConfig).toHaveBeenCalledWith(process.cwd(), { appId: 'app-uuid-789' });
+    expect(mockSaveProjectConfig).toHaveBeenCalledWith(process.cwd(), { appId: 'AAFdetected' });
   });
 
   test('handles API failure at registerApp step', async ({ output, processMocks }) => {
@@ -191,8 +188,7 @@ describe('init command', () => {
     tokenStore.loadToken.mockReturnValue('valid-token');
     projectConfig.loadProjectConfig.mockReturnValue(null);
     client.registerApp.mockResolvedValue({
-      id: 'app-uuid-123',
-      canvaAppId: 'AAFtest',
+      id: 'AAFtest',
       name: 'App',
     });
 
@@ -231,12 +227,12 @@ describe('init command', () => {
     });
   });
 
-  test('writes config with only appId (no canvaAppId in new convention)', async ({
+  test('writes config with only appId', async ({
     processMocks,
   }) => {
     tokenStore.loadToken.mockReturnValue('valid-token');
     projectConfig.loadProjectConfig.mockReturnValue(null);
-    client.registerApp.mockResolvedValue({ id: 'app-uuid-100' });
+    client.registerApp.mockResolvedValue({ id: 'AAFtest100' });
     client.createApiKey.mockResolvedValue({ key: 'cnup_key', prefix: 'cnup' });
 
     const { Command } = await import('commander');
@@ -247,13 +243,10 @@ describe('init command', () => {
 
     await program.parseAsync(['init', '--app-id', 'AAFtest'], { from: 'user' });
 
-    expect(mockSaveProjectConfig).toHaveBeenCalledWith(process.cwd(), { appId: 'app-uuid-100' });
-    // Ensure no canvaAppId in config
-    const callArgs = mockSaveProjectConfig.mock.calls[0];
-    expect(callArgs[1]).not.toHaveProperty('canvaAppId');
+    expect(mockSaveProjectConfig).toHaveBeenCalledWith(process.cwd(), { appId: 'AAFtest100' });
   });
 
-  test('handles 409 conflict when another user owns the canvaAppId', async ({
+  test('handles 409 conflict when another user owns the Canva App ID', async ({
     output,
     processMocks,
   }) => {
@@ -326,14 +319,12 @@ describe('init command', () => {
 
     client.listApps.mockResolvedValue([
       {
-        id: 'app-existing-1',
-        canvaAppId: 'AAFexist1',
+        id: 'AAFexist1',
         name: 'My App',
         createdAt: '2026-01-01T00:00:00Z',
       },
       {
-        id: 'app-existing-2',
-        canvaAppId: 'AAFexist2',
+        id: 'AAFexist2',
         name: 'Other App',
         createdAt: '2026-01-01T00:00:00Z',
       },
@@ -342,7 +333,7 @@ describe('init command', () => {
     client.createApiKey.mockResolvedValue({ key: 'cnup_pick_key', prefix: 'cnup_pick' });
 
     // User selects the first existing app
-    mockSelect.mockResolvedValue('app-existing-1');
+    mockSelect.mockResolvedValue('AAFexist1');
 
     const { Command } = await import('commander');
     const { registerInitCommand } = await import('../commands/init.js');
@@ -358,8 +349,8 @@ describe('init command', () => {
         message: 'Select an app',
       }),
     );
-    expect(client.createApiKey).toHaveBeenCalledWith('app-existing-1', 'canup-cli');
-    expect(mockSaveProjectConfig).toHaveBeenCalledWith(process.cwd(), { appId: 'app-existing-1' });
+    expect(client.createApiKey).toHaveBeenCalledWith('AAFexist1', 'canup-cli');
+    expect(mockSaveProjectConfig).toHaveBeenCalledWith(process.cwd(), { appId: 'AAFexist1' });
     expect(output.success).toHaveBeenCalledWith('Project initialized');
     // Should suggest pull since app has deployed actions
     expect(output.hint).toHaveBeenCalledWith(expect.stringContaining('canup pull'));
@@ -399,7 +390,7 @@ describe('init command', () => {
     projectConfig.loadProjectConfig.mockReturnValue(null);
 
     client.listApps.mockResolvedValue([
-      { id: 'app-1', canvaAppId: 'AAFold', name: 'Old App', createdAt: '2026-01-01T00:00:00Z' },
+      { id: 'AAFold', name: 'Old App', createdAt: '2026-01-01T00:00:00Z' },
     ]);
     client.registerApp.mockResolvedValue({ id: 'app-brand-new' });
     client.createApiKey.mockResolvedValue({ key: 'cnup_k', prefix: 'cnup' });
@@ -433,8 +424,7 @@ describe('init command', () => {
 
     client.listApps.mockResolvedValue([
       {
-        id: 'app-empty',
-        canvaAppId: 'AAFempty',
+        id: 'AAFempty',
         name: 'Empty App',
         createdAt: '2026-01-01T00:00:00Z',
       },
@@ -442,7 +432,7 @@ describe('init command', () => {
     client.listActions.mockResolvedValue([]);
     client.createApiKey.mockResolvedValue({ key: 'cnup_k', prefix: 'cnup' });
 
-    mockSelect.mockResolvedValue('app-empty');
+    mockSelect.mockResolvedValue('AAFempty');
 
     const { Command } = await import('commander');
     const { registerInitCommand } = await import('../commands/init.js');

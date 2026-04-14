@@ -93,7 +93,7 @@ export function registerInitCommand(program: Command): void {
                 message: 'Select an app',
                 choices: [
                   ...existingApps.map((app) => ({
-                    name: `${app.name} (${app.canvaAppId})`,
+                    name: `${app.name} (${app.id})`,
                     value: app.id,
                   })),
                   new Separator(),
@@ -139,7 +139,7 @@ export function registerInitCommand(program: Command): void {
         // f. Create canup/ folder structure with actions/ subdirectory
         mkdirSync(join(process.cwd(), CANUP_DIR, DEFAULT_ACTIONS_DIR), { recursive: true });
 
-        // g. Save project config (only appId -- no canvaAppId in new convention)
+        // g. Save project config
         saveProjectConfig(process.cwd(), { appId });
 
         // h. Add canup as a dependency in the project's package.json

@@ -3,7 +3,6 @@ import { test as baseTest, expect } from 'vitest';
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { randomUUID } from 'node:crypto';
 
 const mockOutput = vi.hoisted(() => ({
   success: vi.fn(),
@@ -27,8 +26,9 @@ import {
   type ProjectConfig,
 } from '../config/project-config.js';
 
+let configCounter = 0;
 function validConfig(overrides: Partial<ProjectConfig> = {}): ProjectConfig {
-  return { appId: randomUUID(), ...overrides };
+  return { appId: `AAFtest${++configCounter}`, ...overrides };
 }
 
 function writeCanupConfig(projectRoot: string, content: string): void {
@@ -87,7 +87,7 @@ describe('loadProjectConfig', () => {
   });
 
   test('returns null when appId is missing from config', ({ tmpRoot }) => {
-    writeCanupConfig(tmpRoot, JSON.stringify({ canvaAppId: 'abc' }));
+    writeCanupConfig(tmpRoot, JSON.stringify({ actions: { dir: 'custom' } }));
     vi.spyOn(process, 'cwd').mockReturnValue(tmpRoot);
 
     const result = loadProjectConfig();
@@ -95,13 +95,23 @@ describe('loadProjectConfig', () => {
     expect(result).toBeNull();
   });
 
-  test('returns null when appId is not a valid UUID', ({ tmpRoot }) => {
-    writeCanupConfig(tmpRoot, JSON.stringify({ appId: 'not-a-uuid' }));
+  test('returns null when appId is an empty string', ({ tmpRoot }) => {
+    writeCanupConfig(tmpRoot, JSON.stringify({ appId: '' }));
     vi.spyOn(process, 'cwd').mockReturnValue(tmpRoot);
 
     const result = loadProjectConfig();
 
     expect(result).toBeNull();
+  });
+
+  test('accepts non-UUID appId strings (Canva App ID format)', ({ tmpRoot }) => {
+    writeCanupConfig(tmpRoot, JSON.stringify({ appId: 'AAFtest12345' }));
+    vi.spyOn(process, 'cwd').mockReturnValue(tmpRoot);
+
+    const result = loadProjectConfig();
+
+    expect(result).not.toBeNull();
+    expect(result!.config.appId).toBe('AAFtest12345');
   });
 
   test('detects legacy canup.json at root level and calls hint()', ({ tmpRoot }) => {

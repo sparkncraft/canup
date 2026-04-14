@@ -179,8 +179,8 @@ export class CanupClient {
   async registerApp(
     canvaAppId: string,
     name?: string,
-  ): Promise<{ id: string; canvaAppId: string; name: string }> {
-    return this.request<{ id: string; canvaAppId: string; name: string }>(`/${API_VERSION}/apps`, {
+  ): Promise<{ id: string; name: string }> {
+    return this.request<{ id: string; name: string }>(`/${API_VERSION}/apps`, {
       method: 'POST',
       body: JSON.stringify({ canvaAppId, name }),
     });
@@ -190,8 +190,8 @@ export class CanupClient {
    * List all apps for the current user.
    * Requires session auth (used by init picker before API key exists).
    */
-  async listApps(): Promise<{ id: string; canvaAppId: string; name: string; createdAt: string }[]> {
-    return this.request<{ id: string; canvaAppId: string; name: string; createdAt: string }[]>(
+  async listApps(): Promise<{ id: string; name: string; createdAt: string }[]> {
+    return this.request<{ id: string; name: string; createdAt: string }[]>(
       `/${API_VERSION}/apps`,
     );
   }
@@ -202,8 +202,8 @@ export class CanupClient {
    */
   async getAppInfo(
     appId: string,
-  ): Promise<{ id: string; canvaAppId: string; name: string; createdAt: string }> {
-    return this.request<{ id: string; canvaAppId: string; name: string; createdAt: string }>(
+  ): Promise<{ id: string; name: string; createdAt: string }> {
+    return this.request<{ id: string; name: string; createdAt: string }>(
       `/${API_VERSION}/apps/${encodeURIComponent(appId)}`,
     );
   }
