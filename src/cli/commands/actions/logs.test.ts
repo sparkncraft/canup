@@ -296,6 +296,41 @@ describe('actions logs command', () => {
     expect(client.listLogs).toHaveBeenCalledWith('test-app-id', 'my-action', { limit: 5 });
   });
 
+  test('passes --search flag to API client', async ({ client, output, processMocks }) => {
+    output.formatTable.mockReturnValue('table-output');
+    client.listLogs.mockResolvedValue({
+      items: [
+        {
+          id: 'exec-uuid-1234-5678',
+          type: 'invocation',
+          actionSlug: 'my-action',
+          status: 'success',
+          durationMs: 150,
+          errorType: null,
+          timestamp: new Date().toISOString(),
+          source: 'api',
+        },
+      ],
+      nextCursor: null,
+      hasMore: false,
+    });
+
+    const { Command } = await import('commander');
+    const { registerActionsLogsAction } = await import('../../commands/actions/logs.js');
+
+    const program = new Command();
+    const actionsCmd = program.command('actions');
+    registerActionsLogsAction(actionsCmd);
+
+    await program.parseAsync(['actions', 'logs', '--search', 'timeout'], { from: 'user' });
+
+    expect(client.listLogs).toHaveBeenCalledWith(
+      expect.any(String),
+      undefined,
+      expect.objectContaining({ search: 'timeout' }),
+    );
+  });
+
   test('shows hint when empty list with slug filter', async ({ client, output, processMocks }) => {
     client.listLogs.mockResolvedValue({ items: [], nextCursor: null, hasMore: false });
 
