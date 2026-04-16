@@ -583,6 +583,17 @@ describe('CanupClient', () => {
       );
     });
 
+    test('appends search as query param when provided', async () => {
+      const response = { items: [], nextCursor: null, hasMore: false };
+      mockFetch.mockResolvedValueOnce(okResponse(response));
+      const client = createClient();
+      await client.listLogs('a1', undefined, { search: 'timeout error' });
+
+      expect(fetchUrl()).toBe(
+        'https://test.api/v1/logs?type=invocation&appId=a1&search=timeout+error',
+      );
+    });
+
     test('returns paginated log entries', async () => {
       const response = {
         items: [
