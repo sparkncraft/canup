@@ -44,11 +44,11 @@ export function registerActionsLogsAction(actionsCommand: Command): void {
       try {
         if (options.id) {
           // Detail mode
-          await showHistoryDetail(client, config.appId, options.id);
+          await showLogDetail(client, options.id);
         } else {
           // List mode
           const limit = options.limit ? parseInt(options.limit, 10) : undefined;
-          await showHistoryList(client, config.appId, slug, limit);
+          await showLogsList(client, config.appId, slug, limit);
         }
       } catch (err) {
         const e = err as Error & { statusCode?: number };
@@ -69,46 +69,46 @@ export function registerActionsLogsAction(actionsCommand: Command): void {
 }
 
 /**
- * Show full detail for a single execution (--id mode).
+ * Show full detail for a single log entry (--id mode).
  */
-async function showHistoryDetail(client: CanupClient, appId: string, id: string): Promise<void> {
-  const exec = await client.getHistoryDetail(appId, id);
+async function showLogDetail(client: CanupClient, id: string): Promise<void> {
+  const entry = await client.getLogDetail(id);
 
-  label('Execution', exec.id);
-  label('Action', exec.actionSlug);
-  label('Status', colorStatus(exec.status));
-  label('Duration', `${exec.durationMs}ms`);
-  label('Source', exec.source);
-  label('Executed', exec.executedAt);
+  label('Execution', entry.id);
+  label('Action', entry.actionSlug);
+  label('Status', colorStatus(entry.status));
+  label('Duration', `${entry.durationMs}ms`);
+  label('Source', entry.source);
+  label('Timestamp', entry.timestamp);
 
-  if (exec.errorType) {
-    label('Error Type', exec.errorType);
+  if (entry.errorType) {
+    label('Error Type', entry.errorType);
   }
-  if (exec.errorMessage) {
-    label('Error', exec.errorMessage);
+  if (entry.detail?.errorMessage) {
+    label('Error', entry.detail.errorMessage);
   }
-  if (exec.stackTrace) {
+  if (entry.detail?.stackTrace) {
     console.log('\n' + dim('Stack Trace:'));
-    console.log(exec.stackTrace);
+    console.log(entry.detail.stackTrace);
   }
-  if (exec.printOutput) {
+  if (entry.detail?.printOutput) {
     console.log('\n' + dim('Output:'));
-    console.log(exec.printOutput);
+    console.log(entry.detail.printOutput);
   }
 }
 
 /**
- * Show execution history list.
+ * Show invocation log list.
  */
-async function showHistoryList(
+async function showLogsList(
   client: CanupClient,
   appId: string,
   slug?: string,
   limit?: number,
 ): Promise<void> {
-  const executions = await client.listHistory(appId, slug, { limit });
+  const result = await client.listLogs(appId, slug, { limit });
 
-  if (executions.length === 0) {
+  if (result.items.length === 0) {
     info('No executions found.');
     if (slug) {
       hint('Try without a slug filter to see all executions.');
@@ -118,13 +118,13 @@ async function showHistoryList(
 
   const table = formatTable(
     ['ID', 'Action', 'Status', 'Duration', 'Source', 'Time'],
-    executions.map((e) => [
+    result.items.map((e) => [
       e.id.substring(0, 8),
       e.actionSlug,
       colorStatus(e.status),
       `${e.durationMs}ms`,
       e.source,
-      timeAgo(e.executedAt),
+      timeAgo(e.timestamp),
     ]),
   );
   console.log(table);

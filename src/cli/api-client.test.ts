@@ -551,69 +551,83 @@ describe('CanupClient', () => {
     });
   });
 
-  // ──── listHistory ────
+  // ──── listLogs ────
 
-  describe('listHistory', () => {
-    test('sends GET to /v1/apps/:appId/history without slug', async () => {
-      mockFetch.mockResolvedValueOnce(okResponse([]));
+  describe('listLogs', () => {
+    test('sends GET to /v1/logs with type=invocation and appId', async () => {
+      const response = { items: [], nextCursor: null, hasMore: false };
+      mockFetch.mockResolvedValueOnce(okResponse(response));
       const client = createClient();
-      await client.listHistory('a1');
+      await client.listLogs('a1');
 
-      expect(fetchUrl()).toBe('https://test.api/v1/apps/a1/history');
+      expect(fetchUrl()).toBe('https://test.api/v1/logs?type=invocation&appId=a1');
     });
 
-    test('sends GET to /v1/apps/:appId/actions/:slug/history with slug', async () => {
-      mockFetch.mockResolvedValueOnce(okResponse([]));
+    test('includes action param when slug is provided', async () => {
+      const response = { items: [], nextCursor: null, hasMore: false };
+      mockFetch.mockResolvedValueOnce(okResponse(response));
       const client = createClient();
-      await client.listHistory('a1', 'greet');
+      await client.listLogs('a1', 'greet');
 
-      expect(fetchUrl()).toBe('https://test.api/v1/apps/a1/actions/greet/history');
+      expect(fetchUrl()).toBe('https://test.api/v1/logs?type=invocation&appId=a1&action=greet');
     });
 
-    test('appends limit and offset as query params', async () => {
-      mockFetch.mockResolvedValueOnce(okResponse([]));
+    test('appends limit and cursor as query params', async () => {
+      const response = { items: [], nextCursor: null, hasMore: false };
+      mockFetch.mockResolvedValueOnce(okResponse(response));
       const client = createClient();
-      await client.listHistory('a1', undefined, { limit: 10, offset: 5 });
+      await client.listLogs('a1', undefined, { limit: 10, cursor: 'abc123' });
 
-      expect(fetchUrl()).toBe('https://test.api/v1/apps/a1/history?limit=10&offset=5');
+      expect(fetchUrl()).toBe(
+        'https://test.api/v1/logs?type=invocation&appId=a1&limit=10&cursor=abc123',
+      );
     });
 
-    test('returns history entries', async () => {
-      const entries = [
-        {
-          id: 'h1',
-          actionSlug: 'greet',
-          status: 'success',
-          durationMs: 100,
-          executedAt: '',
-          source: 'test',
-        },
-      ];
-      mockFetch.mockResolvedValueOnce(okResponse(entries));
+    test('returns paginated log entries', async () => {
+      const response = {
+        items: [
+          {
+            id: 'h1',
+            type: 'invocation',
+            actionSlug: 'greet',
+            status: 'success',
+            durationMs: 100,
+            errorType: null,
+            timestamp: '2026-01-01T00:00:00Z',
+            source: 'cli',
+          },
+        ],
+        nextCursor: 'next-page',
+        hasMore: true,
+      };
+      mockFetch.mockResolvedValueOnce(okResponse(response));
       const client = createClient();
-      const result = await client.listHistory('a1');
+      const result = await client.listLogs('a1');
 
-      expect(result).toEqual(entries);
+      expect(result).toEqual(response);
     });
   });
 
-  // ──── getHistoryDetail ────
+  // ──── getLogDetail ────
 
-  describe('getHistoryDetail', () => {
-    test('sends GET to /v1/apps/:appId/history/:id', async () => {
+  describe('getLogDetail', () => {
+    test('sends GET to /v1/logs/:id', async () => {
       const detail = {
         id: 'h1',
+        type: 'invocation',
         actionSlug: 'greet',
         status: 'success',
         durationMs: 50,
-        executedAt: '',
-        source: 'test',
+        errorType: null,
+        timestamp: '2026-01-01T00:00:00Z',
+        source: 'cli',
+        detail: null,
       };
       mockFetch.mockResolvedValueOnce(okResponse(detail));
       const client = createClient();
-      const result = await client.getHistoryDetail('a1', 'h1');
+      const result = await client.getLogDetail('h1');
 
-      expect(fetchUrl()).toBe('https://test.api/v1/apps/a1/history/h1');
+      expect(fetchUrl()).toBe('https://test.api/v1/logs/h1');
       expect(result).toEqual(detail);
     });
   });
