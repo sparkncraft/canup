@@ -176,10 +176,7 @@ export class CanupClient {
    * Register or upsert an app by Canva App ID.
    * Requires session auth.
    */
-  async registerApp(
-    canvaAppId: string,
-    name?: string,
-  ): Promise<{ id: string; name: string }> {
+  async registerApp(canvaAppId: string, name?: string): Promise<{ id: string; name: string }> {
     return this.request<{ id: string; name: string }>(`/${API_VERSION}/apps`, {
       method: 'POST',
       body: JSON.stringify({ canvaAppId, name }),
@@ -191,18 +188,14 @@ export class CanupClient {
    * Requires session auth (used by init picker before API key exists).
    */
   async listApps(): Promise<{ id: string; name: string; createdAt: string }[]> {
-    return this.request<{ id: string; name: string; createdAt: string }[]>(
-      `/${API_VERSION}/apps`,
-    );
+    return this.request<{ id: string; name: string; createdAt: string }[]>(`/${API_VERSION}/apps`);
   }
 
   /**
    * Get app info by ID.
    * Requires API key auth.
    */
-  async getAppInfo(
-    appId: string,
-  ): Promise<{ id: string; name: string; createdAt: string }> {
+  async getAppInfo(appId: string): Promise<{ id: string; name: string; createdAt: string }> {
     return this.request<{ id: string; name: string; createdAt: string }>(
       `/${API_VERSION}/apps/${encodeURIComponent(appId)}`,
     );
@@ -360,61 +353,60 @@ export class CanupClient {
   }
 
   // ──────────────────────────────────────────────
-  // Execution history (API key auth, app-scoped)
+  // Invocation logs (API key auth, app-scoped)
   // ──────────────────────────────────────────────
 
   /**
-   * List execution history for an app, optionally filtered by action slug.
-   * Response is camelCase from server -- no mapping needed.
+   * List invocation logs for an app, optionally filtered by action slug.
+   * Uses cursor-based pagination.
    */
-  async listHistory(
+  async listLogs(
     appId: string,
     slug?: string,
-    options?: { limit?: number; offset?: number },
-  ): Promise<
-    {
+    options?: { limit?: number; cursor?: string },
+  ): Promise<{
+    items: {
       id: string;
+      type: string;
       actionSlug: string;
       status: string;
-      durationMs: number;
-      executedAt: string;
+      durationMs: number | null;
+      errorType: string | null;
+      timestamp: string;
       source: string;
-    }[]
-  > {
+    }[];
+    nextCursor: string | null;
+    hasMore: boolean;
+  }> {
     const params = new URLSearchParams();
+    params.set('type', 'invocation');
+    params.set('appId', appId);
+    if (slug) params.set('action', slug);
     if (options?.limit !== undefined) params.set('limit', String(options.limit));
-    if (options?.offset !== undefined) params.set('offset', String(options.offset));
-    const query = params.toString();
+    if (options?.cursor) params.set('cursor', options.cursor);
 
-    const basePath = slug
-      ? `/${API_VERSION}/apps/${encodeURIComponent(appId)}/actions/${encodeURIComponent(slug)}/history`
-      : `/${API_VERSION}/apps/${encodeURIComponent(appId)}/history`;
-
-    return this.request(`${basePath}${query ? `?${query}` : ''}`);
+    return this.request(`/${API_VERSION}/logs?${params.toString()}`);
   }
 
   /**
-   * Get detailed info about a single execution.
-   * Response is camelCase from server -- no mapping needed.
+   * Get detailed info about a single log entry.
    */
-  async getHistoryDetail(
-    appId: string,
-    id: string,
-  ): Promise<{
+  async getLogDetail(id: string): Promise<{
     id: string;
+    type: string;
     actionSlug: string;
     status: string;
-    durationMs: number;
-    errorType?: string;
-    errorMessage?: string;
-    stackTrace?: string;
-    printOutput?: string;
-    executedAt: string;
+    durationMs: number | null;
+    errorType: string | null;
+    timestamp: string;
     source: string;
+    detail: {
+      errorMessage: string | null;
+      stackTrace: string | null;
+      printOutput: string | null;
+    } | null;
   }> {
-    return this.request(
-      `/${API_VERSION}/apps/${encodeURIComponent(appId)}/history/${encodeURIComponent(id)}`,
-    );
+    return this.request(`/${API_VERSION}/logs/${encodeURIComponent(id)}`);
   }
 
   // ──────────────────────────────────────────────

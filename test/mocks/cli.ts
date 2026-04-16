@@ -21,8 +21,8 @@ export interface MockCanupClient {
   listActionsWithScript: Mock;
   deleteAction: Mock;
   testCode: Mock;
-  listHistory: Mock;
-  getHistoryDetail: Mock;
+  listLogs: Mock;
+  getLogDetail: Mock;
   setSecret: Mock;
   listSecrets: Mock;
   deleteSecret: Mock;
@@ -72,14 +72,17 @@ export function resetMockCanupClient(client: MockCanupClient): void {
   client.listActionsWithScript.mockResolvedValue([]);
   client.deleteAction.mockResolvedValue({ deleted: 'test-action' });
   client.testCode.mockResolvedValue({ result: null, durationMs: 0, printOutput: '' });
-  client.listHistory.mockResolvedValue([]);
-  client.getHistoryDetail.mockResolvedValue({
+  client.listLogs.mockResolvedValue({ items: [], nextCursor: null, hasMore: false });
+  client.getLogDetail.mockResolvedValue({
     id: 'exec-1',
+    type: 'invocation',
     actionSlug: 'test-action',
     status: 'success',
     durationMs: 50,
-    executedAt: '2026-01-01T00:00:00Z',
+    errorType: null,
+    timestamp: '2026-01-01T00:00:00Z',
     source: 'api',
+    detail: null,
   });
   client.setSecret.mockResolvedValue({ name: 'MY_SECRET', created: true, synced: true });
   client.listSecrets.mockResolvedValue([]);
@@ -132,9 +135,7 @@ export function createMockCanupClient(overrides?: Partial<MockCanupClient>): Moc
     }),
 
     // App management
-    registerApp: vi
-      .fn()
-      .mockResolvedValue({ id: 'AAFtest12345', name: 'Test App' }),
+    registerApp: vi.fn().mockResolvedValue({ id: 'AAFtest12345', name: 'Test App' }),
     getAppInfo: vi.fn().mockResolvedValue({
       id: 'AAFtest12345',
       name: 'Test App',
@@ -157,15 +158,18 @@ export function createMockCanupClient(overrides?: Partial<MockCanupClient>): Moc
     deleteAction: vi.fn().mockResolvedValue({ deleted: 'test-action' }),
     testCode: vi.fn().mockResolvedValue({ result: null, durationMs: 0, printOutput: '' }),
 
-    // History
-    listHistory: vi.fn().mockResolvedValue([]),
-    getHistoryDetail: vi.fn().mockResolvedValue({
+    // Invocation logs
+    listLogs: vi.fn().mockResolvedValue({ items: [], nextCursor: null, hasMore: false }),
+    getLogDetail: vi.fn().mockResolvedValue({
       id: 'exec-1',
+      type: 'invocation',
       actionSlug: 'test-action',
       status: 'success',
       durationMs: 50,
-      executedAt: '2026-01-01T00:00:00Z',
+      errorType: null,
+      timestamp: '2026-01-01T00:00:00Z',
       source: 'api',
+      detail: null,
     }),
 
     // Secrets
