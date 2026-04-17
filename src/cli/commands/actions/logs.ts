@@ -31,12 +31,15 @@ function colorStatus(status: string): string {
   return status;
 }
 
+/** Number of leading hex chars shown for an execution id in the logs table. */
+const LOG_ID_DISPLAY_PREFIX_LENGTH = 8;
+
 export function registerActionsLogsAction(actionsCommand: Command): void {
   actionsCommand
     .command('logs [slug]')
     .description('View execution history')
     .option('--id <uuid>', 'Show single execution detail')
-    .option('--limit <n>', 'Number of results (default: 20)')
+    .option('--limit <n>', 'Number of results (default: 25)')
     .action(async (slug: string | undefined, options: { id?: string; limit?: string }) => {
       const { config, apiKey } = requireProject();
       const client = new CanupClient({ token: apiKey });
@@ -119,7 +122,7 @@ async function showLogsList(
   const table = formatTable(
     ['ID', 'Action', 'Status', 'Duration', 'Source', 'Time'],
     result.items.map((e) => [
-      e.id.substring(0, 8),
+      e.id.substring(0, LOG_ID_DISPLAY_PREFIX_LENGTH),
       e.actionSlug,
       colorStatus(e.status),
       `${e.durationMs}ms`,
