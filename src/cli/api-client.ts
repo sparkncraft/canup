@@ -363,7 +363,7 @@ export class CanupClient {
   async listLogs(
     appId: string,
     slug?: string,
-    options?: { limit?: number; cursor?: string },
+    options?: { limit?: number; cursor?: string; search?: string },
   ): Promise<{
     items: {
       id: string;
@@ -384,6 +384,7 @@ export class CanupClient {
     if (slug) params.set('action', slug);
     if (options?.limit !== undefined) params.set('limit', String(options.limit));
     if (options?.cursor) params.set('cursor', options.cursor);
+    if (options?.search) params.set('search', options.search);
 
     return this.request(`/${API_VERSION}/logs?${params.toString()}`);
   }

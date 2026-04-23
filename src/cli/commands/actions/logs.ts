@@ -39,36 +39,42 @@ export function registerActionsLogsAction(actionsCommand: Command): void {
     .command('logs [slug]')
     .description('View execution history')
     .option('--id <uuid>', 'Show single execution detail')
-    .option('--limit <n>', 'Number of results (default: 25)')
-    .action(async (slug: string | undefined, options: { id?: string; limit?: string }) => {
-      const { config, apiKey } = requireProject();
-      const client = new CanupClient({ token: apiKey });
+    .option('--limit <n>', 'Number of results (default: 20)')
+    .option('--search <term>', 'Filter logs by text search')
+    .action(
+      async (
+        slug: string | undefined,
+        options: { id?: string; limit?: string; search?: string },
+      ) => {
+        const { config, apiKey } = requireProject();
+        const client = new CanupClient({ token: apiKey });
 
-      try {
-        if (options.id) {
-          // Detail mode
-          await showLogDetail(client, options.id);
-        } else {
-          // List mode
-          const limit = options.limit ? parseInt(options.limit, 10) : undefined;
-          await showLogsList(client, config.appId, slug, limit);
-        }
-      } catch (err) {
-        const e = err as Error & { statusCode?: number };
-        if (e.statusCode === 401) {
-          error('Not authenticated.');
-          hint('Run `canup init` to re-authenticate.');
+        try {
+          if (options.id) {
+            // Detail mode
+            await showLogDetail(client, options.id);
+          } else {
+            // List mode
+            const limit = options.limit ? parseInt(options.limit, 10) : undefined;
+            await showLogsList(client, config.appId, slug, limit, options.search);
+          }
+        } catch (err) {
+          const e = err as Error & { statusCode?: number };
+          if (e.statusCode === 401) {
+            error('Not authenticated.');
+            hint('Run `canup init` to re-authenticate.');
+            process.exit(1);
+          }
+          if (e.statusCode === 404) {
+            error('Execution not found.');
+            hint('Run `canup actions logs` to see recent executions.');
+            process.exit(1);
+          }
+          error(e.message);
           process.exit(1);
         }
-        if (e.statusCode === 404) {
-          error('Execution not found.');
-          hint('Run `canup actions logs` to see recent executions.');
-          process.exit(1);
-        }
-        error(e.message);
-        process.exit(1);
-      }
-    });
+      },
+    );
 }
 
 /**
@@ -108,8 +114,9 @@ async function showLogsList(
   appId: string,
   slug?: string,
   limit?: number,
+  search?: string,
 ): Promise<void> {
-  const result = await client.listLogs(appId, slug, { limit });
+  const result = await client.listLogs(appId, slug, { limit, search });
 
   if (result.items.length === 0) {
     info('No executions found.');

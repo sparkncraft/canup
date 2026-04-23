@@ -71,7 +71,10 @@ export function resetMockCanupClient(client: MockCanupClient): void {
   client.listActions.mockResolvedValue([]);
   client.listActionsWithScript.mockResolvedValue([]);
   client.deleteAction.mockResolvedValue({ deleted: 'test-action' });
-  client.testCode.mockResolvedValue({ result: null, durationMs: 0, printOutput: '' });
+  client.testCode.mockResolvedValue({
+    ok: true,
+    data: { result: null, durationMs: 0, printOutput: '' },
+  });
   client.listLogs.mockResolvedValue({ items: [], nextCursor: null, hasMore: false });
   client.getLogDetail.mockResolvedValue({
     id: 'exec-1',
@@ -156,7 +159,9 @@ export function createMockCanupClient(overrides?: Partial<MockCanupClient>): Moc
     listActions: vi.fn().mockResolvedValue([]),
     listActionsWithScript: vi.fn().mockResolvedValue([]),
     deleteAction: vi.fn().mockResolvedValue({ deleted: 'test-action' }),
-    testCode: vi.fn().mockResolvedValue({ result: null, durationMs: 0, printOutput: '' }),
+    testCode: vi
+      .fn()
+      .mockResolvedValue({ ok: true, data: { result: null, durationMs: 0, printOutput: '' } }),
 
     // Invocation logs
     listLogs: vi.fn().mockResolvedValue({ items: [], nextCursor: null, hasMore: false }),
