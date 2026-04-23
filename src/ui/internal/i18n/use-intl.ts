@@ -11,11 +11,10 @@ const FALLBACK_CONTEXT = createContext<IntlShape | null>(null);
  * when react-intl hasn't initialized or in SSR.
  */
 function getIntlContext(): Context<IntlShape | null> {
-  if (typeof window !== 'undefined') {
-    const ctx = (window as unknown as Record<string, unknown>).__REACT_INTL_CONTEXT__ as
-      | Context<IntlShape | null>
-      | undefined;
-    if (ctx) return ctx;
+  if (typeof window !== 'undefined' && '__REACT_INTL_CONTEXT__' in window) {
+    // react-intl types as Context<IntlShape>; widen to allow null for the fallback path.
+    // Safe because we only read via useContext, never provide.
+    return window.__REACT_INTL_CONTEXT__ as Context<IntlShape | null>;
   }
   return FALLBACK_CONTEXT;
 }

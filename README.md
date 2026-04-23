@@ -101,8 +101,6 @@ function MyComponent() {
 | `canup actions test <name>`         | Test an action locally                    |
 | `canup actions logs <name>`         | View execution logs                       |
 | `canup actions remove <name>`       | Remove a deployed action                  |
-| `canup actions credits set <name>`  | Set credit quota for an action            |
-| `canup actions credits show <name>` | Show credit configuration                 |
 
 ### Secrets & Dependencies
 
@@ -136,7 +134,7 @@ function MyComponent() {
 
 **Hooks:** `useAction`, `useCredits`
 
-**Types:** `ActionButtonProps`, `CreditCounterProps`, `UseActionResult`, `UseCreditsResult`, `CreditBalance`, `ActionResult`, `CanupError`, `CanupErrorType`
+**Types:** `ActionButtonProps`, `CreditCounterProps`, `UseActionResult`, `UseCreditsResult`, `CreditBalance`, `ActionResult`, `CanupError`
 
 ## License
 

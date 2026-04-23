@@ -1,11 +1,10 @@
-import { describe, expect, vi } from 'vitest';
-import { test as baseTest } from 'vitest';
+import { describe, expect, test as baseTest, vi } from 'vitest';
 import { renderHook, act, waitFor, cleanup } from '@testing-library/react';
-import { useAction } from '../hooks/useAction.js';
+import { useAction } from './use-action.js';
 import { runAction } from '../internal/api-client.js';
 import { queryClient, creditKey } from '../internal/query.js';
-import { CanupError } from '../internal/errors.js';
-import type { CreditBalance } from '../internal/types.js';
+import { CanupError } from '../errors.js';
+import type { CreditBalance } from '../types.js';
 
 vi.mock('../internal/api-client.js', () => ({
   runAction: vi.fn(),

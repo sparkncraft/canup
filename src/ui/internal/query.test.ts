@@ -1,5 +1,4 @@
-import { describe, expect, vi } from 'vitest';
-import { test as baseTest } from 'vitest';
+import { describe, expect, test as baseTest, vi } from 'vitest';
 import { QueryClient } from '@tanstack/react-query';
 
 const instances: MockBC[] = [];

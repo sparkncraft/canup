@@ -1,7 +1,7 @@
 import { describe, test as baseTest, expect, vi, beforeAll, afterAll, afterEach } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
-import { CanupError } from '../internal/errors.js';
+import { CanupError } from '../errors.js';
 
 function createMockJwt(exp: number): string {
   const header = btoa(JSON.stringify({ alg: 'RS256' }));
@@ -44,7 +44,7 @@ describe('api-client', () => {
       let capturedBody: unknown = null;
 
       server.use(
-        http.post(`${BASE_URL}/run/my-action`, async ({ request }) => {
+        http.post(`${BASE_URL}/v1/run/my-action`, async ({ request }) => {
           capturedHeaders = request.headers;
           capturedBody = await request.json();
           return HttpResponse.json({ ok: true, data: { result: 'done', durationMs: 42 } });
@@ -63,7 +63,7 @@ describe('api-client', () => {
       let capturedBody: unknown = null;
 
       server.use(
-        http.post(`${BASE_URL}/run/my-action`, async ({ request }) => {
+        http.post(`${BASE_URL}/v1/run/my-action`, async ({ request }) => {
           capturedBody = await request.json();
           return HttpResponse.json({ ok: true, data: { result: 'ok', durationMs: 1 } });
         }),
@@ -77,7 +77,7 @@ describe('api-client', () => {
 
     test('returns { result, durationMs } on success', async () => {
       server.use(
-        http.post(`${BASE_URL}/run/my-action`, () =>
+        http.post(`${BASE_URL}/v1/run/my-action`, () =>
           HttpResponse.json({
             ok: true,
             data: { result: { imageUrl: 'https://example.com/img.png' }, durationMs: 150 },
@@ -96,7 +96,7 @@ describe('api-client', () => {
 
     test('throws CanupError with type CREDITS_EXHAUSTED on 403', async () => {
       server.use(
-        http.post(`${BASE_URL}/run/my-action`, () =>
+        http.post(`${BASE_URL}/v1/run/my-action`, () =>
           HttpResponse.json(
             {
               ok: false,
@@ -125,7 +125,7 @@ describe('api-client', () => {
 
     test('throws CanupError with type ACTION_NOT_FOUND on 404', async () => {
       server.use(
-        http.post(`${BASE_URL}/run/missing`, () =>
+        http.post(`${BASE_URL}/v1/run/missing`, () =>
           HttpResponse.json(
             { ok: false, error: { type: 'ACTION_NOT_FOUND', message: 'Action not found' } },
             { status: 404 },
@@ -150,7 +150,7 @@ describe('api-client', () => {
       let capturedHeaders: Headers | null = null;
 
       server.use(
-        http.get(`${BASE_URL}/run/my-action/credits`, ({ request }) => {
+        http.get(`${BASE_URL}/v1/run/my-action/credits`, ({ request }) => {
           capturedHeaders = request.headers;
           return HttpResponse.json({
             ok: true,
@@ -174,7 +174,7 @@ describe('api-client', () => {
 
     test('returns CreditBalance on success', async () => {
       server.use(
-        http.get(`${BASE_URL}/run/my-action/credits`, () =>
+        http.get(`${BASE_URL}/v1/run/my-action/credits`, () =>
           HttpResponse.json({
             ok: true,
             data: {
@@ -204,7 +204,7 @@ describe('api-client', () => {
 
     test('throws CanupError on error', async () => {
       server.use(
-        http.get(`${BASE_URL}/run/my-action/credits`, () =>
+        http.get(`${BASE_URL}/v1/run/my-action/credits`, () =>
           HttpResponse.json(
             { ok: false, error: { type: 'HTTP_ERROR', message: 'Unauthorized' } },
             { status: 401 },
@@ -229,7 +229,7 @@ describe('api-client', () => {
       vi.stubGlobal('__canup_url', undefined);
 
       server.use(
-        http.post('https://canup.link/run/my-action', () =>
+        http.post('https://canup.link/v1/run/my-action', () =>
           HttpResponse.json({ ok: true, data: { result: 'default', durationMs: 1 } }),
         ),
       );
@@ -245,7 +245,7 @@ describe('api-client', () => {
       vi.stubGlobal('__canup_url', 'http://custom-url.local');
 
       server.use(
-        http.post(`http://custom-url.local/run/my-action`, () =>
+        http.post(`http://custom-url.local/v1/run/my-action`, () =>
           HttpResponse.json({ ok: true, data: { result: 'ok', durationMs: 1 } }),
         ),
       );

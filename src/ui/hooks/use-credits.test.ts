@@ -1,10 +1,9 @@
-import { describe, expect, vi } from 'vitest';
-import { test as baseTest } from 'vitest';
+import { describe, expect, test as baseTest, vi } from 'vitest';
 import { renderHook, waitFor, cleanup } from '@testing-library/react';
-import { useCredits } from '../hooks/useCredits.js';
+import { useCredits } from './use-credits.js';
 import { fetchCredits } from '../internal/api-client.js';
 import { queryClient, creditKey } from '../internal/query.js';
-import type { CreditBalance } from '../internal/types.js';
+import type { CreditBalance } from '../types.js';
 
 vi.mock('../internal/api-client.js', () => ({
   fetchCredits: vi.fn(),
@@ -36,12 +35,13 @@ const test = baseTest.extend('_rtl', [
 ]);
 
 describe('useCredits', () => {
-  test('returns { data: null, loading: true, exhausted: false } initially', () => {
+  test('returns { data: null, loading: true, exhausted: false, error: null } initially', () => {
     const { result } = renderHook(() => useCredits('my-action'));
 
     expect(result.current.data).toBeNull();
     expect(result.current.loading).toBe(true);
     expect(result.current.exhausted).toBe(false);
+    expect(result.current.error).toBeNull();
     expect(typeof result.current.refresh).toBe('function');
   });
 
@@ -105,16 +105,16 @@ describe('useCredits', () => {
     });
   });
 
-  test('returns subscribeUrl from fetched data', async () => {
+  test('subscribeUrl is available via data.subscribeUrl', async () => {
     const { result } = renderHook(() => useCredits('my-action'));
 
-    expect(result.current.subscribeUrl).toBeNull();
+    expect(result.current.data).toBeNull();
 
     await waitFor(() => {
       expect(result.current.data).toBeTruthy();
     });
 
-    expect(result.current.subscribeUrl).toBe('https://canup.link/subscribe/V1StGXR8_Z5j');
+    expect(result.current.data!.subscribeUrl).toBe('https://canup.link/subscribe/V1StGXR8_Z5j');
   });
 
   test('data updates when queryClient.setQueryData is called externally (cross-component sync)', async () => {
@@ -134,7 +134,7 @@ describe('useCredits', () => {
     });
   });
 
-  test('returns { data: null, loading: false } when fetch fails after retries', async () => {
+  test('exposes error as CanupError when fetch fails after retries', async () => {
     mockFetchCredits.mockRejectedValue(new Error('Network error'));
 
     const { result } = renderHook(() => useCredits('my-action'));
@@ -148,6 +148,9 @@ describe('useCredits', () => {
 
     expect(result.current.data).toBeNull();
     expect(result.current.exhausted).toBe(false);
+    expect(result.current.error).not.toBeNull();
+    expect(result.current.error!.type).toBe('NETWORK_ERROR');
+    expect(result.current.error!.message).toBe('Network error');
   });
 
   test('exhausted is true when remaining is negative (race condition safety)', async () => {

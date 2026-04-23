@@ -1,8 +1,9 @@
+import { useCallback } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { queryClient, creditKey } from '../internal/query.js';
 import { runAction } from '../internal/api-client.js';
-import { CanupError } from '../internal/errors.js';
-import type { ActionResult } from '../internal/types.js';
+import { type CanupError, toCanupError } from '../errors.js';
+import type { ActionResult } from '../types.js';
 
 export interface UseActionResult {
   execute: (params?: Record<string, unknown>) => Promise<ActionResult>;
@@ -11,7 +12,11 @@ export interface UseActionResult {
 }
 
 export function useAction(action: string): UseActionResult {
-  const mutation = useMutation(
+  const {
+    mutateAsync,
+    isPending: loading,
+    error: mutationError,
+  } = useMutation(
     {
       mutationFn: (params?: Record<string, unknown>) => runAction(action, params),
       onSuccess: (result) => {
@@ -23,16 +28,12 @@ export function useAction(action: string): UseActionResult {
     queryClient,
   );
 
-  const error =
-    mutation.error instanceof CanupError
-      ? mutation.error
-      : mutation.error
-        ? new CanupError('NETWORK_ERROR', mutation.error.message)
-        : null;
+  const execute = useCallback(
+    (params?: Record<string, unknown>) => mutateAsync(params),
+    [mutateAsync],
+  );
 
-  return {
-    execute: (params) => mutation.mutateAsync(params),
-    loading: mutation.isPending,
-    error,
-  };
+  const error = mutationError ? toCanupError(mutationError) : null;
+
+  return { execute, loading, error };
 }
