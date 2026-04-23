@@ -1,8 +1,9 @@
-import { type ComponentProps, useCallback } from 'react';
+import { type ComponentProps, useCallback, useRef } from 'react';
 import { Button } from '@canva/app-ui-kit';
-import { useAction } from '../hooks/useAction.js';
-import { useCredits } from '../hooks/useCredits.js';
-import type { CanupError } from '../internal/errors.js';
+import { useAction } from '../hooks/use-action.js';
+import { useCredits } from '../hooks/use-credits.js';
+import { type CanupError, toCanupError } from '../errors.js';
+import type { ActionResult } from '../types.js';
 
 type CanvaButtonProps = ComponentProps<typeof Button>;
 
@@ -11,13 +12,12 @@ type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K>
 
 export type ActionButtonProps = DistributiveOmit<
   CanvaButtonProps,
-  'onClick' | 'loading' | 'pressed' | 'variant'
+  'onClick' | 'loading' | 'pressed'
 > & {
   action: string;
   params?: Record<string, unknown>;
-  onResult?: (data: { result: unknown; durationMs: number }) => void;
+  onResult?: (data: ActionResult) => void;
   onError?: (error: CanupError) => void;
-  variant?: 'primary' | 'secondary' | 'tertiary' | 'contrast';
 };
 
 export function ActionButton({
@@ -27,20 +27,23 @@ export function ActionButton({
   onError,
   disabled,
   children,
-  variant = 'primary',
+  variant,
   ...rest
 }: ActionButtonProps) {
   const { execute, loading } = useAction(action);
   const { exhausted } = useCredits(action);
 
+  const latest = useRef({ params, onResult, onError });
+  latest.current = { params, onResult, onError };
+
   const handleClick = useCallback(async () => {
     try {
-      const result = await execute(params);
-      onResult?.(result);
+      const result = await execute(latest.current.params);
+      latest.current.onResult?.(result);
     } catch (err) {
-      onError?.(err as CanupError);
+      latest.current.onError?.(toCanupError(err));
     }
-  }, [execute, params, onResult, onError]);
+  }, [execute]);
 
   // Canva's Button uses nested discriminated unions (pressed × size × variant)
   // that TypeScript cannot narrow through a variable (TS #41184). We reassemble

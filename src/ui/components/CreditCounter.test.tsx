@@ -1,16 +1,15 @@
-import { describe, expect, vi } from 'vitest';
-import { test as baseTest } from 'vitest';
+import { describe, expect, test as baseTest, vi } from 'vitest';
 import { render, cleanup, fireEvent } from '@testing-library/react';
 import React from 'react';
 import { IntlProvider } from 'react-intl';
 import { TestAppUiProvider } from '@canva/app-ui-kit';
 import { renderWithCanva } from '#test/setup/ui.js';
-import { CreditCounter } from '../components/CreditCounter.js';
-import { useCredits } from '../hooks/useCredits.js';
-import type { UseCreditsResult } from '../hooks/useCredits.js';
-import type { CreditBalance } from '../internal/types.js';
+import { CreditCounter } from './CreditCounter.js';
+import { useCredits } from '../hooks/use-credits.js';
+import type { UseCreditsResult } from '../hooks/use-credits.js';
+import type { CreditBalance } from '../types.js';
 
-vi.mock('../hooks/useCredits.js', () => ({
+vi.mock('../hooks/use-credits.js', () => ({
   useCredits: vi.fn(),
 }));
 vi.mock('../internal/jwt-cache.js', () => ({
@@ -26,7 +25,7 @@ const mockBalance: CreditBalance = {
   resetAt: '2026-04-01T00:00:00Z',
   interval: 'monthly',
   email: null,
-  subscribeUrl: null,
+  subscribeUrl: 'https://canup.link/subscribe/mock-jwt',
 };
 
 function mockCreditsReturn(overrides: Partial<UseCreditsResult> = {}): UseCreditsResult {
@@ -34,7 +33,7 @@ function mockCreditsReturn(overrides: Partial<UseCreditsResult> = {}): UseCredit
     data: mockBalance,
     loading: false,
     exhausted: false,
-    subscribeUrl: 'https://canup.link/subscribe/mock-jwt',
+    error: null,
     refresh: vi.fn(),
     ...overrides,
   };
@@ -177,9 +176,7 @@ describe('CreditCounter', () => {
   });
 
   test('no link renders when subscribeUrl is null (loading state)', () => {
-    mockUseCredits.mockReturnValue(
-      mockCreditsReturn({ data: null, loading: true, subscribeUrl: null }),
-    );
+    mockUseCredits.mockReturnValue(mockCreditsReturn({ data: null, loading: true }));
 
     const { container } = renderWithCanva(<CreditCounter action="my-action" />);
 
@@ -217,8 +214,7 @@ describe('CreditCounter', () => {
   test('no link renders when subscribeUrl is null with data loaded', () => {
     mockUseCredits.mockReturnValue(
       mockCreditsReturn({
-        data: { ...mockBalance, remaining: 50, used: 50 },
-        subscribeUrl: null,
+        data: { ...mockBalance, remaining: 50, used: 50, subscribeUrl: null },
       }),
     );
 

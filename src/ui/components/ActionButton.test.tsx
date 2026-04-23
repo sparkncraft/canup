@@ -1,17 +1,16 @@
-import { describe, expect, vi } from 'vitest';
-import { test as baseTest } from 'vitest';
-import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
+import { describe, expect, test as baseTest, vi } from 'vitest';
 import React from 'react';
-import { TestAppUiProvider } from '@canva/app-ui-kit';
-import { ActionButton } from '../components/ActionButton.js';
-import { useAction } from '../hooks/useAction.js';
-import { useCredits } from '../hooks/useCredits.js';
-import { CanupError } from '../internal/errors.js';
+import { screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
+import { renderWithCanva } from '#test/setup/ui.js';
+import { ActionButton } from './ActionButton.js';
+import { useAction } from '../hooks/use-action.js';
+import { useCredits } from '../hooks/use-credits.js';
+import { CanupError } from '../errors.js';
 
-vi.mock('../hooks/useAction.js', () => ({
+vi.mock('../hooks/use-action.js', () => ({
   useAction: vi.fn(),
 }));
-vi.mock('../hooks/useCredits.js', () => ({
+vi.mock('../hooks/use-credits.js', () => ({
   useCredits: vi.fn(),
 }));
 vi.mock('../internal/jwt-cache.js', () => ({
@@ -19,10 +18,6 @@ vi.mock('../internal/jwt-cache.js', () => ({
 }));
 const mockUseAction = vi.mocked(useAction);
 const mockUseCredits = vi.mocked(useCredits);
-
-function renderWithCanva(ui: React.ReactElement) {
-  return render(<TestAppUiProvider enableAnimations={false}>{ui}</TestAppUiProvider>);
-}
 
 const test = baseTest.extend('_rtl', [
   async ({}, use) => {
@@ -44,7 +39,7 @@ const test = baseTest.extend('_rtl', [
       },
       loading: false,
       exhausted: false,
-      subscribeUrl: null,
+      error: null,
       refresh: vi.fn(),
     });
     await use();
@@ -111,7 +106,7 @@ describe('ActionButton', () => {
       },
       loading: false,
       exhausted: true,
-      subscribeUrl: null,
+      error: null,
       refresh: vi.fn(),
     });
 

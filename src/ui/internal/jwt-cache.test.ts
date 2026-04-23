@@ -1,5 +1,4 @@
-import { describe, expect, vi } from 'vitest';
-import { test as baseTest } from 'vitest';
+import { describe, expect, test as baseTest, vi } from 'vitest';
 
 function createMockJwt(exp: number): string {
   const header = btoa(JSON.stringify({ alg: 'RS256' }));

@@ -1,5 +1,5 @@
 import { QueryClient, type Query } from '@tanstack/react-query';
-import type { CreditBalance } from './types.js';
+import type { CreditBalance } from '../types.js';
 
 export const POLL_INTERVAL = 30_000;
 export const POLL_INTERVAL_BACKGROUND = 300_000;

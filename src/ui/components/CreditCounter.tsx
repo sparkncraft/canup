@@ -1,11 +1,13 @@
-import { type ReactNode, useCallback } from 'react';
+import { type ComponentProps, type ReactNode, useCallback } from 'react';
 import { Link, Rows, Text, TextPlaceholder } from '@canva/app-ui-kit';
 import { requestOpenExternalUrl } from '@canva/platform';
 import type { IntlShape } from 'react-intl';
-import { useCredits } from '../hooks/useCredits.js';
+import { useCredits } from '../hooks/use-credits.js';
 import { useIntl } from '../internal/i18n/use-intl.js';
 import { creditCounterMessages } from '../internal/i18n/messages.js';
-import type { CreditBalance } from '../internal/types.js';
+import type { CreditBalance } from '../types.js';
+
+type CanvaRowsProps = ComponentProps<typeof Rows>;
 
 /**
  * Format a resetAt ISO string to a human-readable date.
@@ -30,23 +32,35 @@ function EmailLine({ email, intl }: { email: string | null; intl: IntlShape }) {
   );
 }
 
-export interface CreditCounterProps {
+export type CreditCounterProps = Omit<CanvaRowsProps, 'children' | 'spacing' | 'align'> & {
   action: string;
   footer?: ReactNode;
   formatText?: (data: CreditBalance) => ReactNode;
-}
+  spacing?: CanvaRowsProps['spacing'];
+  align?: CanvaRowsProps['align'];
+};
 
-export function CreditCounter({ action, footer, formatText }: CreditCounterProps) {
-  const { data, loading, subscribeUrl } = useCredits(action);
+export function CreditCounter({
+  action,
+  footer,
+  formatText,
+  spacing = '1u',
+  align = 'center',
+  ...rest
+}: CreditCounterProps) {
+  const { data, loading } = useCredits(action);
   const intl = useIntl();
+  const subscribeUrl = data?.subscribeUrl ?? null;
 
   const openUrl = useCallback(() => {
-    void requestOpenExternalUrl({ url: subscribeUrl! });
+    if (subscribeUrl) void requestOpenExternalUrl({ url: subscribeUrl });
   }, [subscribeUrl]);
+
+  const rowsProps = { ...rest, spacing, align } satisfies CanvaRowsProps;
 
   if (loading) {
     return (
-      <Rows spacing="0.5u">
+      <Rows {...rowsProps}>
         <Rows spacing="0">
           <TextPlaceholder size="small" />
           <TextPlaceholder size="small" />
@@ -74,7 +88,7 @@ export function CreditCounter({ action, footer, formatText }: CreditCounterProps
 
   if (formatText) {
     return (
-      <Rows spacing="1u" align="center">
+      <Rows {...rowsProps}>
         <Rows spacing="0" align="center">
           {formatText(data)}
         </Rows>
@@ -88,7 +102,7 @@ export function CreditCounter({ action, footer, formatText }: CreditCounterProps
 
   if (data.remaining <= 0) {
     return (
-      <Rows spacing="1u" align="center">
+      <Rows {...rowsProps}>
         <Rows spacing="0" align="center">
           <Text alignment="center" tone="secondary">
             {intl.formatMessage(creditCounterMessages.exhausted)}
@@ -107,7 +121,7 @@ export function CreditCounter({ action, footer, formatText }: CreditCounterProps
   const showInterval = data.interval && data.interval !== 'lifetime';
 
   return (
-    <Rows spacing="1u" align="center">
+    <Rows {...rowsProps}>
       <Rows spacing="0" align="center">
         <Text alignment="center" tone="secondary">
           {intl.formatMessage(creditCounterMessages.usage, {
