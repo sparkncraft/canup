@@ -1,4 +1,5 @@
 import { describe, expect, test as baseTest, vi } from 'vitest';
+import React from 'react';
 import { screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import { renderWithCanva } from '#test/setup/ui.js';
 import { ActionButton } from './ActionButton.js';
