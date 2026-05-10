@@ -8,6 +8,11 @@ const KEYS_DIR = 'keys';
 const DIR_PERMISSION = 0o700;
 const FILE_PERMISSION = 0o600;
 
+export interface UserCredentials {
+  userKey: string;
+  keyId: string;
+}
+
 /**
  * Path to the CanUp credentials directory (~/.canup/)
  */
@@ -23,44 +28,56 @@ function getCredentialsPath(): string {
 }
 
 /**
- * Save a session token to ~/.canup/credentials.
+ * Save user-level credentials to ~/.canup/credentials.
  *
  * Creates the ~/.canup/ directory (mode 0o700) if it does not exist.
  * Writes the credentials file with mode 0o600 (owner read/write only).
+ *
+ * `userKey` is the secret bearer; `keyId` is its server-side identifier and
+ * is used by `canup logout` to revoke the specific key without touching the
+ * user's other CLI keys on other devices.
  */
-export function saveToken(token: string): void {
+export function saveCredentials(credentials: UserCredentials): void {
   const dir = getCanupDir();
   const filePath = getCredentialsPath();
 
-  // Create directory with restrictive permissions
   mkdirSync(dir, { recursive: true, mode: DIR_PERMISSION });
 
-  // Write credentials with restrictive permissions
-  const data = JSON.stringify({ token, savedAt: new Date().toISOString() }, null, 2);
+  const data = JSON.stringify(
+    {
+      userKey: credentials.userKey,
+      keyId: credentials.keyId,
+      savedAt: new Date().toISOString(),
+    },
+    null,
+    2,
+  );
   writeFileSync(filePath, data, { mode: FILE_PERMISSION });
 }
 
 /**
- * Load a session token from ~/.canup/credentials.
+ * Load user-level credentials from ~/.canup/credentials.
  *
- * Returns the token string, or null if the file does not exist or is invalid.
+ * Returns `{ userKey, keyId }`, or null if the file does not exist or is
+ * missing either field.
  */
-export function loadToken(): string | null {
+export function loadCredentials(): UserCredentials | null {
   const filePath = getCredentialsPath();
 
   try {
     const raw = readFileSync(filePath, 'utf-8');
-    const parsed = JSON.parse(raw) as { token?: string };
-    return parsed.token ?? null;
+    const parsed = JSON.parse(raw) as { userKey?: string; keyId?: string };
+    if (!parsed.userKey || !parsed.keyId) return null;
+    return { userKey: parsed.userKey, keyId: parsed.keyId };
   } catch {
     return null;
   }
 }
 
 /**
- * Clear the stored token by deleting the credentials file.
+ * Clear the stored credentials by deleting the credentials file.
  */
-export function clearToken(): void {
+export function clearCredentials(): void {
   const filePath = getCredentialsPath();
 
   try {

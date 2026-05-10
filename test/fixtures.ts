@@ -52,10 +52,11 @@ const _actionsDiscovery = {
 };
 
 const _tokenStore = {
-  loadToken: vi.fn(),
-  saveToken: vi.fn(),
+  loadCredentials: vi.fn(),
+  saveCredentials: vi.fn(),
+  clearCredentials: vi.fn(),
   saveApiKey: vi.fn(),
-  clearToken: vi.fn(),
+  loadApiKey: vi.fn(),
 };
 
 /** Defaults for resetting _project between tests. */

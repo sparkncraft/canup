@@ -4,8 +4,7 @@ import { mkdirSync, readFileSync, existsSync, writeFileSync } from 'node:fs';
 import { createInterface } from 'node:readline/promises';
 import { join, resolve } from 'node:path';
 import { select, Separator } from '@inquirer/prompts';
-import { loadToken } from '../auth/token-store.js';
-import { saveApiKey } from '../auth/token-store.js';
+import { loadCredentials, saveApiKey } from '../auth/token-store.js';
 import { performLogin } from '../auth/perform-login.js';
 import { CanupClient } from '../api-client.js';
 import {
@@ -58,15 +57,14 @@ export function registerInitCommand(program: Command): void {
           return;
         }
 
-        // b. Auto-login: check for session token, trigger login if missing
-        let token = loadToken();
-        if (!token) {
+        // b. Auto-login: check for stored credentials, trigger login if missing
+        let credentials = loadCredentials();
+        if (!credentials) {
           info('Not logged in. Starting login...');
-          token = await performLogin();
-          info('Login successful!');
+          credentials = await performLogin();
         }
 
-        const client = new CanupClient({ token });
+        const client = new CanupClient({ token: credentials.userKey });
 
         // c. Determine the app to link: --app-id flag, .env detection, app picker, or create new
         let appId: string | undefined;

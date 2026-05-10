@@ -1,26 +1,32 @@
 import { createServer, type Server } from 'node:http';
 import { URL } from 'node:url';
 
+export interface CredentialsCallbackResult {
+  userKey: string;
+  keyId: string;
+  state?: string;
+}
+
 export interface CallbackServerResult {
   /** The port the server is listening on (OS-assigned) */
   port: number;
-  /** Resolves with the session token when the OAuth callback is received. Throws on error. */
-  tokenPromise: Promise<string>;
+  /** Resolves with credentials when the OAuth callback is received. Throws on error. */
+  credentialsPromise: Promise<CredentialsCallbackResult>;
   /** Close the server */
   close: () => void;
 }
 
-interface TokenResult {
+interface CredentialsOk {
   ok: true;
-  token: string;
+  result: CredentialsCallbackResult;
 }
 
-interface TokenError {
+interface CredentialsErr {
   ok: false;
   error: string;
 }
 
-type CallbackResult = TokenResult | TokenError;
+type CallbackOutcome = CredentialsOk | CredentialsErr;
 
 /**
  * Start a local HTTP callback server for receiving the OAuth redirect.
@@ -29,8 +35,8 @@ type CallbackResult = TokenResult | TokenError;
  * 127.0.0.1, never localhost) with port 0 (OS-assigned random port).
  *
  * Handles:
- * - GET /callback?token=... -> resolves tokenPromise, serves success page
- * - GET /callback?error=... -> resolves with error result, serves error page
+ * - GET /callback?token=<userKey>&keyId=<id>[&state=<x>] -> resolves credentialsPromise, serves success page
+ * - GET /callback?error=...                              -> resolves with error result, serves error page
  *
  * Automatically times out after LOGIN_TIMEOUT_SECONDS.
  */
@@ -39,32 +45,31 @@ const LOGIN_TIMEOUT_SECONDS = LOGIN_TIMEOUT_MS / 1000;
 
 export function startCallbackServer(): Promise<CallbackServerResult> {
   return new Promise((resolveStart, rejectStart) => {
-    let resolveResult: (result: CallbackResult) => void;
+    let resolveOutcome: (outcome: CallbackOutcome) => void;
 
-    // Use a result-based promise that always resolves (never rejects directly)
-    // to avoid unhandled rejection issues. The tokenPromise wraps this
-    // to throw on error results.
-    const resultPromise = new Promise<CallbackResult>((resolve) => {
-      resolveResult = resolve;
+    // Result-based promise that always resolves (never rejects directly) to
+    // avoid unhandled rejection issues. The public credentialsPromise wraps
+    // this to throw on error outcomes.
+    const outcomePromise = new Promise<CallbackOutcome>((resolve) => {
+      resolveOutcome = resolve;
     });
 
-    // The public tokenPromise throws if the result is an error
-    const tokenPromise = resultPromise.then((result) => {
-      if (result.ok) {
-        return result.token;
-      }
-      throw new Error(result.error);
+    const credentialsPromise = outcomePromise.then((outcome) => {
+      if (outcome.ok) return outcome.result;
+      throw new Error(outcome.error);
     });
 
-    // Prevent Node/Vitest unhandled rejection warnings.
-    // The consumer will still receive the rejection when they await tokenPromise.
-    tokenPromise.catch(() => {});
+    // Prevent Node/Vitest unhandled-rejection warnings. The consumer still
+    // receives the rejection when they await credentialsPromise.
+    credentialsPromise.catch(() => {});
 
     const server: Server = createServer((req, res) => {
       const url = new URL(req.url!, `http://127.0.0.1`);
 
       if (url.pathname === '/callback') {
-        const token = url.searchParams.get('token');
+        const userKey = url.searchParams.get('token');
+        const keyId = url.searchParams.get('keyId');
+        const state = url.searchParams.get('state') ?? undefined;
         const error = url.searchParams.get('error');
 
         if (error) {
@@ -76,11 +81,11 @@ export function startCallbackServer(): Promise<CallbackServerResult> {
 <p>${escapeHtml(error)}</p>
 <p>You can close this tab and try again.</p>
 </body></html>`);
-          resolveResult!({ ok: false, error: `OAuth error: ${error}` });
+          resolveOutcome!({ ok: false, error: `OAuth error: ${error}` });
           return;
         }
 
-        if (token) {
+        if (userKey && keyId) {
           res.writeHead(200, { 'Content-Type': 'text/html' });
           res.end(`<!DOCTYPE html>
 <html><head><title>Login Successful</title></head>
@@ -88,7 +93,7 @@ export function startCallbackServer(): Promise<CallbackServerResult> {
 <h1>Login Successful!</h1>
 <p>You can close this tab and return to your terminal.</p>
 </body></html>`);
-          resolveResult!({ ok: true, token });
+          resolveOutcome!({ ok: true, result: { userKey, keyId, state } });
           return;
         }
 
@@ -97,7 +102,7 @@ export function startCallbackServer(): Promise<CallbackServerResult> {
 <html><head><title>Bad Request</title></head>
 <body style="font-family: sans-serif; text-align: center; padding: 60px;">
 <h1>Bad Request</h1>
-<p>Missing token or error parameter.</p>
+<p>Missing credentials in the callback URL.</p>
 </body></html>`);
         return;
       }
@@ -106,17 +111,15 @@ export function startCallbackServer(): Promise<CallbackServerResult> {
       res.end('Not found');
     });
 
-    // Timeout after 120 seconds
     const timeout = setTimeout(() => {
-      resolveResult!({
+      resolveOutcome!({
         ok: false,
         error: `Login timed out. No callback received within ${LOGIN_TIMEOUT_SECONDS} seconds.`,
       });
       server.close();
     }, LOGIN_TIMEOUT_MS);
 
-    // Clear timeout when result is resolved
-    void resultPromise.then(() => {
+    void outcomePromise.then(() => {
       clearTimeout(timeout);
     });
 
@@ -125,12 +128,11 @@ export function startCallbackServer(): Promise<CallbackServerResult> {
       server.close();
     };
 
-    // Listen on 127.0.0.1 with port 0 (OS-assigned)
     server.listen(0, '127.0.0.1', () => {
       const addr = server.address() as { port: number };
       resolveStart({
         port: addr.port,
-        tokenPromise,
+        credentialsPromise,
         close,
       });
     });
