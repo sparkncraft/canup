@@ -28,23 +28,23 @@ const test = baseTest.extend('tempDir', async ({}, { onCleanup }) => {
   return dir;
 });
 
-describe('Token Store', () => {
-  test('saves and loads a token', async ({ tempDir }) => {
-    const { saveToken, loadToken } = await import('../auth/token-store.js');
+describe('Credentials Store', () => {
+  test('saves and loads credentials', async ({ tempDir: _ }) => {
+    const { saveCredentials, loadCredentials } = await import('../auth/token-store.js');
 
-    saveToken('test-session-token-123');
-    expect(loadToken()).toBe('test-session-token-123');
+    saveCredentials({ userKey: 'cnup_secret_xyz', keyId: 'apikey_abc' });
+    expect(loadCredentials()).toEqual({ userKey: 'cnup_secret_xyz', keyId: 'apikey_abc' });
   });
 
-  test('returns null when no credentials file exists', async ({ tempDir }) => {
-    const { loadToken } = await import('../auth/token-store.js');
-    expect(loadToken()).toBeNull();
+  test('returns null when no credentials file exists', async ({ tempDir: _ }) => {
+    const { loadCredentials } = await import('../auth/token-store.js');
+    expect(loadCredentials()).toBeNull();
   });
 
   test('creates ~/.canup/ directory with mode 0o700', async ({ tempDir }) => {
-    const { saveToken } = await import('../auth/token-store.js');
+    const { saveCredentials } = await import('../auth/token-store.js');
 
-    saveToken('test-token');
+    saveCredentials({ userKey: 'cnup_xxx', keyId: 'apikey_xxx' });
 
     const canupDir = join(tempDir, '.canup');
     expect(existsSync(canupDir)).toBe(true);
@@ -52,62 +52,80 @@ describe('Token Store', () => {
   });
 
   test('creates credentials file with mode 0o600', async ({ tempDir }) => {
-    const { saveToken } = await import('../auth/token-store.js');
+    const { saveCredentials } = await import('../auth/token-store.js');
 
-    saveToken('test-token');
+    saveCredentials({ userKey: 'cnup_xxx', keyId: 'apikey_xxx' });
 
     const credPath = join(tempDir, '.canup', 'credentials');
     expect(existsSync(credPath)).toBe(true);
     expect(statSync(credPath).mode & 0o777).toBe(0o600);
   });
 
-  test('stores valid JSON with token and savedAt fields', async ({ tempDir }) => {
-    const { saveToken } = await import('../auth/token-store.js');
+  test('stores valid JSON with userKey, keyId, and savedAt fields', async ({ tempDir }) => {
+    const { saveCredentials } = await import('../auth/token-store.js');
 
-    saveToken('test-token-abc');
+    saveCredentials({ userKey: 'cnup_secret', keyId: 'apikey_123' });
 
     const credPath = join(tempDir, '.canup', 'credentials');
-    const parsed = JSON.parse(readFileSync(credPath, 'utf-8'));
-    expect(parsed.token).toBe('test-token-abc');
+    const parsed = JSON.parse(readFileSync(credPath, 'utf-8')) as Record<string, unknown>;
+    expect(parsed.userKey).toBe('cnup_secret');
+    expect(parsed.keyId).toBe('apikey_123');
     expect(typeof parsed.savedAt).toBe('string');
   });
 
-  test('clears the token by deleting credentials file', async ({ tempDir }) => {
-    const { saveToken, clearToken, loadToken } = await import('../auth/token-store.js');
+  test('clears credentials by deleting the file', async ({ tempDir }) => {
+    const { saveCredentials, clearCredentials, loadCredentials } =
+      await import('../auth/token-store.js');
 
-    saveToken('test-token');
-    expect(loadToken()).toBe('test-token');
+    saveCredentials({ userKey: 'cnup_xxx', keyId: 'apikey_xxx' });
+    expect(loadCredentials()).not.toBeNull();
 
-    clearToken();
-    expect(loadToken()).toBeNull();
+    clearCredentials();
+    expect(loadCredentials()).toBeNull();
     expect(existsSync(join(tempDir, '.canup', 'credentials'))).toBe(false);
   });
 
-  test('returns null when credentials JSON lacks token field', async ({ tempDir }) => {
-    const { loadToken } = await import('../auth/token-store.js');
+  test('returns null when credentials JSON lacks userKey', async ({ tempDir }) => {
+    const { loadCredentials } = await import('../auth/token-store.js');
 
     const canupDir = join(tempDir, '.canup');
     mkdirSync(canupDir, { recursive: true });
-    writeFileSync(join(canupDir, 'credentials'), JSON.stringify({ savedAt: '2026-01-01' }));
+    writeFileSync(
+      join(canupDir, 'credentials'),
+      JSON.stringify({ keyId: 'apikey_xxx', savedAt: '2026-01-01' }),
+    );
 
-    expect(loadToken()).toBeNull();
+    expect(loadCredentials()).toBeNull();
   });
 
-  test('clearToken does not error when no credentials exist', async ({ tempDir }) => {
-    const { clearToken } = await import('../auth/token-store.js');
-    expect(() => clearToken()).not.toThrow();
+  test('returns null when credentials JSON lacks keyId', async ({ tempDir }) => {
+    const { loadCredentials } = await import('../auth/token-store.js');
+
+    const canupDir = join(tempDir, '.canup');
+    mkdirSync(canupDir, { recursive: true });
+    writeFileSync(
+      join(canupDir, 'credentials'),
+      JSON.stringify({ userKey: 'cnup_xxx', savedAt: '2026-01-01' }),
+    );
+
+    expect(loadCredentials()).toBeNull();
+  });
+
+  test('clearCredentials does not error when no file exists', async ({ tempDir: _ }) => {
+    const { clearCredentials } = await import('../auth/token-store.js');
+    expect(() => clearCredentials()).not.toThrow();
   });
 });
 
 describe('API Key Store', () => {
-  test('saves and loads an API key by appId', async ({ tempDir }) => {
+  test('saves and loads an API key by appId', async ({ tempDir: _ }) => {
     const { saveApiKey, loadApiKey } = await import('../auth/token-store.js');
 
     saveApiKey('app-123', 'cnup_key_abc');
     expect(loadApiKey('app-123')).toBe('cnup_key_abc');
   });
 
-  test('returns null when no key file exists for appId', async ({ tempDir }) => {
+  test('returns null when no key file exists for appId', async ({ tempDir: _ }) => {
     const { loadApiKey } = await import('../auth/token-store.js');
     expect(loadApiKey('nonexistent-app')).toBeNull();
   });
@@ -137,12 +155,12 @@ describe('API Key Store', () => {
     saveApiKey('app-1', 'cnup_secret');
 
     const keyPath = join(tempDir, '.canup', 'keys', 'app-1');
-    const parsed = JSON.parse(readFileSync(keyPath, 'utf-8'));
+    const parsed = JSON.parse(readFileSync(keyPath, 'utf-8')) as Record<string, unknown>;
     expect(parsed.apiKey).toBe('cnup_secret');
     expect(typeof parsed.savedAt).toBe('string');
   });
 
-  test('isolates keys by appId', async ({ tempDir }) => {
+  test('isolates keys by appId', async ({ tempDir: _ }) => {
     const { saveApiKey, loadApiKey } = await import('../auth/token-store.js');
 
     saveApiKey('app-a', 'key-a');

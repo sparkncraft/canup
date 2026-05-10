@@ -12,7 +12,7 @@ export interface UserInfo {
   id: string;
   email: string;
   name: string | null;
-  avatarUrl: string | null;
+  image: string | null;
   createdAt: string;
 }
 
@@ -152,20 +152,25 @@ export class CanupClient {
   }
 
   /**
-   * Get the GitHub OAuth authorization URL.
-   * The CLI will open this URL in the browser.
-   */
-  async getAuthUrl(redirectUri: string): Promise<{ url: string }> {
-    const params = new URLSearchParams({ redirect_uri: redirectUri });
-    return this.request<{ url: string }>(`/${API_VERSION}/oauth/github?${params.toString()}`);
-  }
-
-  /**
    * Get the current user's info.
-   * Requires a valid session token.
+   * Requires a valid session cookie or user-level api key.
    */
   async getMe(): Promise<UserInfo> {
     return this.request<UserInfo>(`/${API_VERSION}/me`);
+  }
+
+  /**
+   * Revoke a user-level API key by id. Used by `canup logout` to remove the
+   * exact key stored on this machine without touching keys on other devices.
+   *
+   * The optional `signal` lets callers bound the request (logout swallows
+   * errors after a short timeout — see commands/logout.ts).
+   */
+  async revokeUserKey(keyId: string, init?: { signal?: AbortSignal }): Promise<void> {
+    await this.request<{ revoked: string }>(
+      `/${API_VERSION}/me/api-keys/${encodeURIComponent(keyId)}`,
+      { method: 'DELETE', signal: init?.signal },
+    );
   }
 
   // ──────────────────────────────────────────────
@@ -572,6 +577,7 @@ export class CanupClient {
     const res = await fetch(url, {
       ...options,
       headers,
+      signal: options?.signal,
     });
 
     const body = (await res.json()) as ApiResponse<T>;

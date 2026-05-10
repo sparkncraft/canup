@@ -10,8 +10,8 @@ import type { Mock } from 'vitest';
  * Each method is a vi.fn() mock.
  */
 export interface MockCanupClient {
-  getAuthUrl: Mock;
   getMe: Mock;
+  revokeUserKey: Mock;
   registerApp: Mock;
   getAppInfo: Mock;
   listApps: Mock;
@@ -41,14 +41,14 @@ export interface MockCanupClient {
  * Called after vitest's mockReset clears implementations between tests.
  */
 export function resetMockCanupClient(client: MockCanupClient): void {
-  client.getAuthUrl.mockResolvedValue({ url: 'https://github.com/login/oauth' });
   client.getMe.mockResolvedValue({
     id: 'usr-1',
     email: 'test@example.com',
     name: 'Test User',
-    avatarUrl: null,
+    image: null,
     createdAt: '2026-01-01T00:00:00Z',
   });
+  client.revokeUserKey.mockResolvedValue(undefined);
   client.registerApp.mockResolvedValue({
     id: 'AAFtest12345',
     name: 'Test App',
@@ -128,14 +128,14 @@ export function resetMockCanupClient(client: MockCanupClient): void {
 export function createMockCanupClient(overrides?: Partial<MockCanupClient>): MockCanupClient {
   return {
     // Auth / user
-    getAuthUrl: vi.fn().mockResolvedValue({ url: 'https://github.com/login/oauth' }),
     getMe: vi.fn().mockResolvedValue({
       id: 'usr-1',
       email: 'test@example.com',
       name: 'Test User',
-      avatarUrl: null,
+      image: null,
       createdAt: '2026-01-01T00:00:00Z',
     }),
+    revokeUserKey: vi.fn().mockResolvedValue(undefined),
 
     // App management
     registerApp: vi.fn().mockResolvedValue({ id: 'AAFtest12345', name: 'Test App' }),

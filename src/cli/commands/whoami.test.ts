@@ -10,8 +10,8 @@ vi.mock('../api-client.js', () => ({
 }));
 
 describe('whoami command', () => {
-  test('prints "Not logged in" when no token is stored', async ({ processMocks }) => {
-    tokenStore.loadToken.mockReturnValue(null);
+  test('prints "Not logged in" when no credentials are stored', async ({ processMocks }) => {
+    tokenStore.loadCredentials.mockReturnValue(null);
 
     const { Command } = await import('commander');
     const { registerWhoamiCommand } = await import('../commands/whoami.js');
@@ -25,14 +25,14 @@ describe('whoami command', () => {
     expect(processMocks.exit).toHaveBeenCalledWith(1);
   });
 
-  test('displays user info when logged in', async ({ client, processMocks }) => {
-    tokenStore.loadToken.mockReturnValue('valid-token');
+  test('displays user info when logged in', async ({ client: c, processMocks }) => {
+    tokenStore.loadCredentials.mockReturnValue({ userKey: 'cnup_x', keyId: 'apikey_x' });
 
-    client.getMe.mockResolvedValue({
+    c.getMe.mockResolvedValue({
       id: '123',
       email: 'dev@example.com',
       name: 'Test User',
-      avatarUrl: null,
+      image: null,
       createdAt: '2026-01-15T00:00:00.000Z',
     });
 
@@ -40,7 +40,7 @@ describe('whoami command', () => {
     const { registerWhoamiCommand } = await import('../commands/whoami.js');
 
     const program = new Command();
-    program.exitOverride(); // Prevent commander from calling process.exit
+    program.exitOverride();
     registerWhoamiCommand(program);
 
     await program.parseAsync(['whoami'], { from: 'user' });
@@ -49,13 +49,13 @@ describe('whoami command', () => {
     expect(processMocks.log).toHaveBeenCalledWith(expect.stringContaining('dev@example.com'));
   });
 
-  test('displays "(not set)" when user name is null', async ({ client, processMocks }) => {
-    tokenStore.loadToken.mockReturnValue('valid-token');
-    client.getMe.mockResolvedValue({
+  test('displays "(not set)" when user name is null', async ({ client: c, processMocks }) => {
+    tokenStore.loadCredentials.mockReturnValue({ userKey: 'cnup_x', keyId: 'apikey_x' });
+    c.getMe.mockResolvedValue({
       id: '123',
       email: 'dev@example.com',
       name: null,
-      avatarUrl: null,
+      image: null,
       createdAt: '2026-01-15T00:00:00.000Z',
     });
 
@@ -70,9 +70,9 @@ describe('whoami command', () => {
     expect(processMocks.log).toHaveBeenCalledWith(expect.stringContaining('(not set)'));
   });
 
-  test('handles non-Error thrown value', async ({ client, processMocks }) => {
-    tokenStore.loadToken.mockReturnValue('valid-token');
-    client.getMe.mockRejectedValue('raw error string');
+  test('handles non-Error thrown value', async ({ client: c, processMocks }) => {
+    tokenStore.loadCredentials.mockReturnValue({ userKey: 'cnup_x', keyId: 'apikey_x' });
+    c.getMe.mockRejectedValue('raw error string');
 
     const { Command } = await import('commander');
     const { registerWhoamiCommand } = await import('../commands/whoami.js');
@@ -86,12 +86,12 @@ describe('whoami command', () => {
     expect(processMocks.exit).toHaveBeenCalledWith(1);
   });
 
-  test('prints session expired on 401 error', async ({ client, processMocks }) => {
-    tokenStore.loadToken.mockReturnValue('expired-token');
+  test('prints session expired on 401 error', async ({ client: c, processMocks }) => {
+    tokenStore.loadCredentials.mockReturnValue({ userKey: 'cnup_x', keyId: 'apikey_x' });
 
     const error = new Error('Invalid or expired session') as Error & { statusCode: number };
     error.statusCode = 401;
-    client.getMe.mockRejectedValue(error);
+    c.getMe.mockRejectedValue(error);
 
     const { Command } = await import('commander');
     const { registerWhoamiCommand } = await import('../commands/whoami.js');

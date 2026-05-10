@@ -136,7 +136,7 @@ describe('CanupClient', () => {
   describe('constructor', () => {
     test('uses apiUrl from options when provided', async () => {
       mockFetch.mockResolvedValueOnce(
-        okResponse({ id: '1', email: 'a@b.c', name: null, avatarUrl: null, createdAt: '' }),
+        okResponse({ id: '1', email: 'a@b.c', name: null, image: null, createdAt: '' }),
       );
       const client = new CanupClient({ apiUrl: 'https://custom.test', token: 'tok' });
       await client.getMe();
@@ -146,7 +146,7 @@ describe('CanupClient', () => {
     test('falls back to CANUP_API_URL env var', async () => {
       vi.stubEnv('CANUP_API_URL', 'https://env.test');
       mockFetch.mockResolvedValueOnce(
-        okResponse({ id: '1', email: 'a@b.c', name: null, avatarUrl: null, createdAt: '' }),
+        okResponse({ id: '1', email: 'a@b.c', name: null, image: null, createdAt: '' }),
       );
       const client = new CanupClient({ token: 'tok' });
       await client.getMe();
@@ -155,7 +155,7 @@ describe('CanupClient', () => {
 
     test('defaults to https://canup.link when neither option nor env set', async () => {
       mockFetch.mockResolvedValueOnce(
-        okResponse({ id: '1', email: 'a@b.c', name: null, avatarUrl: null, createdAt: '' }),
+        okResponse({ id: '1', email: 'a@b.c', name: null, image: null, createdAt: '' }),
       );
       const client = new CanupClient({ token: 'tok' });
       await client.getMe();
@@ -168,7 +168,7 @@ describe('CanupClient', () => {
   describe('auth header', () => {
     test('sends Authorization: Bearer when token is set', async () => {
       mockFetch.mockResolvedValueOnce(
-        okResponse({ id: '1', email: 'a@b.c', name: null, avatarUrl: null, createdAt: '' }),
+        okResponse({ id: '1', email: 'a@b.c', name: null, image: null, createdAt: '' }),
       );
       const client = createClient();
       await client.getMe();
@@ -177,7 +177,7 @@ describe('CanupClient', () => {
 
     test('omits Authorization header when no token', async () => {
       mockFetch.mockResolvedValueOnce(
-        okResponse({ id: '1', email: 'a@b.c', name: null, avatarUrl: null, createdAt: '' }),
+        okResponse({ id: '1', email: 'a@b.c', name: null, image: null, createdAt: '' }),
       );
       const client = new CanupClient({ apiUrl: 'https://test.api' });
       await client.getMe();
@@ -232,21 +232,6 @@ describe('CanupClient', () => {
     });
   });
 
-  // ──── getAuthUrl ────
-
-  describe('getAuthUrl', () => {
-    test('sends GET to /v1/oauth/github with redirect_uri query param', async () => {
-      mockFetch.mockResolvedValueOnce(okResponse({ url: 'https://github.com/login/oauth' }));
-      const client = createClient();
-      const result = await client.getAuthUrl('http://localhost:3000/callback');
-
-      expect(fetchUrl()).toBe(
-        'https://test.api/v1/oauth/github?redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fcallback',
-      );
-      expect(result).toEqual({ url: 'https://github.com/login/oauth' });
-    });
-  });
-
   // ──── getMe ────
 
   describe('getMe', () => {
@@ -255,7 +240,7 @@ describe('CanupClient', () => {
         id: 'u1',
         email: 'a@b.c',
         name: 'Test',
-        avatarUrl: null,
+        image: null,
         createdAt: '2026-01-01',
       };
       mockFetch.mockResolvedValueOnce(okResponse(user));
@@ -265,6 +250,50 @@ describe('CanupClient', () => {
       expect(fetchUrl()).toBe('https://test.api/v1/me');
       expect(fetchOpts().method).toBeUndefined(); // defaults to GET
       expect(result).toEqual(user);
+    });
+  });
+
+  // ──── revokeUserKey ────
+
+  describe('revokeUserKey', () => {
+    test('sends DELETE to /v1/me/api-keys/:keyId with URL encoding', async () => {
+      mockFetch.mockResolvedValueOnce(okResponse({ revoked: 'apikey_abc' }));
+      const client = createClient();
+      await client.revokeUserKey('apikey/abc');
+
+      expect(fetchUrl()).toBe('https://test.api/v1/me/api-keys/apikey%2Fabc');
+      expect(fetchOpts().method).toBe('DELETE');
+    });
+
+    test('forwards AbortSignal to underlying fetch', async () => {
+      mockFetch.mockResolvedValueOnce(okResponse({ revoked: 'apikey_x' }));
+      const client = createClient();
+      const ac = new AbortController();
+      await client.revokeUserKey('apikey_x', { signal: ac.signal });
+
+      // The actual signal the SDK passed must be the SAME instance reaching fetch,
+      // otherwise the timeout in `canup logout` would be decorative.
+      expect(fetchOpts().signal).toBe(ac.signal);
+    });
+
+    test('AbortError surfaces when the signal aborts before fetch resolves', async () => {
+      mockFetch.mockImplementation(async (_url: string, init: RequestInit) => {
+        // Simulate fetch honoring the signal: if it's aborted, reject with AbortError.
+        if (init.signal?.aborted) {
+          const err = new Error('aborted') as Error & { name: string };
+          err.name = 'AbortError';
+          throw err;
+        }
+        return okResponse({ revoked: 'apikey_x' });
+      });
+
+      const client = createClient();
+      const ac = new AbortController();
+      ac.abort();
+
+      await expect(client.revokeUserKey('apikey_x', { signal: ac.signal })).rejects.toMatchObject({
+        name: 'AbortError',
+      });
     });
   });
 

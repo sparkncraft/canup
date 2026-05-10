@@ -1,27 +1,27 @@
 import type { Command } from 'commander';
-import { loadToken } from '../auth/token-store.js';
+import { loadCredentials } from '../auth/token-store.js';
 import { CanupClient } from '../api-client.js';
 
 /**
  * Register the `whoami` command.
  *
- * Loads the stored session token and calls GET /v1/me to display
- * the current user's identity.
+ * Loads the stored credentials and calls GET /v1/me to display the current
+ * user's identity.
  */
 export function registerWhoamiCommand(program: Command): void {
   program
     .command('whoami')
     .description('Show the currently logged-in user')
     .action(async () => {
-      const token = loadToken();
+      const credentials = loadCredentials();
 
-      if (!token) {
+      if (!credentials) {
         console.error('Not logged in. Run `canup login` first.');
         process.exit(1);
       }
 
       try {
-        const client = new CanupClient({ token });
+        const client = new CanupClient({ token: credentials.userKey });
         const me = await client.getMe();
 
         console.log(`Name:         ${me.name ?? '(not set)'}`);

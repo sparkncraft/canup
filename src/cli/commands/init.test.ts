@@ -68,7 +68,7 @@ describe('init command', () => {
     output,
     processMocks,
   }) => {
-    tokenStore.loadToken.mockReturnValue('valid-token');
+    tokenStore.loadCredentials.mockReturnValue({ userKey: 'cnup_x', keyId: 'apikey_x' });
     projectConfig.loadProjectConfig.mockReturnValue(null);
     client.registerApp.mockResolvedValue({
       id: 'AAFtest',
@@ -116,8 +116,8 @@ describe('init command', () => {
   });
 
   test('auto-triggers login when no session token exists', async ({ output, processMocks }) => {
-    tokenStore.loadToken.mockReturnValue(null);
-    mockPerformLogin.mockResolvedValue('auto-login-token');
+    tokenStore.loadCredentials.mockReturnValue(null);
+    mockPerformLogin.mockResolvedValue({ userKey: 'cnup_auto', keyId: 'apikey_auto' });
     projectConfig.loadProjectConfig.mockReturnValue(null);
     client.registerApp.mockResolvedValue({
       id: 'AAFauto',
@@ -135,13 +135,15 @@ describe('init command', () => {
 
     expect(mockPerformLogin).toHaveBeenCalled();
     expect(output.info).toHaveBeenCalledWith('Not logged in. Starting login...');
-    expect(output.info).toHaveBeenCalledWith('Login successful!');
+    // performLogin now prints its own "Logged in as <email>." line, so the
+    // wrapper command should NOT also print a "Login successful!" line.
+    expect(output.info).not.toHaveBeenCalledWith('Login successful!');
     expect(client.registerApp).toHaveBeenCalledWith('AAFauto');
     expect(mockSaveProjectConfig).toHaveBeenCalledWith(process.cwd(), { appId: 'AAFauto' });
   });
 
   test('detects CANVA_APP_ID from .env file', async ({ output, processMocks }) => {
-    tokenStore.loadToken.mockReturnValue('valid-token');
+    tokenStore.loadCredentials.mockReturnValue({ userKey: 'cnup_x', keyId: 'apikey_x' });
     projectConfig.loadProjectConfig.mockReturnValue(null);
     mockExistsSync.mockReturnValueOnce(true);
     mockReadFileSync.mockReturnValue('CANVA_APP_ID=AAFdetected\nOTHER_VAR=foo\n');
@@ -165,7 +167,7 @@ describe('init command', () => {
   });
 
   test('handles API failure at registerApp step', async ({ output, processMocks }) => {
-    tokenStore.loadToken.mockReturnValue('valid-token');
+    tokenStore.loadCredentials.mockReturnValue({ userKey: 'cnup_x', keyId: 'apikey_x' });
     projectConfig.loadProjectConfig.mockReturnValue(null);
 
     const apiError = new Error('Server error') as Error & { statusCode: number };
@@ -185,7 +187,7 @@ describe('init command', () => {
   });
 
   test('handles API failure at createApiKey step', async ({ output, processMocks }) => {
-    tokenStore.loadToken.mockReturnValue('valid-token');
+    tokenStore.loadCredentials.mockReturnValue({ userKey: 'cnup_x', keyId: 'apikey_x' });
     projectConfig.loadProjectConfig.mockReturnValue(null);
     client.registerApp.mockResolvedValue({
       id: 'AAFtest',
@@ -209,7 +211,7 @@ describe('init command', () => {
   });
 
   test('creates canup/ and canup/actions/ directories', async ({ processMocks }) => {
-    tokenStore.loadToken.mockReturnValue('valid-token');
+    tokenStore.loadCredentials.mockReturnValue({ userKey: 'cnup_x', keyId: 'apikey_x' });
     projectConfig.loadProjectConfig.mockReturnValue(null);
     client.registerApp.mockResolvedValue({ id: 'app-1' });
     client.createApiKey.mockResolvedValue({ key: 'cnup_k', prefix: 'cnup' });
@@ -227,10 +229,8 @@ describe('init command', () => {
     });
   });
 
-  test('writes config with only appId', async ({
-    processMocks,
-  }) => {
-    tokenStore.loadToken.mockReturnValue('valid-token');
+  test('writes config with only appId', async ({ processMocks }) => {
+    tokenStore.loadCredentials.mockReturnValue({ userKey: 'cnup_x', keyId: 'apikey_x' });
     projectConfig.loadProjectConfig.mockReturnValue(null);
     client.registerApp.mockResolvedValue({ id: 'AAFtest100' });
     client.createApiKey.mockResolvedValue({ key: 'cnup_key', prefix: 'cnup' });
@@ -250,7 +250,7 @@ describe('init command', () => {
     output,
     processMocks,
   }) => {
-    tokenStore.loadToken.mockReturnValue('valid-token');
+    tokenStore.loadCredentials.mockReturnValue({ userKey: 'cnup_x', keyId: 'apikey_x' });
     projectConfig.loadProjectConfig.mockReturnValue(null);
 
     const apiError = new Error('Conflict') as Error & { statusCode: number };
@@ -272,7 +272,10 @@ describe('init command', () => {
   });
 
   test('handles 401 session expired during init', async ({ output, processMocks }) => {
-    tokenStore.loadToken.mockReturnValue('expired-token');
+    tokenStore.loadCredentials.mockReturnValue({
+      userKey: 'cnup_expired',
+      keyId: 'apikey_expired',
+    });
     projectConfig.loadProjectConfig.mockReturnValue(null);
 
     const apiError = new Error('Unauthorized') as Error & { statusCode: number };
@@ -293,7 +296,7 @@ describe('init command', () => {
   });
 
   test('displays API key prefix with ellipsis on success', async ({ output, processMocks }) => {
-    tokenStore.loadToken.mockReturnValue('valid-token');
+    tokenStore.loadCredentials.mockReturnValue({ userKey: 'cnup_x', keyId: 'apikey_x' });
     projectConfig.loadProjectConfig.mockReturnValue(null);
     client.registerApp.mockResolvedValue({ id: 'app-1' });
     client.createApiKey.mockResolvedValue({ key: 'cnup_mykey_full', prefix: 'cnup_mykey' });
@@ -314,7 +317,7 @@ describe('init command', () => {
     output,
     processMocks,
   }) => {
-    tokenStore.loadToken.mockReturnValue('valid-token');
+    tokenStore.loadCredentials.mockReturnValue({ userKey: 'cnup_x', keyId: 'apikey_x' });
     projectConfig.loadProjectConfig.mockReturnValue(null);
 
     client.listApps.mockResolvedValue([
@@ -357,7 +360,7 @@ describe('init command', () => {
   });
 
   test('skips picker when user has no existing apps', async ({ output, processMocks }) => {
-    tokenStore.loadToken.mockReturnValue('valid-token');
+    tokenStore.loadCredentials.mockReturnValue({ userKey: 'cnup_x', keyId: 'apikey_x' });
     projectConfig.loadProjectConfig.mockReturnValue(null);
 
     client.listApps.mockResolvedValue([]);
@@ -386,7 +389,7 @@ describe('init command', () => {
     output,
     processMocks,
   }) => {
-    tokenStore.loadToken.mockReturnValue('valid-token');
+    tokenStore.loadCredentials.mockReturnValue({ userKey: 'cnup_x', keyId: 'apikey_x' });
     projectConfig.loadProjectConfig.mockReturnValue(null);
 
     client.listApps.mockResolvedValue([
@@ -419,7 +422,7 @@ describe('init command', () => {
     output,
     processMocks,
   }) => {
-    tokenStore.loadToken.mockReturnValue('valid-token');
+    tokenStore.loadCredentials.mockReturnValue({ userKey: 'cnup_x', keyId: 'apikey_x' });
     projectConfig.loadProjectConfig.mockReturnValue(null);
 
     client.listApps.mockResolvedValue([
@@ -448,7 +451,7 @@ describe('init command', () => {
   });
 
   test('handles .env read error gracefully', async ({ output, processMocks }) => {
-    tokenStore.loadToken.mockReturnValue('valid-token');
+    tokenStore.loadCredentials.mockReturnValue({ userKey: 'cnup_x', keyId: 'apikey_x' });
     projectConfig.loadProjectConfig.mockReturnValue(null);
     client.listApps.mockResolvedValue([]);
     client.registerApp.mockResolvedValue({ id: 'app-new-1' });
@@ -474,7 +477,7 @@ describe('init command', () => {
   });
 
   test('exits when user enters empty Canva App ID', async ({ output, processMocks }) => {
-    tokenStore.loadToken.mockReturnValue('valid-token');
+    tokenStore.loadCredentials.mockReturnValue({ userKey: 'cnup_x', keyId: 'apikey_x' });
     projectConfig.loadProjectConfig.mockReturnValue(null);
     client.listApps.mockResolvedValue([]);
 
@@ -497,7 +500,7 @@ describe('init command', () => {
     output,
     processMocks,
   }) => {
-    tokenStore.loadToken.mockReturnValue('valid-token');
+    tokenStore.loadCredentials.mockReturnValue({ userKey: 'cnup_x', keyId: 'apikey_x' });
     projectConfig.loadProjectConfig.mockReturnValue(null);
     client.registerApp.mockResolvedValue({ id: 'app-1' });
     client.createApiKey.mockResolvedValue({ key: 'cnup_k', prefix: 'cnup' });
@@ -524,7 +527,7 @@ describe('init command', () => {
     output,
     processMocks,
   }) => {
-    tokenStore.loadToken.mockReturnValue('valid-token');
+    tokenStore.loadCredentials.mockReturnValue({ userKey: 'cnup_x', keyId: 'apikey_x' });
     projectConfig.loadProjectConfig.mockReturnValue(null);
     client.registerApp.mockResolvedValue({ id: 'app-1' });
     client.createApiKey.mockResolvedValue({ key: 'cnup_k', prefix: 'cnup' });
@@ -544,7 +547,7 @@ describe('init command', () => {
   });
 
   test('suggests install command when lockfile is detected', async ({ output, processMocks }) => {
-    tokenStore.loadToken.mockReturnValue('valid-token');
+    tokenStore.loadCredentials.mockReturnValue({ userKey: 'cnup_x', keyId: 'apikey_x' });
     projectConfig.loadProjectConfig.mockReturnValue(null);
     client.registerApp.mockResolvedValue({ id: 'app-1' });
     client.createApiKey.mockResolvedValue({ key: 'cnup_k', prefix: 'cnup' });
