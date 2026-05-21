@@ -53,7 +53,8 @@ export function CreditCounter({
   const subscribeUrl = data?.subscribeUrl ?? null;
 
   const openUrl = useCallback(() => {
-    if (subscribeUrl) void requestOpenExternalUrl({ url: subscribeUrl });
+    if (!subscribeUrl) return;
+    void requestOpenExternalUrl({ url: subscribeUrl });
   }, [subscribeUrl]);
 
   const rowsProps = { ...rest, spacing, align } satisfies CanvaRowsProps;
