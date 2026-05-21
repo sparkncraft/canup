@@ -99,8 +99,8 @@
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.2",
     "lint-staged": "^16.4.0",
-    "@canva/app-ui-kit": "^5.7.0",
-    "@canva/platform": "^2.2.0",
+    "@canva/app-ui-kit": "^5.9.0",
+    "@canva/platform": "^2.2.2",
     "@canva/user": "^2.2.0",
     "@changesets/changelog-github": "^0.6.0",
     "@changesets/cli": "^2.30.0",
