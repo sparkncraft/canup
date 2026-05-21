@@ -63,6 +63,7 @@
     "@inquirer/prompts": "^8.3.0",
     "chalk": "^5.6.2",
     "commander": "^13.1.0",
+    "eventsource": "^4.1.0",
     "open": "^10.1.0",
     "ora": "^9.3.0",
     "tsx": "^4.19.4",
@@ -98,7 +99,7 @@
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.2",
-    "lint-staged": "^16.4.0",
+    "@canva/app-i18n-kit": "^1.2.0",
     "@canva/app-ui-kit": "^5.9.0",
     "@canva/platform": "^2.2.2",
     "@canva/user": "^2.2.0",
@@ -115,18 +116,18 @@
     "eslint": "^10.1.0",
     "eslint-config-prettier": "^10.1.8",
     "jsdom": "^26.0.0",
+    "lint-staged": "^16.4.0",
     "msw": "^2.12.14",
     "prettier": "^3.8.1",
     "publint": "^0.3.18",
     "react": "^19.0.0",
+    "react-intl": "^7.1.11",
+    "simple-git-hooks": "^2.13.1",
     "size-limit": "^12.0.1",
     "tsdown": "^0.21.4",
     "type-fest": "^5.5.0",
-    "simple-git-hooks": "^2.13.1",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.58.0",
-    "vitest": "^4.1.0",
-    "@canva/app-i18n-kit": "^1.2.0",
-    "react-intl": "^7.1.11"
+    "vitest": "^4.1.0"
   }
 }
