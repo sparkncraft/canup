@@ -9,12 +9,17 @@ import WebpackDevServer from 'webpack-dev-server';
 import chalk from 'chalk';
 import { config } from 'dotenv';
 import { buildConfig } from '../webpack.config';
+import { createOrRetrieveCertificate } from './ssl/ssl';
 
 config();
 
 const port = Number(process.env.CANVA_FRONTEND_PORT) || 8080;
 const enableHmr = process.env.CANVA_HMR_ENABLED?.toUpperCase() === 'TRUE';
-const enableHttps = true; // Required: Canva editor runs on HTTPS
+// HTTP by default. The Canva editor accepts http://localhost in Chrome and
+// Firefox (Chromium exempts localhost from mixed-content blocking). Safari
+// requires HTTPS — pass `--use-https` to enable it. See
+// https://www.canva.dev/docs/apps/previewing-apps/#using-https
+const enableHttps = process.argv.includes('--use-https');
 const appOrigin = process.env.CANVA_APP_ORIGIN;
 
 if (!appOrigin) {
@@ -24,15 +29,21 @@ if (!appOrigin) {
   );
 }
 
-const webpackConfig = buildConfig({
-  devConfig: { port, enableHmr, enableHttps, appOrigin },
-});
+async function main() {
+  const { certFile, keyFile } = enableHttps
+    ? await createOrRetrieveCertificate()
+    : { certFile: undefined, keyFile: undefined };
 
-const compiler = webpack(webpackConfig);
-// devServer is always present when devConfig is passed to buildConfig
-const server = new WebpackDevServer(webpackConfig.devServer!, compiler);
+  const webpackConfig = buildConfig({
+    devConfig: { port, enableHmr, enableHttps, appOrigin, certFile, keyFile },
+  });
 
-void server.start().then(() => {
+  const compiler = webpack(webpackConfig);
+  // devServer is always present when devConfig is passed to buildConfig
+  const server = new WebpackDevServer(webpackConfig.devServer!, compiler);
+
+  await server.start();
+
   const protocol = enableHttps ? 'https' : 'http';
   console.log();
   console.log(chalk.green.bold('Canva app dev server running:'));
@@ -44,4 +55,6 @@ void server.start().then(() => {
     console.log(chalk.dim('HMR disabled (set CANVA_HMR_ENABLED=TRUE and CANVA_APP_ORIGIN)'));
   }
   console.log();
-});
+}
+
+void main();

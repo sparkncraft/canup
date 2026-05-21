@@ -9,6 +9,8 @@ type DevConfig = {
   enableHmr: boolean;
   enableHttps: boolean;
   appOrigin?: string;
+  certFile?: string;
+  keyFile?: string;
 };
 
 export function buildConfig({
@@ -90,11 +92,16 @@ function buildDevConfig(options?: DevConfig): {
     return {};
   }
 
-  const { port, enableHmr, appOrigin, enableHttps } = options;
+  const { port, enableHmr, appOrigin, enableHttps, certFile, keyFile } = options;
   const host = 'localhost';
 
   let devServer: DevServerConfiguration = {
-    server: enableHttps ? 'https' : 'http',
+    server: enableHttps
+      ? {
+          type: 'https',
+          options: { cert: certFile, key: keyFile },
+        }
+      : 'http',
     host,
     allowedHosts: [host],
     historyApiFallback: {

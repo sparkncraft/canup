@@ -1,4 +1,8 @@
-node_modules/
-dist/
+.DS_Store
 .env
-package-lock.json
+.idea
+.ssl
+*.log*
+**/*/db.json
+dist
+node_modules

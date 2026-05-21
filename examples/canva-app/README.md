@@ -1,12 +1,12 @@
-# Canva App Example with canup
+# Canva App Example with CanUp
 
-A reference Canva app that demonstrates canup components in a realistic project setup. Shows prompt input via `TextInput`, server-side action execution via `ActionButton`, adding generated text to the Canva canvas, and credit tracking via `CreditCounter`.
+A reference Canva app that demonstrates CanUp components in a realistic project setup. Shows prompt input via `TextInput`, server-side action execution via `ActionButton`, adding generated text to the Canva canvas, and credit tracking via `CreditCounter`.
 
 ## Setup
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 22+
 - A [Canva developer account](https://www.canva.dev/) and app created via `canva apps create`
 
 ### Steps
@@ -42,6 +42,8 @@ A reference Canva app that demonstrates canup components in a realistic project 
    npm install
    npm start
    ```
+
+   The dev server runs on `http://localhost:8080`. If you preview in Safari, start with `npm start -- --use-https` instead and bypass the self-signed cert warning each time.
 
 6. Open the [Canva Developer Portal](https://www.canva.dev/) and preview your app.
 
@@ -110,6 +112,6 @@ function MyComponent() {
 
 ## Links
 
-- [canup on npm](https://www.npmjs.com/package/canup)
+- [CanUp on npm](https://www.npmjs.com/package/canup)
 - [Canva SDK documentation](https://www.canva.dev/docs/apps/)
 - [Canva App UI Kit](https://www.canva.dev/docs/apps/app-ui-kit/)
