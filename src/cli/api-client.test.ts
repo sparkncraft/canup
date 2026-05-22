@@ -365,12 +365,16 @@ describe('CanupClient', () => {
   describe('deployAction', () => {
     test('sends PUT to /v1/apps/:appId/actions/:slug with code and language', async () => {
       const deployed = {
-        id: 'act1',
-        slug: 'greet',
-        language: 'nodejs',
+        action: {
+          id: 'act1',
+          slug: 'greet',
+          language: 'nodejs',
+          deployed: true,
+          contentHash: 'abc123',
+          createdAt: '',
+          updatedAt: '',
+        },
         lambdaReady: true,
-        createdAt: '',
-        updatedAt: '',
       };
       mockFetch.mockResolvedValueOnce(okResponse(deployed));
       const client = createClient();
@@ -388,12 +392,16 @@ describe('CanupClient', () => {
     test('encodes appId and slug in URL', async () => {
       mockFetch.mockResolvedValueOnce(
         okResponse({
-          id: '',
-          slug: '',
-          language: '',
+          action: {
+            id: '',
+            slug: '',
+            language: '',
+            deployed: false,
+            contentHash: null,
+            createdAt: '',
+            updatedAt: '',
+          },
           lambdaReady: false,
-          createdAt: '',
-          updatedAt: '',
         }),
       );
       const client = createClient();
