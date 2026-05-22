@@ -181,7 +181,7 @@ export class CanupClient {
    * Register or upsert an app by Canva App ID.
    * Requires session auth.
    */
-  async registerApp(canvaAppId: string, name?: string): Promise<{ id: string; name: string }> {
+  async registerApp(canvaAppId: string, name: string): Promise<{ id: string; name: string }> {
     return this.request<{ id: string; name: string }>(`/${API_VERSION}/apps`, {
       method: 'POST',
       body: JSON.stringify({ canvaAppId, name }),
