@@ -226,6 +226,10 @@ export class CanupClient {
 
   /**
    * Deploy an action (create or update).
+   *
+   * `lambdaReady: false` is a soft-success — the action row is saved (so
+   * the caller can retry deployment), but per-language Lambda provisioning
+   * threw. Retrying `deployAction(...)` will re-attempt.
    */
   async deployAction(
     appId: string,
@@ -233,24 +237,24 @@ export class CanupClient {
     code: string,
     language: string,
   ): Promise<{
-    id: string;
-    slug: string;
-    language: string;
-    lambdaReady: boolean;
-    createdAt: string;
-    updatedAt: string;
-  }> {
-    return this.request<{
+    action: {
       id: string;
       slug: string;
       language: string;
-      lambdaReady: boolean;
+      deployed: boolean;
+      contentHash: string | null;
       createdAt: string;
       updatedAt: string;
-    }>(`/${API_VERSION}/apps/${encodeURIComponent(appId)}/actions/${encodeURIComponent(slug)}`, {
-      method: 'PUT',
-      body: JSON.stringify({ code, language }),
-    });
+    };
+    lambdaReady: boolean;
+  }> {
+    return this.request(
+      `/${API_VERSION}/apps/${encodeURIComponent(appId)}/actions/${encodeURIComponent(slug)}`,
+      {
+        method: 'PUT',
+        body: JSON.stringify({ code, language }),
+      },
+    );
   }
 
   /**
