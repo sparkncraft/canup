@@ -54,12 +54,16 @@ describe('actions deploy command', () => {
     });
 
     client.deployAction.mockResolvedValue({
-      id: '1',
-      slug: 'my-script',
-      language: 'python',
+      action: {
+        id: '1',
+        slug: 'my-script',
+        language: 'python',
+        deployed: true,
+        contentHash: 'hash1',
+        createdAt: '2026-01-01T00:00:00Z',
+        updatedAt: '2026-01-01T00:00:00Z',
+      },
       lambdaReady: true,
-      createdAt: '2026-01-01T00:00:00Z',
-      updatedAt: '2026-01-01T00:00:00Z',
     });
     client.listActions.mockResolvedValue([]);
 
@@ -100,12 +104,16 @@ describe('actions deploy command', () => {
     ]);
 
     client.deployAction.mockResolvedValue({
-      id: '1',
-      slug: 'action-a',
-      language: 'python',
+      action: {
+        id: '1',
+        slug: 'action-a',
+        language: 'python',
+        deployed: true,
+        contentHash: 'hash1',
+        createdAt: '2026-01-01T00:00:00Z',
+        updatedAt: '2026-01-01T00:00:00Z',
+      },
       lambdaReady: true,
-      createdAt: '2026-01-01T00:00:00Z',
-      updatedAt: '2026-01-01T00:00:00Z',
     });
     client.listActions.mockResolvedValue([]);
 
@@ -182,12 +190,16 @@ describe('actions deploy command', () => {
     });
 
     client.deployAction.mockResolvedValue({
-      id: '1',
-      slug: 'my-script',
-      language: 'python',
+      action: {
+        id: '1',
+        slug: 'my-script',
+        language: 'python',
+        deployed: true,
+        contentHash: 'hash1',
+        createdAt: '2026-01-01T00:00:00Z',
+        updatedAt: '2026-01-01T00:00:00Z',
+      },
       lambdaReady: true,
-      createdAt: '2026-01-01T00:00:00Z',
-      updatedAt: '2026-01-01T00:00:00Z',
     });
     client.listActions.mockResolvedValue([]);
 
@@ -276,12 +288,16 @@ describe('actions deploy command', () => {
     ]);
 
     client.deployAction.mockResolvedValue({
-      id: '2',
-      slug: 'changed-action',
-      language: 'python',
+      action: {
+        id: '2',
+        slug: 'changed-action',
+        language: 'python',
+        deployed: true,
+        contentHash: 'hash2',
+        createdAt: '2026-01-01T00:00:00Z',
+        updatedAt: '2026-01-01T00:00:00Z',
+      },
       lambdaReady: true,
-      createdAt: '2026-01-01T00:00:00Z',
-      updatedAt: '2026-01-01T00:00:00Z',
     });
 
     mockReadFileSync.mockReturnValueOnce(unchangedCode).mockReturnValueOnce(changedCode);
@@ -357,12 +373,16 @@ describe('actions deploy command', () => {
     });
 
     client.deployAction.mockResolvedValue({
-      id: '1',
-      slug: 'my-script',
-      language: 'python',
+      action: {
+        id: '1',
+        slug: 'my-script',
+        language: 'python',
+        deployed: true,
+        contentHash: 'hash1',
+        createdAt: '2026-01-01T00:00:00Z',
+        updatedAt: '2026-01-01T00:00:00Z',
+      },
       lambdaReady: false,
-      createdAt: '2026-01-01T00:00:00Z',
-      updatedAt: '2026-01-01T00:00:00Z',
     });
     client.listActions.mockResolvedValue([]);
 

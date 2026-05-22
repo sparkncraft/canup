@@ -61,12 +61,16 @@ export function resetMockCanupClient(client: MockCanupClient): void {
   client.listApps.mockResolvedValue([]);
   client.createApiKey.mockResolvedValue({ key: 'cnup_testkey_secret', prefix: 'cnup_testkey' });
   client.deployAction.mockResolvedValue({
-    id: 'act-1',
-    slug: 'test-action',
-    language: 'python',
+    action: {
+      id: 'act-1',
+      slug: 'test-action',
+      language: 'python',
+      deployed: true,
+      contentHash: 'hash1',
+      createdAt: '2026-01-01T00:00:00Z',
+      updatedAt: '2026-01-01T00:00:00Z',
+    },
     lambdaReady: true,
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z',
   });
   client.listActions.mockResolvedValue([]);
   client.listActionsWithScript.mockResolvedValue([]);
@@ -149,12 +153,16 @@ export function createMockCanupClient(overrides?: Partial<MockCanupClient>): Moc
 
     // Actions
     deployAction: vi.fn().mockResolvedValue({
-      id: 'act-1',
-      slug: 'test-action',
-      language: 'python',
+      action: {
+        id: 'act-1',
+        slug: 'test-action',
+        language: 'python',
+        deployed: true,
+        contentHash: 'hash1',
+        createdAt: '2026-01-01T00:00:00Z',
+        updatedAt: '2026-01-01T00:00:00Z',
+      },
       lambdaReady: true,
-      createdAt: '2026-01-01T00:00:00Z',
-      updatedAt: '2026-01-01T00:00:00Z',
     }),
     listActions: vi.fn().mockResolvedValue([]),
     listActionsWithScript: vi.fn().mockResolvedValue([]),
