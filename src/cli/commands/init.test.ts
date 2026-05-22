@@ -10,6 +10,7 @@ const {
   mockReadFileSync,
   mockWriteFileSync,
   mockSelect,
+  mockInput,
   mockCreateInterface,
 } = vi.hoisted(() => ({
   mockPerformLogin: vi.fn(),
@@ -19,6 +20,7 @@ const {
   mockReadFileSync: vi.fn(),
   mockWriteFileSync: vi.fn(),
   mockSelect: vi.fn(),
+  mockInput: vi.fn(),
   mockCreateInterface: vi.fn(),
 }));
 
@@ -43,6 +45,7 @@ vi.mock('../ui/output.js', () => output);
 
 vi.mock('@inquirer/prompts', () => ({
   select: mockSelect,
+  input: mockInput,
   Separator: class Separator {
     isSeparator = true;
   },
@@ -82,9 +85,11 @@ describe('init command', () => {
     const program = new Command();
     registerInitCommand(program);
 
-    await program.parseAsync(['init', '--app-id', 'AAFtest'], { from: 'user' });
+    await program.parseAsync(['init', '--app-id', 'AAFtest', '--name', 'Test App'], {
+      from: 'user',
+    });
 
-    expect(client.registerApp).toHaveBeenCalledWith('AAFtest');
+    expect(client.registerApp).toHaveBeenCalledWith('AAFtest', 'Test App');
     expect(client.createApiKey).toHaveBeenCalledWith('AAFtest', 'canup-cli');
     expect(tokenStore.saveApiKey).toHaveBeenCalledWith('AAFtest', 'cnup_full_key_123');
     expect(mockMkdirSync).toHaveBeenCalledWith(expect.stringContaining('canup/actions'), {
@@ -131,14 +136,16 @@ describe('init command', () => {
     const program = new Command();
     registerInitCommand(program);
 
-    await program.parseAsync(['init', '--app-id', 'AAFauto'], { from: 'user' });
+    await program.parseAsync(['init', '--app-id', 'AAFauto', '--name', 'Test App'], {
+      from: 'user',
+    });
 
     expect(mockPerformLogin).toHaveBeenCalled();
     expect(output.info).toHaveBeenCalledWith('Not logged in. Starting login...');
     // performLogin now prints its own "Logged in as <email>." line, so the
     // wrapper command should NOT also print a "Login successful!" line.
     expect(output.info).not.toHaveBeenCalledWith('Login successful!');
-    expect(client.registerApp).toHaveBeenCalledWith('AAFauto');
+    expect(client.registerApp).toHaveBeenCalledWith('AAFauto', 'Test App');
     expect(mockSaveProjectConfig).toHaveBeenCalledWith(process.cwd(), { appId: 'AAFauto' });
   });
 
@@ -159,10 +166,10 @@ describe('init command', () => {
     const program = new Command();
     registerInitCommand(program);
 
-    await program.parseAsync(['init'], { from: 'user' });
+    await program.parseAsync(['init', '--name', 'Test App'], { from: 'user' });
 
     expect(output.info).toHaveBeenCalledWith('Detected Canva App ID from .env: AAFdetected');
-    expect(client.registerApp).toHaveBeenCalledWith('AAFdetected');
+    expect(client.registerApp).toHaveBeenCalledWith('AAFdetected', 'Test App');
     expect(mockSaveProjectConfig).toHaveBeenCalledWith(process.cwd(), { appId: 'AAFdetected' });
   });
 
@@ -180,7 +187,9 @@ describe('init command', () => {
     const program = new Command();
     registerInitCommand(program);
 
-    await program.parseAsync(['init', '--app-id', 'AAFfail'], { from: 'user' });
+    await program.parseAsync(['init', '--app-id', 'AAFfail', '--name', 'Test App'], {
+      from: 'user',
+    });
 
     expect(output.error).toHaveBeenCalledWith('Init failed: Server error');
     expect(processMocks.exit).toHaveBeenCalledWith(1);
@@ -204,7 +213,9 @@ describe('init command', () => {
     const program = new Command();
     registerInitCommand(program);
 
-    await program.parseAsync(['init', '--app-id', 'AAFtest'], { from: 'user' });
+    await program.parseAsync(['init', '--app-id', 'AAFtest', '--name', 'Test App'], {
+      from: 'user',
+    });
 
     expect(output.error).toHaveBeenCalledWith('Init failed: Key creation failed');
     expect(processMocks.exit).toHaveBeenCalledWith(1);
@@ -222,7 +233,9 @@ describe('init command', () => {
     const program = new Command();
     registerInitCommand(program);
 
-    await program.parseAsync(['init', '--app-id', 'AAFtest'], { from: 'user' });
+    await program.parseAsync(['init', '--app-id', 'AAFtest', '--name', 'Test App'], {
+      from: 'user',
+    });
 
     expect(mockMkdirSync).toHaveBeenCalledWith(expect.stringContaining('canup/actions'), {
       recursive: true,
@@ -241,7 +254,9 @@ describe('init command', () => {
     const program = new Command();
     registerInitCommand(program);
 
-    await program.parseAsync(['init', '--app-id', 'AAFtest'], { from: 'user' });
+    await program.parseAsync(['init', '--app-id', 'AAFtest', '--name', 'Test App'], {
+      from: 'user',
+    });
 
     expect(mockSaveProjectConfig).toHaveBeenCalledWith(process.cwd(), { appId: 'AAFtest100' });
   });
@@ -263,7 +278,9 @@ describe('init command', () => {
     const program = new Command();
     registerInitCommand(program);
 
-    await program.parseAsync(['init', '--app-id', 'AAFconflict'], { from: 'user' });
+    await program.parseAsync(['init', '--app-id', 'AAFconflict', '--name', 'Test App'], {
+      from: 'user',
+    });
 
     expect(output.error).toHaveBeenCalledWith(
       expect.stringContaining('already registered by another user'),
@@ -288,7 +305,9 @@ describe('init command', () => {
     const program = new Command();
     registerInitCommand(program);
 
-    await program.parseAsync(['init', '--app-id', 'AAFtest'], { from: 'user' });
+    await program.parseAsync(['init', '--app-id', 'AAFtest', '--name', 'Test App'], {
+      from: 'user',
+    });
 
     expect(output.error).toHaveBeenCalledWith('Session expired.');
     expect(output.hint).toHaveBeenCalledWith('Run `canup login` to re-authenticate.');
@@ -307,7 +326,9 @@ describe('init command', () => {
     const program = new Command();
     registerInitCommand(program);
 
-    await program.parseAsync(['init', '--app-id', 'AAFtest'], { from: 'user' });
+    await program.parseAsync(['init', '--app-id', 'AAFtest', '--name', 'Test App'], {
+      from: 'user',
+    });
 
     expect(output.label).toHaveBeenCalledWith('API Key', 'cnup_mykey...');
     expect(output.hint).toHaveBeenCalledWith('Add the canup/ folder to your git repository.');
@@ -378,11 +399,11 @@ describe('init command', () => {
     const program = new Command();
     registerInitCommand(program);
 
-    await program.parseAsync(['init'], { from: 'user' });
+    await program.parseAsync(['init', '--name', 'Test App'], { from: 'user' });
 
     expect(client.listApps).toHaveBeenCalled();
     expect(mockSelect).not.toHaveBeenCalled();
-    expect(client.registerApp).toHaveBeenCalledWith('AAFnewapp');
+    expect(client.registerApp).toHaveBeenCalledWith('AAFnewapp', 'Test App');
   });
 
   test('app picker "Create a new app" falls through to prompt', async ({
@@ -411,10 +432,10 @@ describe('init command', () => {
     const program = new Command();
     registerInitCommand(program);
 
-    await program.parseAsync(['init'], { from: 'user' });
+    await program.parseAsync(['init', '--name', 'Test App'], { from: 'user' });
 
     expect(mockSelect).toHaveBeenCalled();
-    expect(client.registerApp).toHaveBeenCalledWith('AAFbrandnew');
+    expect(client.registerApp).toHaveBeenCalledWith('AAFbrandnew', 'Test App');
     expect(mockSaveProjectConfig).toHaveBeenCalledWith(process.cwd(), { appId: 'app-brand-new' });
   });
 
@@ -471,9 +492,9 @@ describe('init command', () => {
     const { registerInitCommand } = await import('../commands/init.js');
     const program = new Command();
     registerInitCommand(program);
-    await program.parseAsync(['init'], { from: 'user' });
+    await program.parseAsync(['init', '--name', 'Test App'], { from: 'user' });
 
-    expect(client.registerApp).toHaveBeenCalledWith('AAFnew');
+    expect(client.registerApp).toHaveBeenCalledWith('AAFnew', 'Test App');
   });
 
   test('exits when user enters empty Canva App ID', async ({ output, processMocks }) => {
@@ -514,7 +535,9 @@ describe('init command', () => {
     const { registerInitCommand } = await import('../commands/init.js');
     const program = new Command();
     registerInitCommand(program);
-    await program.parseAsync(['init', '--app-id', 'AAFtest'], { from: 'user' });
+    await program.parseAsync(['init', '--app-id', 'AAFtest', '--name', 'Test App'], {
+      from: 'user',
+    });
 
     expect(mockWriteFileSync).toHaveBeenCalledWith(
       expect.stringContaining('package.json'),
@@ -541,7 +564,9 @@ describe('init command', () => {
     const { registerInitCommand } = await import('../commands/init.js');
     const program = new Command();
     registerInitCommand(program);
-    await program.parseAsync(['init', '--app-id', 'AAFtest'], { from: 'user' });
+    await program.parseAsync(['init', '--app-id', 'AAFtest', '--name', 'Test App'], {
+      from: 'user',
+    });
 
     expect(mockWriteFileSync).not.toHaveBeenCalled();
   });
@@ -558,8 +583,45 @@ describe('init command', () => {
     const { registerInitCommand } = await import('../commands/init.js');
     const program = new Command();
     registerInitCommand(program);
-    await program.parseAsync(['init', '--app-id', 'AAFtest'], { from: 'user' });
+    await program.parseAsync(['init', '--app-id', 'AAFtest', '--name', 'Test App'], {
+      from: 'user',
+    });
 
     expect(output.hint).toHaveBeenCalledWith('Run: pnpm install');
+  });
+
+  test('prompts for name when --name flag is omitted', async ({ output, processMocks }) => {
+    tokenStore.loadCredentials.mockReturnValue({ userKey: 'cnup_x', keyId: 'apikey_x' });
+    projectConfig.loadProjectConfig.mockReturnValue(null);
+    client.registerApp.mockResolvedValue({ id: 'AAFprompt', name: 'Prompted Name' });
+    client.createApiKey.mockResolvedValue({ key: 'cnup_p_key', prefix: 'cnup_p' });
+    mockInput.mockResolvedValue('Prompted Name');
+
+    const { Command } = await import('commander');
+    const { registerInitCommand } = await import('../commands/init.js');
+    const program = new Command();
+    registerInitCommand(program);
+    await program.parseAsync(['init', '--app-id', 'AAFprompt'], { from: 'user' });
+
+    expect(mockInput).toHaveBeenCalledWith(
+      expect.objectContaining({ message: expect.stringContaining('name') }),
+    );
+    expect(client.registerApp).toHaveBeenCalledWith('AAFprompt', 'Prompted Name');
+  });
+
+  test('exits when --name flag is whitespace', async ({ output, processMocks }) => {
+    tokenStore.loadCredentials.mockReturnValue({ userKey: 'cnup_x', keyId: 'apikey_x' });
+    projectConfig.loadProjectConfig.mockReturnValue(null);
+
+    const { Command } = await import('commander');
+    const { registerInitCommand } = await import('../commands/init.js');
+    const program = new Command();
+    registerInitCommand(program);
+    await program.parseAsync(['init', '--app-id', 'AAFtest', '--name', '   '], {
+      from: 'user',
+    });
+
+    expect(output.error).toHaveBeenCalledWith('--name cannot be empty.');
+    expect(processMocks.exit).toHaveBeenCalledWith(1);
   });
 });

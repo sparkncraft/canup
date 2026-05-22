@@ -2,8 +2,8 @@ import type { Command } from 'commander';
 import type { PackageJson } from 'type-fest';
 import { mkdirSync, readFileSync, existsSync, writeFileSync } from 'node:fs';
 import { createInterface } from 'node:readline/promises';
-import { join, resolve } from 'node:path';
-import { select, Separator } from '@inquirer/prompts';
+import { basename, join, resolve } from 'node:path';
+import { input, select, Separator } from '@inquirer/prompts';
 import { loadCredentials, saveApiKey } from '../auth/token-store.js';
 import { performLogin } from '../auth/perform-login.js';
 import { CanupClient } from '../api-client.js';
@@ -46,7 +46,8 @@ export function registerInitCommand(program: Command): void {
     .command('init')
     .description('Initialize a CanUp project in this directory')
     .option('--app-id <id>', 'Canva App ID (skip interactive prompt)')
-    .action(async (opts: { appId?: string }) => {
+    .option('--name <name>', 'Display name for the app (skip interactive prompt)')
+    .action(async (opts: { appId?: string; name?: string }) => {
       try {
         // a. Check if already initialized
         const existing = loadProjectConfig();
@@ -66,20 +67,42 @@ export function registerInitCommand(program: Command): void {
 
         const client = new CanupClient({ token: credentials.userKey });
 
+        // Resolve the display name for a newly registered app: use --name if
+        // provided, otherwise prompt (defaulting to the current directory's
+        // basename — the user is expected to run this from inside their
+        // Canva app folder).
+        async function resolveName(): Promise<string> {
+          if (opts.name) {
+            const trimmed = opts.name.trim();
+            if (!trimmed) {
+              error('--name cannot be empty.');
+              process.exit(1);
+            }
+            return trimmed;
+          }
+          return input({
+            message: 'App name:',
+            default: basename(process.cwd()),
+            validate: (v) => v.trim().length > 0 || 'Name is required',
+          });
+        }
+
         // c. Determine the app to link: --app-id flag, .env detection, app picker, or create new
         let appId: string | undefined;
         let isExistingApp = false;
 
         if (opts.appId) {
           // Fast path: --app-id flag provided, register directly
-          const app = await client.registerApp(opts.appId);
+          const name = await resolveName();
+          const app = await client.registerApp(opts.appId, name);
           appId = app.id;
         } else {
           // Try detecting from .env
           const detected = detectCanvaAppId();
           if (detected) {
             info(`Detected Canva App ID from .env: ${detected}`);
-            const app = await client.registerApp(detected);
+            const name = await resolveName();
+            const app = await client.registerApp(detected, name);
             appId = app.id;
           } else {
             // No --app-id, no .env -- try app picker
@@ -122,7 +145,8 @@ export function registerInitCommand(program: Command): void {
               }
               canvaAppId = canvaAppId.trim();
 
-              const app = await client.registerApp(canvaAppId);
+              const name = await resolveName();
+              const app = await client.registerApp(canvaAppId, name);
               appId = app.id;
             }
           }
