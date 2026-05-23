@@ -7,6 +7,7 @@
  */
 
 import { DEFAULT_API_URL, API_VERSION } from '../constants.js';
+import { CLI_USER_AGENT } from './version.js';
 
 export interface UserInfo {
   id: string;
@@ -320,16 +321,9 @@ export class CanupClient {
     params: unknown,
   ): Promise<TestResult> {
     const url = `${this.apiUrl}/${API_VERSION}/apps/${encodeURIComponent(appId)}/test`;
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-    if (this.token) {
-      headers.Authorization = `Bearer ${this.token}`;
-    }
-
     const res = await fetch(url, {
       method: 'POST',
-      headers,
+      headers: this.defaultHeaders(),
       body: JSON.stringify({ code, language, params }),
     });
 
@@ -565,22 +559,32 @@ export class CanupClient {
   // ──────────────────────────────────────────────
 
   /**
+   * Headers attached to every CanUp API request.
+   *
+   * Every new `fetch` site in this class must build its headers via this
+   * helper so the bearer + the `X-Canup-Client` identifier travel together.
+   * The server emits `cli.*` analytics events keyed on this header.
+   */
+  private defaultHeaders(extra?: Record<string, string>): Record<string, string> {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'X-Canup-Client': CLI_USER_AGENT,
+      ...extra,
+    };
+    if (this.token) {
+      headers.Authorization = `Bearer ${this.token}`;
+    }
+    return headers;
+  }
+
+  /**
    * Make an authenticated request to the CanUp API.
    */
   private async request<T>(path: string, options?: RequestInit): Promise<T> {
     const url = `${this.apiUrl}${path}`;
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      ...(options?.headers as Record<string, string> | undefined),
-    };
-
-    if (this.token) {
-      headers.Authorization = `Bearer ${this.token}`;
-    }
-
     const res = await fetch(url, {
       ...options,
-      headers,
+      headers: this.defaultHeaders(options?.headers as Record<string, string> | undefined),
       signal: options?.signal,
     });
 
