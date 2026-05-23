@@ -14,7 +14,18 @@ export function App() {
   const addElement = [addElementAtPoint, addElementAtCursor].find((fn) => isSupported(fn));
 
   const handleResult = async (data: { result: unknown; durationMs: number }) => {
-    const { text } = data.result as { text: string; generatedAt: string };
+    const text =
+      data.result && typeof data.result === 'object' && 'text' in data.result
+        ? String((data.result as { text: unknown }).text)
+        : null;
+
+    if (text == null) {
+      void notification.addToast({
+        messageText:
+          'Action ran, but returned no text. Implement your generate-text action server-side.',
+      });
+      return;
+    }
 
     if (addElement) {
       await addElement({ type: 'text', children: [text] });

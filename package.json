@@ -36,6 +36,7 @@
   "sideEffects": false,
   "scripts": {
     "build": "tsdown",
+    "dev": "tsdown --watch",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:build": "publint --strict && attw --pack . --profile esm-only",
