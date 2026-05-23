@@ -71,14 +71,23 @@ describe('CreditCounter', () => {
     expect(container.textContent).toContain('credits');
   });
 
-  test('shows "credit" (singular) when used === 1', () => {
+  test('pluralizes on quota: "credit" (singular) when quota === 1', () => {
+    mockUseCredits.mockReturnValue(
+      mockCreditsReturn({ data: { ...mockBalance, quota: 1, used: 0, remaining: 1 } }),
+    );
+
+    const { container } = renderWithCanva(<CreditCounter action="my-action" />);
+    expect(container.textContent).toContain('Used 0 of 1 credit.');
+    expect(container.textContent).not.toContain('credits.');
+  });
+
+  test('pluralizes on quota: "credits" (plural) when quota > 1 even if used === 1', () => {
     mockUseCredits.mockReturnValue(
       mockCreditsReturn({ data: { ...mockBalance, remaining: 99, used: 1 } }),
     );
 
     const { container } = renderWithCanva(<CreditCounter action="my-action" />);
-    expect(container.textContent).toContain('Used 1 of 100 credit.');
-    expect(container.textContent).not.toContain('credits.');
+    expect(container.textContent).toContain('Used 1 of 100 credits.');
   });
 
   test('shows "Credits refresh {interval}." for monthly', () => {
