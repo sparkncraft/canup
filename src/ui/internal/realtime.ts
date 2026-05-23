@@ -6,8 +6,7 @@ import { DEFAULT_API_URL } from '../../constants.js';
 /**
  * One SSE connection for the whole SDK consumer. Every `useCredits` hook
  * subscribes to this singleton; the connection opens on first acquire
- * and closes on last release. Suspended Canva iframes (Page Visibility
- * API hidden) close the connection eagerly and reopen on resume.
+ * and closes on last release.
  */
 
 // ─── Wire schema (also the type) ────────────────────────────
@@ -41,7 +40,6 @@ const NO_RETRY_STATUSES = new Set([401, 403]);
 const handlers = new Set<(event: SdkEvent) => void>();
 let connection: EventSource | null = null;
 let reopenTimer: ReturnType<typeof setTimeout> | undefined;
-let visibilityListener: (() => void) | null = null;
 
 function open(): void {
   if (connection || handlers.size === 0) return;
@@ -100,15 +98,6 @@ function close(): void {
   }
 }
 
-function attachVisibilityListener(): void {
-  if (visibilityListener || typeof document === 'undefined') return;
-  visibilityListener = (): void => {
-    if (document.hidden) close();
-    else if (handlers.size > 0) open();
-  };
-  document.addEventListener('visibilitychange', visibilityListener);
-}
-
 /**
  * Subscribe to the SSE event stream. The first call opens the connection;
  * subsequent calls share it. Returns a release function that, when
@@ -116,9 +105,8 @@ function attachVisibilityListener(): void {
  * remain.
  */
 export function acquire(handler: (event: SdkEvent) => void): () => void {
-  attachVisibilityListener();
   handlers.add(handler);
-  if (typeof document === 'undefined' || !document.hidden) open();
+  open();
   return () => {
     handlers.delete(handler);
     if (handlers.size === 0) close();
@@ -130,10 +118,6 @@ export function acquire(handler: (event: SdkEvent) => void): () => void {
 export function _reset(): void {
   close();
   handlers.clear();
-  if (visibilityListener && typeof document !== 'undefined') {
-    document.removeEventListener('visibilitychange', visibilityListener);
-  }
-  visibilityListener = null;
 }
 
 export function _handlerCount(): number {

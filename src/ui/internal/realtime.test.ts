@@ -64,7 +64,6 @@ afterEach(async () => {
   const mod = await import('./realtime.js');
   mod._reset();
   resetEsState();
-  Object.defineProperty(document, 'hidden', { configurable: true, get: () => false });
 });
 
 describe('realtime — connection', () => {
@@ -270,32 +269,5 @@ describe('realtime — error recovery', () => {
     release();
     vi.advanceTimersByTime(60_000);
     expect(mockEventSourceCtor).toHaveBeenCalledOnce();
-  });
-});
-
-describe('realtime — page visibility', () => {
-  test('document.hidden=true closes the connection', async () => {
-    const { acquire } = await load();
-    acquire(() => {});
-    expect(mockEventSourceCtor).toHaveBeenCalledOnce();
-
-    Object.defineProperty(document, 'hidden', { configurable: true, get: () => true });
-    document.dispatchEvent(new Event('visibilitychange'));
-
-    expect(mockClose).toHaveBeenCalledOnce();
-  });
-
-  test('document.hidden=false reopens when handlers exist', async () => {
-    const { acquire } = await load();
-    acquire(() => {});
-    expect(mockEventSourceCtor).toHaveBeenCalledTimes(1);
-
-    Object.defineProperty(document, 'hidden', { configurable: true, get: () => true });
-    document.dispatchEvent(new Event('visibilitychange'));
-
-    Object.defineProperty(document, 'hidden', { configurable: true, get: () => false });
-    document.dispatchEvent(new Event('visibilitychange'));
-
-    expect(mockEventSourceCtor).toHaveBeenCalledTimes(2);
   });
 });

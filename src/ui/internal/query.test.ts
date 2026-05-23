@@ -11,6 +11,12 @@ describe('query', () => {
     expect(defaults.queries?.retry).toBe(1);
   });
 
+  test('safety-net poll is visible-tab-only and at most every 5 minutes', () => {
+    const defaults = queryClient.getDefaultOptions();
+    expect(defaults.queries?.refetchIntervalInBackground).toBe(false);
+    expect(defaults.queries?.refetchInterval).toBe(5 * 60_000);
+  });
+
   test('creditKey returns ["credits", action] tuple', () => {
     expect(creditKey('my-action')).toEqual(['credits', 'my-action']);
   });
