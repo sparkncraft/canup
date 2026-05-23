@@ -22,8 +22,9 @@ export interface UseCreditsResult {
  *  - Live updates: SSE `credits.update` events merge usage/subscription fields
  *    into the same cache key. The merge preserves `email` and `subscribeUrl`,
  *    which don't change with usage and are only populated by the initial fetch.
- *  - Safety net: `refetchOnWindowFocus` (default true) catches anything that
- *    slipped past SSE — e.g. silent connection deaths through corporate proxies.
+ *  - Safety nets (in `query.ts`): `refetchOnWindowFocus` plus a 5-min visible-tab
+ *    poll catch the rare case where SSE dies silently (proxy buffers the
+ *    stream, dropped reconnect window) without emitting an error event.
  */
 export function useCredits(action: string): UseCreditsResult {
   const qc = useQueryClient(queryClient);
