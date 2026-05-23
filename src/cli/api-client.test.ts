@@ -196,6 +196,35 @@ describe('CanupClient', () => {
     });
   });
 
+  // ──── X-Canup-Client header ────
+
+  describe('X-Canup-Client header', () => {
+    test('sends canup-cli/<semver> on JSON requests', async () => {
+      mockFetch.mockResolvedValueOnce(okResponse([]));
+      const client = createClient();
+      await client.listApps();
+      expect(fetchOpts().headers['X-Canup-Client']).toMatch(/^canup-cli\/\d+\.\d+\.\d+/);
+    });
+
+    test('sends canup-cli/<semver> on the test endpoint', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ ok: true, data: { result: null, durationMs: 0, printOutput: '' } }),
+      });
+      const client = createClient();
+      await client.testCode('app-1', 'x', 'python', {});
+      expect(fetchOpts().headers['X-Canup-Client']).toMatch(/^canup-cli\/\d+\.\d+\.\d+/);
+    });
+
+    test('sends the header even without an auth token', async () => {
+      mockFetch.mockResolvedValueOnce(okResponse([]));
+      const client = new CanupClient({ apiUrl: 'https://test.api' });
+      await client.listApps();
+      expect(fetchOpts().headers['X-Canup-Client']).toMatch(/^canup-cli\/\d+\.\d+\.\d+/);
+    });
+  });
+
   // ──── Error handling (via request()) ────
 
   describe('error handling via request()', () => {
