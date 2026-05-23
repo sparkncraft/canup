@@ -1,7 +1,7 @@
 import { getJwt } from './jwt-cache.js';
 import { CanupError, toCanupError } from '../errors.js';
 import type { CreditBalance, ActionResult } from '../types.js';
-import { DEFAULT_API_URL, API_VERSION } from '../../constants.js';
+import { DEFAULT_API_URL } from '../../constants.js';
 
 type ApiResponse<T> =
   | { ok: true; data: T }
@@ -48,11 +48,10 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   return json.data;
 }
 
-export const fetchCredits = (action: string) =>
-  request<CreditBalance>(`/${API_VERSION}/run/${action}/credits`);
+export const fetchCredits = (action: string) => request<CreditBalance>(`/run/${action}/credits`);
 
 export const runAction = (action: string, params?: Record<string, unknown>) =>
-  request<ActionResult>(`/${API_VERSION}/run/${action}`, {
+  request<ActionResult>(`/run/${action}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ params: params ?? {} }),
