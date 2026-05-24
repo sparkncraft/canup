@@ -38,7 +38,7 @@ function captureOpenedUrl(): CapturedUrl {
 
 describe('performLogin', () => {
   test('opens browser at <apiUrl>/cli/login with port, host, and state', async ({ output: o }) => {
-    vi.stubEnv('CANUP_API_URL', 'https://test.api');
+    vi.stubEnv('CANUP_URL', 'https://test.api');
 
     let echoedState = '';
     mockStartCallbackServer.mockImplementation(async () => {

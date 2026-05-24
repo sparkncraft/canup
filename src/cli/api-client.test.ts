@@ -143,8 +143,8 @@ describe('CanupClient', () => {
       expect(fetchUrl()).toMatch(/^https:\/\/custom\.test/);
     });
 
-    test('falls back to CANUP_API_URL env var', async () => {
-      vi.stubEnv('CANUP_API_URL', 'https://env.test');
+    test('falls back to CANUP_URL env var', async () => {
+      vi.stubEnv('CANUP_URL', 'https://env.test');
       mockFetch.mockResolvedValueOnce(
         okResponse({ id: '1', email: 'a@b.c', name: null, image: null, createdAt: '' }),
       );

@@ -22,7 +22,7 @@ const STATE_NONCE_BYTES = 16;
  * Returns the saved credentials for callers/tests that want them.
  */
 export async function performLogin(): Promise<UserCredentials> {
-  const apiUrl = process.env.CANUP_API_URL ?? DEFAULT_API_URL;
+  const apiUrl = process.env.CANUP_URL ?? DEFAULT_API_URL;
   const { port, credentialsPromise, close } = await startCallbackServer();
 
   const host = osHostname();
