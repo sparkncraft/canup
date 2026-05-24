@@ -87,7 +87,7 @@ describe('useAction', () => {
       resetAt: null,
       interval: 'monthly',
       email: null,
-      subscribeUrl: null,
+      billingUrl: null,
     };
     mockRunAction.mockResolvedValue({ result: 'ok', durationMs: 10, credits });
 

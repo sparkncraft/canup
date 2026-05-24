@@ -50,12 +50,12 @@ export function CreditCounter({
 }: CreditCounterProps) {
   const { data, loading } = useCredits(action);
   const intl = useIntl();
-  const subscribeUrl = data?.subscribeUrl ?? null;
+  const billingUrl = data?.billingUrl ?? null;
 
   const openUrl = useCallback(() => {
-    if (!subscribeUrl) return;
-    void requestOpenExternalUrl({ url: subscribeUrl });
-  }, [subscribeUrl]);
+    if (!billingUrl) return;
+    void requestOpenExternalUrl({ url: billingUrl });
+  }, [billingUrl]);
 
   const rowsProps = { ...rest, spacing, align } satisfies CanvaRowsProps;
 
@@ -78,10 +78,10 @@ export function CreditCounter({
   const linkText = data.subscribed
     ? intl.formatMessage(creditCounterMessages.manageSubscription)
     : intl.formatMessage(creditCounterMessages.upgradeForMore);
-  const billingLink = subscribeUrl ? (
+  const billingLink = billingUrl ? (
     <>
       {' '}
-      <Link href={subscribeUrl} requestOpenExternalUrl={openUrl}>
+      <Link href={billingUrl} requestOpenExternalUrl={openUrl}>
         {linkText}
       </Link>
     </>
