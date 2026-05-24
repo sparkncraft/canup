@@ -148,7 +148,7 @@ export class CanupClient {
   private token?: string;
 
   constructor(options?: { apiUrl?: string; token?: string }) {
-    this.apiUrl = options?.apiUrl ?? process.env.CANUP_API_URL ?? DEFAULT_API_URL;
+    this.apiUrl = options?.apiUrl ?? process.env.CANUP_URL ?? DEFAULT_API_URL;
     this.token = options?.token;
   }
 
