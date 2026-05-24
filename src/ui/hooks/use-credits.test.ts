@@ -44,7 +44,7 @@ const mockBalance: CreditBalance = {
   resetAt: '2026-04-01T00:00:00Z',
   interval: 'monthly',
   email: null,
-  subscribeUrl: 'https://canup.link/subscribe/V1StGXR8_Z5j',
+  billingUrl: 'https://canup.link/subscribe/V1StGXR8_Z5j',
 };
 
 const test = baseTest.extend('_rtl', [
@@ -129,7 +129,7 @@ describe('useCredits', () => {
     });
   });
 
-  test('subscribeUrl is available via data.subscribeUrl', async () => {
+  test('billingUrl is available via data.billingUrl', async () => {
     const { result } = renderHook(() => useCredits('my-action'));
 
     expect(result.current.data).toBeNull();
@@ -138,7 +138,7 @@ describe('useCredits', () => {
       expect(result.current.data).toBeTruthy();
     });
 
-    expect(result.current.data!.subscribeUrl).toBe('https://canup.link/subscribe/V1StGXR8_Z5j');
+    expect(result.current.data!.billingUrl).toBe('https://canup.link/subscribe/V1StGXR8_Z5j');
   });
 
   test('data updates when queryClient.setQueryData is called externally (cross-component sync)', async () => {
@@ -223,7 +223,7 @@ describe('useCredits', () => {
     });
 
     // Identity fields from the initial fetch are preserved through the merge.
-    expect(result.current.data!.subscribeUrl).toBe(mockBalance.subscribeUrl);
+    expect(result.current.data!.billingUrl).toBe(mockBalance.billingUrl);
   });
 
   test('SSE event for a different action does NOT touch this hook cache', async () => {

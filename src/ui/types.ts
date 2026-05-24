@@ -7,7 +7,7 @@ export interface CreditBalance {
   resetAt: string | null;
   interval: 'daily' | 'weekly' | 'monthly' | 'lifetime' | null;
   email: string | null;
-  subscribeUrl: string | null;
+  billingUrl: string | null;
 }
 
 /** Action execution result from POST /run/:slug */

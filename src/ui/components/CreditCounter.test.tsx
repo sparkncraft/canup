@@ -25,7 +25,7 @@ const mockBalance: CreditBalance = {
   resetAt: '2026-04-01T00:00:00Z',
   interval: 'monthly',
   email: null,
-  subscribeUrl: 'https://canup.link/subscribe/mock-jwt',
+  billingUrl: 'https://canup.link/subscribe/mock-jwt',
 };
 
 function mockCreditsReturn(overrides: Partial<UseCreditsResult> = {}): UseCreditsResult {
@@ -168,7 +168,7 @@ describe('CreditCounter', () => {
     expect(container.textContent).toContain('Custom: 90 left');
   });
 
-  test('renders "Upgrade for more credits" link when subscribeUrl is available', () => {
+  test('renders "Upgrade for more credits" link when billingUrl is available', () => {
     const { container } = renderWithCanva(<CreditCounter action="my-action" />);
 
     const link = container.querySelector('a');
@@ -176,7 +176,7 @@ describe('CreditCounter', () => {
     expect(link!.textContent).toContain('Upgrade for more credits');
   });
 
-  test('link href matches subscribeUrl from useCredits', () => {
+  test('link href matches billingUrl from useCredits', () => {
     const { container } = renderWithCanva(<CreditCounter action="my-action" />);
 
     const link = container.querySelector('a');
@@ -184,7 +184,7 @@ describe('CreditCounter', () => {
     expect(link!.getAttribute('href')).toBe('https://canup.link/subscribe/mock-jwt');
   });
 
-  test('no link renders when subscribeUrl is null (loading state)', () => {
+  test('no link renders when billingUrl is null (loading state)', () => {
     mockUseCredits.mockReturnValue(mockCreditsReturn({ data: null, loading: true }));
 
     const { container } = renderWithCanva(<CreditCounter action="my-action" />);
@@ -220,10 +220,10 @@ describe('CreditCounter', () => {
     expect(link).toBeNull();
   });
 
-  test('no link renders when subscribeUrl is null with data loaded', () => {
+  test('no link renders when billingUrl is null with data loaded', () => {
     mockUseCredits.mockReturnValue(
       mockCreditsReturn({
-        data: { ...mockBalance, remaining: 50, used: 50, subscribeUrl: null },
+        data: { ...mockBalance, remaining: 50, used: 50, billingUrl: null },
       }),
     );
 

@@ -18,9 +18,9 @@ export interface UseCreditsResult {
  * Live credit balance for one action.
  *
  * Reads:
- *  - Initial paint: one `GET /run/:slug/credits` (sets email, subscribeUrl, etc.)
+ *  - Initial paint: one `GET /run/:slug/credits` (sets email, billingUrl, etc.)
  *  - Live updates: SSE `credits.update` events merge usage/subscription fields
- *    into the same cache key. The merge preserves `email` and `subscribeUrl`,
+ *    into the same cache key. The merge preserves `email` and `billingUrl`,
  *    which don't change with usage and are only populated by the initial fetch.
  *  - Safety nets (in `query.ts`): `refetchOnWindowFocus` plus a 5-min visible-tab
  *    poll catch the rare case where SSE dies silently (proxy buffers the
@@ -47,9 +47,9 @@ export function useCredits(action: string): UseCreditsResult {
       if (event.type !== 'credits.update') return;
       if (event.action !== action) return;
       qc.setQueryData<CreditBalance>(creditKey(action), (old) =>
-        // Merge so identity fields (email, subscribeUrl) from the initial
+        // Merge so identity fields (email, billingUrl) from the initial
         // fetch survive a wire payload that doesn't carry them.
-        old ? { ...old, ...event.balance } : { ...event.balance, email: null, subscribeUrl: null },
+        old ? { ...old, ...event.balance } : { ...event.balance, email: null, billingUrl: null },
       );
     });
     return release;
