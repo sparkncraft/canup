@@ -23,6 +23,12 @@ const creditsUpdateSchema = z.object({
     resetAt: z.string().nullable(),
     interval: z.enum(['daily', 'weekly', 'monthly', 'lifetime']).nullable(),
   }),
+  // ISO-8601 publish-time timestamp. Consumers compare it against the
+  // last accepted update to skip out-of-order deliveries. Optional in
+  // the schema so an older server that doesn't emit the field still
+  // parses; consumers degrade gracefully (no ordering protection) for
+  // that case.
+  at: z.string().optional(),
 });
 
 /** Discriminated union of every server→SDK event. Adding a variant here

@@ -1,6 +1,6 @@
 import { describe, expect, test as baseTest, vi } from 'vitest';
 import { renderHook, waitFor, cleanup, act } from '@testing-library/react';
-import { useCredits } from './use-credits.js';
+import { useCredits, _resetCreditOrdering } from './use-credits.js';
 import { fetchCredits } from '../internal/api-client.js';
 import { queryClient, creditKey } from '../internal/query.js';
 import { acquire, type SdkEvent } from '../internal/realtime.js';
@@ -52,6 +52,7 @@ const test = baseTest.extend('_rtl', [
     queryClient.clear();
     mockFetchCredits.mockResolvedValue(mockBalance);
     sseHandlers.clear();
+    _resetCreditOrdering();
     await use();
     cleanup();
   },
@@ -277,5 +278,137 @@ describe('useCredits', () => {
     expect(sseHandlers.size).toBeGreaterThan(0);
     unmount();
     expect(sseHandlers.size).toBe(0);
+  });
+
+  // ─── Out-of-order delivery ────────────────────────────────
+  // Network can reshuffle SSE deliveries. Without ordering protection a
+  // stale snapshot can overwrite a fresh one and the user sees the wrong
+  // remaining count until the next interaction. The hook tracks the
+  // publish-time `at` per action and rejects deliveries older than the
+  // last accepted one.
+
+  test('newer at-timestamp overwrites older cache value (in-order delivery)', async () => {
+    const { result } = renderHook(() => useCredits('my-action'));
+
+    await waitFor(() => {
+      expect(result.current.data).toEqual(mockBalance);
+    });
+
+    act(() => {
+      emitTestEvent({
+        type: 'credits.update',
+        action: 'my-action',
+        balance: {
+          subscribed: true,
+          quota: 100,
+          used: 30,
+          remaining: 70,
+          resetAt: null,
+          interval: 'monthly',
+        },
+        at: '2026-05-24T10:00:00.000Z',
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.data!.remaining).toBe(70);
+    });
+
+    act(() => {
+      emitTestEvent({
+        type: 'credits.update',
+        action: 'my-action',
+        balance: {
+          subscribed: true,
+          quota: 100,
+          used: 40,
+          remaining: 60,
+          resetAt: null,
+          interval: 'monthly',
+        },
+        at: '2026-05-24T10:00:01.000Z',
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.data!.remaining).toBe(60);
+    });
+  });
+
+  test('older at-timestamp is rejected when cache holds a newer at', async () => {
+    const { result } = renderHook(() => useCredits('my-action'));
+
+    await waitFor(() => {
+      expect(result.current.data).toEqual(mockBalance);
+    });
+
+    act(() => {
+      emitTestEvent({
+        type: 'credits.update',
+        action: 'my-action',
+        balance: {
+          subscribed: true,
+          quota: 100,
+          used: 30,
+          remaining: 70,
+          resetAt: null,
+          interval: 'monthly',
+        },
+        at: '2026-05-24T10:00:05.000Z',
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.data!.remaining).toBe(70);
+    });
+
+    // Out-of-order: an older publish time arriving after the newer one.
+    // Must be dropped so the user keeps the more recent value.
+    act(() => {
+      emitTestEvent({
+        type: 'credits.update',
+        action: 'my-action',
+        balance: {
+          subscribed: true,
+          quota: 100,
+          used: 999,
+          remaining: -899,
+          resetAt: null,
+          interval: 'monthly',
+        },
+        at: '2026-05-24T10:00:02.000Z',
+      });
+    });
+
+    await new Promise((r) => setTimeout(r, 50));
+    expect(result.current.data!.remaining).toBe(70); // unchanged
+  });
+
+  test('events without `at` field (older server) still apply (graceful degradation)', async () => {
+    const { result } = renderHook(() => useCredits('my-action'));
+
+    await waitFor(() => {
+      expect(result.current.data).toEqual(mockBalance);
+    });
+
+    act(() => {
+      emitTestEvent({
+        type: 'credits.update',
+        action: 'my-action',
+        balance: {
+          subscribed: true,
+          quota: 100,
+          used: 25,
+          remaining: 75,
+          resetAt: null,
+          interval: 'monthly',
+        },
+        // no `at` — simulates an older server
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.data!.remaining).toBe(75);
+    });
   });
 });

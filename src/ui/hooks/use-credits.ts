@@ -15,6 +15,18 @@ export interface UseCreditsResult {
 }
 
 /**
+ * Tracks the publish-time timestamp of the last accepted update per action
+ * so we can reject out-of-order SSE deliveries. Network can re-order
+ * messages; without this guard a stale snapshot can overwrite a fresh one
+ * and the user sees the wrong remaining count until the next interaction.
+ *
+ * ISO-8601 strings sort lexically the same way as their actual time order,
+ * so a string compare is sufficient. Updates without an `at` field (older
+ * servers) bypass the guard — degrade gracefully rather than break.
+ */
+const lastAtByAction = new Map<string, string>();
+
+/**
  * Live credit balance for one action.
  *
  * Reads:
@@ -22,6 +34,7 @@ export interface UseCreditsResult {
  *  - Live updates: SSE `credits.update` events merge usage/subscription fields
  *    into the same cache key. The merge preserves `email` and `billingUrl`,
  *    which don't change with usage and are only populated by the initial fetch.
+ *    Out-of-order deliveries are rejected via the event's `at` timestamp.
  *  - Safety nets (in `query.ts`): `refetchOnWindowFocus` plus a 5-min visible-tab
  *    poll catch the rare case where SSE dies silently (proxy buffers the
  *    stream, dropped reconnect window) without emitting an error event.
@@ -46,6 +59,16 @@ export function useCredits(action: string): UseCreditsResult {
     const release = acquire((event) => {
       if (event.type !== 'credits.update') return;
       if (event.action !== action) return;
+
+      // Reject out-of-order delivery. If the server didn't include `at`
+      // (older deployment), no guard — accept and hope the message order
+      // matches the publish order.
+      if (event.at) {
+        const prevAt = lastAtByAction.get(action);
+        if (prevAt && event.at < prevAt) return;
+        lastAtByAction.set(action, event.at);
+      }
+
       qc.setQueryData<CreditBalance>(creditKey(action), (old) =>
         // Merge so identity fields (email, billingUrl) from the initial
         // fetch survive a wire payload that doesn't carry them.
@@ -64,4 +87,9 @@ export function useCredits(action: string): UseCreditsResult {
     error,
     refresh: () => void refetch(),
   };
+}
+
+/** Test-only: clear the per-action ordering memo. */
+export function _resetCreditOrdering(): void {
+  lastAtByAction.clear();
 }
