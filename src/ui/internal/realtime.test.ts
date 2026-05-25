@@ -128,6 +128,7 @@ describe('realtime — dispatch', () => {
         remaining: 487,
         resetAt: '2026-06-01T00:00:00.000Z',
         interval: 'monthly',
+        cancelAt: null,
       },
     };
     lastInstance()!._emit('message', new MessageEvent('message', { data: JSON.stringify(event) }));
@@ -199,6 +200,7 @@ describe('realtime — dispatch', () => {
             remaining: 100,
             resetAt: null,
             interval: 'monthly',
+            cancelAt: null,
           },
         }),
       }),

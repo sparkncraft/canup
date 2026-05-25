@@ -33,7 +33,7 @@ describe('translations', () => {
     }
   });
 
-  test('each locale has all 7 message IDs', () => {
+  test('each locale has all 8 message IDs', () => {
     for (const locale of EXPECTED_LOCALES) {
       const messages = getTranslations(locale);
       for (const id of EXPECTED_MESSAGE_IDS) {

@@ -30,4 +30,8 @@ export const creditCounterMessages = defineMessages({
     defaultMessage:
       'Credits refresh {interval, select, daily {daily} weekly {weekly} monthly {monthly} other {daily}}.',
   },
+  cancelScheduled: {
+    id: 'canup.creditCounter.cancelScheduled',
+    defaultMessage: 'Subscription ends {cancelDate}.',
+  },
 });
