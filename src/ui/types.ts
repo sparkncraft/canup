@@ -6,6 +6,10 @@ export interface CreditBalance {
   remaining: number;
   resetAt: string | null;
   interval: 'daily' | 'weekly' | 'monthly' | 'lifetime' | null;
+  /** When the subscription will end if cancellation is scheduled at period
+   *  end. Null when the sub will renew normally OR the user is unsubscribed.
+   *  ISO-8601 on the wire — same shape as resetAt. */
+  cancelAt: string | null;
   email: string | null;
   billingUrl: string | null;
 }

@@ -10,11 +10,11 @@ import type { CreditBalance } from '../types.js';
 type CanvaRowsProps = ComponentProps<typeof Rows>;
 
 /**
- * Format a resetAt ISO string to a human-readable date.
+ * Format an ISO date string to a human-readable date.
  */
-function formatResetDate(resetAt: string | null): string | null {
-  if (!resetAt) return null;
-  return new Date(resetAt).toLocaleDateString(undefined, {
+function formatIsoDate(iso: string | null): string | null {
+  if (!iso) return null;
+  return new Date(iso).toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',
   });
@@ -28,6 +28,21 @@ function EmailLine({ email, intl }: { email: string | null; intl: IntlShape }) {
   return (
     <Text alignment="center" size="xsmall" tone="tertiary">
       {intl.formatMessage(creditCounterMessages.loggedInAs, { email })}
+    </Text>
+  );
+}
+
+/**
+ * "Subscription ends MMM DD" line shown when cancel_at_period_end is set
+ * on the brand's Stripe subscription. Lets users know the sub is scheduled
+ * to cancel without forcing them into the billing portal to find out.
+ */
+function CancelScheduledLine({ cancelAt, intl }: { cancelAt: string | null; intl: IntlShape }) {
+  const cancelDate = formatIsoDate(cancelAt);
+  if (!cancelDate) return null;
+  return (
+    <Text alignment="center" size="xsmall" tone="tertiary">
+      {intl.formatMessage(creditCounterMessages.cancelScheduled, { cancelDate })}
     </Text>
   );
 }
@@ -94,12 +109,13 @@ export function CreditCounter({
           {formatText(data)}
         </Rows>
         {footer}
+        <CancelScheduledLine cancelAt={data.cancelAt} intl={intl} />
         <EmailLine email={data.email} intl={intl} />
       </Rows>
     );
   }
 
-  const resetDate = formatResetDate(data.resetAt);
+  const resetDate = formatIsoDate(data.resetAt);
 
   if (data.remaining <= 0) {
     return (
@@ -114,6 +130,7 @@ export function CreditCounter({
           </Text>
         </Rows>
         {footer}
+        <CancelScheduledLine cancelAt={data.cancelAt} intl={intl} />
         <EmailLine email={data.email} intl={intl} />
       </Rows>
     );
@@ -136,6 +153,7 @@ export function CreditCounter({
         </Text>
       </Rows>
       {footer}
+      <CancelScheduledLine cancelAt={data.cancelAt} intl={intl} />
       <EmailLine email={data.email} intl={intl} />
     </Rows>
   );

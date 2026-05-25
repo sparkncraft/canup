@@ -13,6 +13,7 @@ const translations: Record<string, Record<string, string>> = {
       'تم استخدام {used} من {quota} {quota, plural, zero {رصيد} one {رصيد} two {رصيدين} few {أرصدة} many {رصيداً} other {رصيد}}.',
     'canup.creditCounter.refreshInterval':
       'يتم تجديد الأرصدة {interval, select, daily {يومياً} weekly {أسبوعياً} monthly {شهرياً} other {يومياً}}.',
+    'canup.creditCounter.cancelScheduled': 'ينتهي الاشتراك في {cancelDate}.',
   },
   de: {
     'canup.creditCounter.loggedInAs': 'Du bist als {email} angemeldet.',
@@ -24,6 +25,7 @@ const translations: Record<string, Record<string, string>> = {
       'Du hast {used} von {quota} {quota, plural, one {Credit} other {Credits}} verbraucht.',
     'canup.creditCounter.refreshInterval':
       'Credits werden {interval, select, daily {täglich} weekly {wöchentlich} monthly {monatlich} other {täglich}} erneuert.',
+    'canup.creditCounter.cancelScheduled': 'Abonnement endet am {cancelDate}.',
   },
   es: {
     'canup.creditCounter.loggedInAs': 'Has iniciado sesión como {email}.',
@@ -35,6 +37,7 @@ const translations: Record<string, Record<string, string>> = {
       'Has usado {used} de {quota} {quota, plural, one {crédito} other {créditos}}.',
     'canup.creditCounter.refreshInterval':
       'Los créditos se renuevan {interval, select, daily {diariamente} weekly {semanalmente} monthly {mensualmente} other {diariamente}}.',
+    'canup.creditCounter.cancelScheduled': 'La suscripción finaliza el {cancelDate}.',
   },
   'es-419': {
     'canup.creditCounter.loggedInAs': 'Iniciaste sesión como {email}.',
@@ -46,6 +49,7 @@ const translations: Record<string, Record<string, string>> = {
       'Has usado {used} de {quota} {quota, plural, one {crédito} other {créditos}}.',
     'canup.creditCounter.refreshInterval':
       'Los créditos se renuevan {interval, select, daily {diariamente} weekly {semanalmente} monthly {mensualmente} other {diariamente}}.',
+    'canup.creditCounter.cancelScheduled': 'La suscripción termina el {cancelDate}.',
   },
   fr: {
     'canup.creditCounter.loggedInAs': 'Vous êtes connecté(e) en tant que {email}.',
@@ -57,6 +61,7 @@ const translations: Record<string, Record<string, string>> = {
       'Vous avez utilisé {used} sur {quota} {quota, plural, one {crédit} other {crédits}}.',
     'canup.creditCounter.refreshInterval':
       'Les crédits se renouvellent {interval, select, daily {chaque jour} weekly {chaque semaine} monthly {chaque mois} other {chaque jour}}.',
+    'canup.creditCounter.cancelScheduled': "L'abonnement prend fin le {cancelDate}.",
   },
   id: {
     'canup.creditCounter.loggedInAs': 'Anda masuk sebagai {email}.',
@@ -68,6 +73,7 @@ const translations: Record<string, Record<string, string>> = {
       '{used} dari {quota} {quota, plural, other {kredit}} telah digunakan.',
     'canup.creditCounter.refreshInterval':
       'Kredit diperbarui {interval, select, daily {setiap hari} weekly {setiap minggu} monthly {setiap bulan} other {setiap hari}}.',
+    'canup.creditCounter.cancelScheduled': 'Langganan berakhir pada {cancelDate}.',
   },
   it: {
     'canup.creditCounter.loggedInAs': "Hai effettuato l'accesso come {email}.",
@@ -79,6 +85,7 @@ const translations: Record<string, Record<string, string>> = {
       'Hai usato {used} di {quota} {quota, plural, one {credito} other {crediti}}.',
     'canup.creditCounter.refreshInterval':
       'I crediti si rinnovano {interval, select, daily {ogni giorno} weekly {ogni settimana} monthly {ogni mese} other {ogni giorno}}.',
+    'canup.creditCounter.cancelScheduled': "L'abbonamento termina il {cancelDate}.",
   },
   ja: {
     'canup.creditCounter.loggedInAs': '{email} でログイン中です。',
@@ -89,6 +96,7 @@ const translations: Record<string, Record<string, string>> = {
     'canup.creditCounter.usage': '{used} / {quota} {quota, plural, other {クレジット}}を使用済み。',
     'canup.creditCounter.refreshInterval':
       'クレジットは{interval, select, daily {毎日} weekly {毎週} monthly {毎月} other {毎日}}更新されます。',
+    'canup.creditCounter.cancelScheduled': 'サブスクリプションは{cancelDate}に終了します。',
   },
   ko: {
     'canup.creditCounter.loggedInAs': '{email}(으)로 로그인되어 있습니다.',
@@ -99,6 +107,7 @@ const translations: Record<string, Record<string, string>> = {
     'canup.creditCounter.usage': '{used} / {quota} {quota, plural, other {크레딧}} 사용됨.',
     'canup.creditCounter.refreshInterval':
       '크레딧은 {interval, select, daily {매일} weekly {매주} monthly {매월} other {매일}} 갱신됩니다.',
+    'canup.creditCounter.cancelScheduled': '구독이 {cancelDate}에 종료됩니다.',
   },
   ms: {
     'canup.creditCounter.loggedInAs': 'Anda log masuk sebagai {email}.',
@@ -110,6 +119,7 @@ const translations: Record<string, Record<string, string>> = {
       '{used} daripada {quota} {quota, plural, other {kredit}} telah digunakan.',
     'canup.creditCounter.refreshInterval':
       'Kredit diperbaharui {interval, select, daily {setiap hari} weekly {setiap minggu} monthly {setiap bulan} other {setiap hari}}.',
+    'canup.creditCounter.cancelScheduled': 'Langganan tamat pada {cancelDate}.',
   },
   nl: {
     'canup.creditCounter.loggedInAs': 'Je bent ingelogd als {email}.',
@@ -121,6 +131,7 @@ const translations: Record<string, Record<string, string>> = {
       'Je hebt {used} van {quota} {quota, plural, one {credit} other {credits}} gebruikt.',
     'canup.creditCounter.refreshInterval':
       'Credits worden {interval, select, daily {dagelijks} weekly {wekelijks} monthly {maandelijks} other {dagelijks}} vernieuwd.',
+    'canup.creditCounter.cancelScheduled': 'Abonnement eindigt op {cancelDate}.',
   },
   pl: {
     'canup.creditCounter.loggedInAs': 'Zalogowano jako {email}.',
@@ -132,6 +143,7 @@ const translations: Record<string, Record<string, string>> = {
       'Wykorzystano {used} z {quota} {quota, plural, one {kredyt} few {kredyty} many {kredytów} other {kredytu}}.',
     'canup.creditCounter.refreshInterval':
       'Kredyty odnawiają się {interval, select, daily {codziennie} weekly {co tydzień} monthly {co miesiąc} other {codziennie}}.',
+    'canup.creditCounter.cancelScheduled': 'Subskrypcja kończy się {cancelDate}.',
   },
   'pt-BR': {
     'canup.creditCounter.loggedInAs': 'Você está conectado(a) como {email}.',
@@ -143,6 +155,7 @@ const translations: Record<string, Record<string, string>> = {
       'Você usou {used} de {quota} {quota, plural, one {crédito} other {créditos}}.',
     'canup.creditCounter.refreshInterval':
       'Os créditos são renovados {interval, select, daily {diariamente} weekly {semanalmente} monthly {mensalmente} other {diariamente}}.',
+    'canup.creditCounter.cancelScheduled': 'A assinatura termina em {cancelDate}.',
   },
   ro: {
     'canup.creditCounter.loggedInAs': 'Ești conectat(ă) ca {email}.',
@@ -154,6 +167,7 @@ const translations: Record<string, Record<string, string>> = {
       'Ai folosit {used} din {quota} {quota, plural, one {credit} few {credite} other {de credite}}.',
     'canup.creditCounter.refreshInterval':
       'Creditele se reîmprospătează {interval, select, daily {zilnic} weekly {săptămânal} monthly {lunar} other {zilnic}}.',
+    'canup.creditCounter.cancelScheduled': 'Abonamentul se încheie pe {cancelDate}.',
   },
   sv: {
     'canup.creditCounter.loggedInAs': 'Du är inloggad som {email}.',
@@ -165,6 +179,7 @@ const translations: Record<string, Record<string, string>> = {
       'Du har använt {used} av {quota} {quota, plural, one {kredit} other {krediter}}.',
     'canup.creditCounter.refreshInterval':
       'Krediter förnyas {interval, select, daily {dagligen} weekly {veckovis} monthly {månadsvis} other {dagligen}}.',
+    'canup.creditCounter.cancelScheduled': 'Prenumerationen avslutas {cancelDate}.',
   },
   th: {
     'canup.creditCounter.loggedInAs': 'คุณเข้าสู่ระบบด้วย {email}',
@@ -175,6 +190,7 @@ const translations: Record<string, Record<string, string>> = {
     'canup.creditCounter.usage': 'ใช้ไปแล้ว {used} จาก {quota} {quota, plural, other {เครดิต}}',
     'canup.creditCounter.refreshInterval':
       'เครดิตจะรีเซ็ต{interval, select, daily {ทุกวัน} weekly {ทุกสัปดาห์} monthly {ทุกเดือน} other {ทุกวัน}}',
+    'canup.creditCounter.cancelScheduled': 'การสมัครสมาชิกสิ้นสุดในวันที่ {cancelDate}',
   },
   tr: {
     'canup.creditCounter.loggedInAs': '{email} olarak giriş yaptınız.',
@@ -186,6 +202,7 @@ const translations: Record<string, Record<string, string>> = {
       '{used} / {quota} {quota, plural, one {kredi} other {kredi}} kullanıldı.',
     'canup.creditCounter.refreshInterval':
       'Krediler {interval, select, daily {günlük} weekly {haftalık} monthly {aylık} other {günlük}} olarak yenilenir.',
+    'canup.creditCounter.cancelScheduled': 'Abonelik {cancelDate} tarihinde sona erer.',
   },
   vi: {
     'canup.creditCounter.loggedInAs': 'Bạn đã đăng nhập bằng {email}.',
@@ -197,6 +214,7 @@ const translations: Record<string, Record<string, string>> = {
       'Đã sử dụng {used} trong số {quota} {quota, plural, other {tín dụng}}.',
     'canup.creditCounter.refreshInterval':
       'Tín dụng được làm mới {interval, select, daily {hàng ngày} weekly {hàng tuần} monthly {hàng tháng} other {hàng ngày}}.',
+    'canup.creditCounter.cancelScheduled': 'Gói đăng ký kết thúc vào {cancelDate}.',
   },
 };
 
