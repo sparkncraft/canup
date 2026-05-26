@@ -1,14 +1,20 @@
 import { useState } from 'react';
-import { FormField, Rows, TextInput } from '@canva/app-ui-kit';
+import { Alert, FormField, Rows, Text, TextInput } from '@canva/app-ui-kit';
 import { addElementAtPoint, addElementAtCursor } from '@canva/design';
-import { notification } from '@canva/platform';
 import { useFeatureSupport } from '@canva/app-hooks';
 import { ActionButton, CreditCounter } from 'canup';
 import type { CanupError } from 'canup';
 import * as styles from 'styles/components.css';
 
+type ResultState =
+  | { kind: 'idle' }
+  | { kind: 'success'; text: string }
+  | { kind: 'empty' }
+  | { kind: 'error'; message: string };
+
 export function App() {
   const [prompt, setPrompt] = useState('');
+  const [result, setResult] = useState<ResultState>({ kind: 'idle' });
 
   const isSupported = useFeatureSupport();
   const addElement = [addElementAtPoint, addElementAtCursor].find((fn) => isSupported(fn));
@@ -20,24 +26,23 @@ export function App() {
         : null;
 
     if (text == null) {
-      void notification.addToast({
-        messageText:
-          'Action ran, but returned no text. Implement your generate-text action server-side.',
-      });
+      // Demo apps ship without a backing action — render the hint inline
+      // instead of throwing an OS-level modal at the user on every click.
+      setResult({ kind: 'empty' });
       return;
     }
 
+    setResult({ kind: 'success', text });
+
     if (addElement) {
       await addElement({ type: 'text', children: [text] });
-      void notification.addToast({ messageText: 'Added to design.' });
-    } else {
-      void notification.addToast({ messageText: 'Cannot add elements in this context.' });
     }
   };
 
   const handleError = (error: CanupError) => {
-    void notification.addToast({
-      messageText: error.type === 'CREDITS_EXHAUSTED' ? 'No credits remaining.' : error.message,
+    setResult({
+      kind: 'error',
+      message: error.type === 'CREDITS_EXHAUSTED' ? 'No credits remaining.' : error.message,
     });
   };
 
@@ -69,6 +74,21 @@ export function App() {
           Generate Text
         </ActionButton>
         <CreditCounter action="generate-text" />
+        {result.kind === 'success' && (
+          <Alert tone="positive" title="Generated">
+            <Text>{result.text}</Text>
+          </Alert>
+        )}
+        {result.kind === 'empty' && (
+          <Alert tone="info" title="No text returned">
+            <Text>Hook up your generate-text action server-side to render real output here.</Text>
+          </Alert>
+        )}
+        {result.kind === 'error' && (
+          <Alert tone="critical" title="Action failed">
+            <Text>{result.message}</Text>
+          </Alert>
+        )}
       </Rows>
     </div>
   );

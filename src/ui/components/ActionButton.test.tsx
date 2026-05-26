@@ -34,6 +34,7 @@ const test = baseTest.extend('_rtl', [
         remaining: 90,
         resetAt: null,
         interval: 'monthly',
+        cancelAt: null,
         email: null,
         billingUrl: null,
       },
@@ -101,6 +102,7 @@ describe('ActionButton', () => {
         remaining: 0,
         resetAt: null,
         interval: 'monthly',
+        cancelAt: null,
         email: null,
         billingUrl: null,
       },
@@ -155,6 +157,77 @@ describe('ActionButton', () => {
     await waitFor(() => {
       expect(onError).toHaveBeenCalledWith(error);
     });
+  });
+
+  test('calls onStart synchronously on click, before execute resolves', async () => {
+    let resolveExecute: (value: { result: string; durationMs: number }) => void = () => {};
+    const mockExecute = vi.fn(
+      () => new Promise<{ result: string; durationMs: number }>((r) => (resolveExecute = r)),
+    );
+    mockUseAction.mockReturnValue({ execute: mockExecute, loading: false, error: null });
+    const onStart = vi.fn();
+    const onResult = vi.fn();
+
+    renderWithCanva(
+      <ActionButton action="my-action" variant="primary" onStart={onStart} onResult={onResult}>
+        Go
+      </ActionButton>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Go' }));
+
+    // onStart fires synchronously with the click, before the execute promise resolves
+    expect(onStart).toHaveBeenCalledTimes(1);
+    expect(onResult).not.toHaveBeenCalled();
+
+    resolveExecute({ result: 'done', durationMs: 5 });
+    await waitFor(() => {
+      expect(onResult).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  test('calls onSettled after onResult on success', async () => {
+    const mockResult = { result: 'done', durationMs: 5 };
+    const mockExecute = vi.fn().mockResolvedValue(mockResult);
+    mockUseAction.mockReturnValue({ execute: mockExecute, loading: false, error: null });
+    const calls: string[] = [];
+    const onResult = vi.fn(() => calls.push('onResult'));
+    const onSettled = vi.fn(() => calls.push('onSettled'));
+
+    renderWithCanva(
+      <ActionButton action="my-action" variant="primary" onResult={onResult} onSettled={onSettled}>
+        Go
+      </ActionButton>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Go' }));
+
+    await waitFor(() => {
+      expect(onSettled).toHaveBeenCalledTimes(1);
+    });
+    expect(calls).toEqual(['onResult', 'onSettled']);
+  });
+
+  test('calls onSettled after onError on failure', async () => {
+    const error = new CanupError('CREDITS_EXHAUSTED', 'Credits exhausted');
+    const mockExecute = vi.fn().mockRejectedValue(error);
+    mockUseAction.mockReturnValue({ execute: mockExecute, loading: false, error: null });
+    const calls: string[] = [];
+    const onError = vi.fn(() => calls.push('onError'));
+    const onSettled = vi.fn(() => calls.push('onSettled'));
+
+    renderWithCanva(
+      <ActionButton action="my-action" variant="primary" onError={onError} onSettled={onSettled}>
+        Go
+      </ActionButton>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Go' }));
+
+    await waitFor(() => {
+      expect(onSettled).toHaveBeenCalledTimes(1);
+    });
+    expect(calls).toEqual(['onError', 'onSettled']);
   });
 
   test('renders with variant and stretch props', () => {
