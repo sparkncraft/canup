@@ -16,15 +16,21 @@ export type ActionButtonProps = DistributiveOmit<
 > & {
   action: string;
   params?: Record<string, unknown>;
+  /** Fires synchronously when the user clicks, before the action runs. Useful for starting an external timer or progress UI. */
+  onStart?: () => void;
   onResult?: (data: ActionResult) => void;
   onError?: (error: CanupError) => void;
+  /** Fires after the action settles (success or error). Pair with `onStart` to bracket consumer-side loading state. */
+  onSettled?: () => void;
 };
 
 export function ActionButton({
   action,
   params,
+  onStart,
   onResult,
   onError,
+  onSettled,
   disabled,
   children,
   variant,
@@ -33,15 +39,18 @@ export function ActionButton({
   const { execute, loading } = useAction(action);
   const { exhausted } = useCredits(action);
 
-  const latest = useRef({ params, onResult, onError });
-  latest.current = { params, onResult, onError };
+  const latest = useRef({ params, onStart, onResult, onError, onSettled });
+  latest.current = { params, onStart, onResult, onError, onSettled };
 
   const handleClick = useCallback(async () => {
+    latest.current.onStart?.();
     try {
       const result = await execute(latest.current.params);
       latest.current.onResult?.(result);
     } catch (err) {
       latest.current.onError?.(toCanupError(err));
+    } finally {
+      latest.current.onSettled?.();
     }
   }, [execute]);
 
