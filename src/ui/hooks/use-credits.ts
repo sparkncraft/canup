@@ -30,10 +30,15 @@ const lastAtByAction = new Map<string, string>();
  * Live credit balance for one action.
  *
  * Reads:
- *  - Initial paint: one `GET /run/:slug/credits` (sets email, billingUrl, etc.)
- *  - Live updates: SSE `credits.update` events merge usage/subscription fields
- *    into the same cache key. The merge preserves `email` and `billingUrl`,
- *    which don't change with usage and are only populated by the initial fetch.
+ *  - Initial paint: one `GET /run/:slug/credits` (sets billingUrl + initial
+ *    balance shape, including email).
+ *  - Live updates: SSE `credits.update` events merge into the same cache key.
+ *    The wire carries every field that depends on customer/subscription state
+ *    — including `email` — so the iframe's "logged in as ..." line refreshes
+ *    on re-subscribe / customer.deleted without an iframe reload. `billingUrl`
+ *    is the one identity field NOT on the wire: it's HTTP-scoped (request
+ *    origin + per-user token mint) and stable across customer changes, so
+ *    the merge preserves the value set on initial fetch.
  *    Out-of-order deliveries are rejected via the event's `at` timestamp.
  *  - Safety nets (in `query.ts`): `refetchOnWindowFocus` plus a 5-min visible-tab
  *    poll catch the rare case where SSE dies silently (proxy buffers the
@@ -70,9 +75,14 @@ export function useCredits(action: string): UseCreditsResult {
       }
 
       qc.setQueryData<CreditBalance>(creditKey(action), (old) =>
-        // Merge so identity fields (email, billingUrl) from the initial
-        // fetch survive a wire payload that doesn't carry them.
-        old ? { ...old, ...event.balance } : { ...event.balance, email: null, billingUrl: null },
+        // Spread `old` first so `billingUrl` (the one identity field that
+        // isn't on the SSE wire) survives. `event.balance` then overwrites
+        // every customer-state field — `email` included — so the iframe
+        // reflects the new customer immediately after a re-subscribe or
+        // customer.deleted. When `old` is undefined (first SSE arrives
+        // before the initial fetch resolves), billingUrl is unknown until
+        // the fetch lands and we leave it null.
+        old ? { ...old, ...event.balance } : { ...event.balance, billingUrl: null },
       );
     });
     return release;

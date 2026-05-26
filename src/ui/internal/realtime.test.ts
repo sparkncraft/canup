@@ -129,6 +129,7 @@ describe('realtime — dispatch', () => {
         resetAt: '2026-06-01T00:00:00.000Z',
         interval: 'monthly',
         cancelAt: null,
+        email: 'subscriber@example.com',
       },
     };
     lastInstance()!._emit('message', new MessageEvent('message', { data: JSON.stringify(event) }));
@@ -178,6 +179,87 @@ describe('realtime — dispatch', () => {
     expect(h).not.toHaveBeenCalled();
   });
 
+  test('wire schema accepts cancelAt + email nullable in both directions', async () => {
+    const h = vi.fn();
+    const { acquire } = await load();
+    acquire(h);
+
+    // Subscribed brand — email + cancelAt populated.
+    lastInstance()!._emit(
+      'message',
+      new MessageEvent('message', {
+        data: JSON.stringify({
+          type: 'credits.update',
+          action: 'generate',
+          balance: {
+            subscribed: true,
+            quota: 100,
+            used: 5,
+            remaining: 95,
+            resetAt: '2026-06-01T00:00:00.000Z',
+            interval: 'monthly',
+            cancelAt: '2026-07-01T00:00:00.000Z',
+            email: 'cancelled@example.com',
+          },
+        }),
+      }),
+    );
+    expect(h).toHaveBeenCalledTimes(1);
+    expect(h.mock.calls[0][0].balance.email).toBe('cancelled@example.com');
+    expect(h.mock.calls[0][0].balance.cancelAt).toBe('2026-07-01T00:00:00.000Z');
+
+    // Unsubscribed brand — explicit nulls.
+    lastInstance()!._emit(
+      'message',
+      new MessageEvent('message', {
+        data: JSON.stringify({
+          type: 'credits.update',
+          action: 'generate',
+          balance: {
+            subscribed: false,
+            quota: 10,
+            used: 0,
+            remaining: 10,
+            resetAt: null,
+            interval: 'monthly',
+            cancelAt: null,
+            email: null,
+          },
+        }),
+      }),
+    );
+    expect(h).toHaveBeenCalledTimes(2);
+    expect(h.mock.calls[1][0].balance.email).toBeNull();
+    expect(h.mock.calls[1][0].balance.cancelAt).toBeNull();
+  });
+
+  test('wire schema rejects payload missing email (forward-compat boundary)', async () => {
+    const h = vi.fn();
+    const { acquire } = await load();
+    acquire(h);
+
+    lastInstance()!._emit(
+      'message',
+      new MessageEvent('message', {
+        data: JSON.stringify({
+          type: 'credits.update',
+          action: 'generate',
+          balance: {
+            subscribed: true,
+            quota: 100,
+            used: 0,
+            remaining: 100,
+            resetAt: '2026-06-01T00:00:00.000Z',
+            interval: 'monthly',
+            cancelAt: null,
+            // email omitted — older server without this field.
+          },
+        }),
+      }),
+    );
+    expect(h).not.toHaveBeenCalled();
+  });
+
   test('throwing handler does not stop other handlers', async () => {
     using consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const ok = vi.fn();
@@ -201,6 +283,7 @@ describe('realtime — dispatch', () => {
             resetAt: null,
             interval: 'monthly',
             cancelAt: null,
+            email: null,
           },
         }),
       }),
