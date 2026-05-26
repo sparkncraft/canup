@@ -86,6 +86,7 @@ describe('useAction', () => {
       remaining: 9,
       resetAt: null,
       interval: 'monthly',
+      cancelAt: null,
       email: null,
       billingUrl: null,
     };

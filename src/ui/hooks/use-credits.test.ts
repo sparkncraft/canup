@@ -43,6 +43,7 @@ const mockBalance: CreditBalance = {
   remaining: 90,
   resetAt: '2026-04-01T00:00:00Z',
   interval: 'monthly',
+  cancelAt: null,
   email: null,
   billingUrl: 'https://canup.link/subscribe/V1StGXR8_Z5j',
 };
@@ -197,7 +198,7 @@ describe('useCredits', () => {
     expect(sseHandlers.size).toBeGreaterThan(0);
   });
 
-  test('SSE credits.update event merges new balance into cache (preserves identity fields)', async () => {
+  test('SSE credits.update event merges new balance into cache (preserves billingUrl)', async () => {
     const { result } = renderHook(() => useCredits('my-action'));
 
     await waitFor(() => {
@@ -215,6 +216,8 @@ describe('useCredits', () => {
           remaining: 450,
           resetAt: '2026-05-01T00:00:00.000Z',
           interval: 'monthly',
+          cancelAt: null,
+          email: 'fresh@example.com',
         },
       });
     });
@@ -223,8 +226,83 @@ describe('useCredits', () => {
       expect(result.current.data!.remaining).toBe(450);
     });
 
-    // Identity fields from the initial fetch are preserved through the merge.
+    // billingUrl is HTTP-scoped and not on the SSE wire — preserved.
     expect(result.current.data!.billingUrl).toBe(mockBalance.billingUrl);
+  });
+
+  test('SSE credits.update overwrites email when the Stripe customer changes', async () => {
+    // Bug fix: re-subscribing with a different customer email used to leave
+    // the iframe's "logged in as ..." line stale until reload, because the
+    // wire payload didn't carry email and the merge preserved the old one.
+    mockFetchCredits.mockResolvedValue({
+      ...mockBalance,
+      subscribed: true,
+      email: 'old@example.com',
+    });
+    const { result } = renderHook(() => useCredits('my-action'));
+
+    await waitFor(() => {
+      expect(result.current.data?.email).toBe('old@example.com');
+    });
+
+    act(() => {
+      emitTestEvent({
+        type: 'credits.update',
+        action: 'my-action',
+        balance: {
+          subscribed: true,
+          quota: 500,
+          used: 0,
+          remaining: 500,
+          resetAt: '2026-05-01T00:00:00.000Z',
+          interval: 'monthly',
+          cancelAt: null,
+          email: 'new@example.com',
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.data!.email).toBe('new@example.com');
+    });
+    expect(result.current.data!.billingUrl).toBe(mockBalance.billingUrl);
+  });
+
+  test('SSE credits.update sets email to null on customer.deleted', async () => {
+    // The deleted-customer flow emits a balance with email: null. The merge
+    // must propagate the null so the iframe stops claiming the user is
+    // logged in as the deleted address.
+    mockFetchCredits.mockResolvedValue({
+      ...mockBalance,
+      subscribed: true,
+      email: 'deleted@example.com',
+    });
+    const { result } = renderHook(() => useCredits('my-action'));
+
+    await waitFor(() => {
+      expect(result.current.data?.email).toBe('deleted@example.com');
+    });
+
+    act(() => {
+      emitTestEvent({
+        type: 'credits.update',
+        action: 'my-action',
+        balance: {
+          subscribed: false,
+          quota: 10,
+          used: 0,
+          remaining: 10,
+          resetAt: null,
+          interval: 'monthly',
+          cancelAt: null,
+          email: null,
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.data!.email).toBeNull();
+    });
   });
 
   test('SSE event for a different action does NOT touch this hook cache', async () => {
@@ -245,6 +323,8 @@ describe('useCredits', () => {
           remaining: 1,
           resetAt: null,
           interval: 'monthly',
+          cancelAt: null,
+          email: null,
         },
       });
     });
@@ -305,6 +385,8 @@ describe('useCredits', () => {
           remaining: 70,
           resetAt: null,
           interval: 'monthly',
+          cancelAt: null,
+          email: null,
         },
         at: '2026-05-24T10:00:00.000Z',
       });
@@ -325,6 +407,8 @@ describe('useCredits', () => {
           remaining: 60,
           resetAt: null,
           interval: 'monthly',
+          cancelAt: null,
+          email: null,
         },
         at: '2026-05-24T10:00:01.000Z',
       });
@@ -353,6 +437,8 @@ describe('useCredits', () => {
           remaining: 70,
           resetAt: null,
           interval: 'monthly',
+          cancelAt: null,
+          email: null,
         },
         at: '2026-05-24T10:00:05.000Z',
       });
@@ -375,6 +461,8 @@ describe('useCredits', () => {
           remaining: -899,
           resetAt: null,
           interval: 'monthly',
+          cancelAt: null,
+          email: null,
         },
         at: '2026-05-24T10:00:02.000Z',
       });
@@ -402,6 +490,8 @@ describe('useCredits', () => {
           remaining: 75,
           resetAt: null,
           interval: 'monthly',
+          cancelAt: null,
+          email: null,
         },
         // no `at` — simulates an older server
       });

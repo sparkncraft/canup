@@ -27,6 +27,12 @@ const creditsUpdateSchema = z.object({
     // Same wire shape as resetAt — ISO-8601 string on the wire, Date in
     // consumer code after re-parsing.
     cancelAt: z.string().nullable(),
+    // Stripe customer email when the brand has an active subscription;
+    // null when unsubscribed / customer was deleted. Riding this through
+    // SSE refreshes the iframe's "logged in as ..." line when the
+    // customer changes (re-subscribe with a different email, or
+    // customer.deleted) without an iframe reload.
+    email: z.string().nullable(),
   }),
   // ISO-8601 publish-time timestamp. Consumers compare it against the
   // last accepted update to skip out-of-order deliveries. Optional in

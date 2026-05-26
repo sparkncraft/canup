@@ -24,6 +24,7 @@ const mockBalance: CreditBalance = {
   remaining: 90,
   resetAt: '2026-04-01T00:00:00Z',
   interval: 'monthly',
+  cancelAt: null,
   email: null,
   billingUrl: 'https://canup.link/subscribe/mock-jwt',
 };
