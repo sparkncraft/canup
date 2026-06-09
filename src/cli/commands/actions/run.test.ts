@@ -18,6 +18,7 @@ const test = baseTest.extend('tmpFile', async ({}, { onCleanup }) => {
 
 vi.mock('../../config/require-project.js', () => ({
   requireProject: vi.fn(() => project),
+  requireClient: vi.fn(() => ({ ...project, client })),
 }));
 
 vi.mock('../../api-client.js', () => ({
@@ -107,12 +108,9 @@ describe('actions run command', () => {
         from: 'user',
       });
 
-      expect(client.testCode).toHaveBeenCalledWith(
-        'test-app-id',
-        expect.any(String),
-        'python',
-        { key: 'val' },
-      );
+      expect(client.testCode).toHaveBeenCalledWith('test-app-id', expect.any(String), 'python', {
+        key: 'val',
+      });
     });
 
     test('reads params from a JSON file path', async ({ client, tmpFile, processMocks }) => {
@@ -325,9 +323,7 @@ describe('actions run command', () => {
 
       await program.parseAsync(['actions', 'run', 'observe'], { from: 'user' });
 
-      expect(output.error).toHaveBeenCalledWith(
-        "Action 'observe' has no deployed code to run.",
-      );
+      expect(output.error).toHaveBeenCalledWith("Action 'observe' has no deployed code to run.");
       expect(processMocks.exit).toHaveBeenCalledWith(1);
       expect(client.testCode).not.toHaveBeenCalled();
     });

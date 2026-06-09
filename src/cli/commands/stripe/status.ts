@@ -1,6 +1,5 @@
 import type { Command } from 'commander';
-import { CanupClient } from '../../api-client.js';
-import { requireProject } from '../../config/require-project.js';
+import { requireClient } from '../../config/require-project.js';
 import { error, hint } from '../../ui/output.js';
 
 export function registerStripeStatusAction(stripeCommand: Command): void {
@@ -8,8 +7,7 @@ export function registerStripeStatusAction(stripeCommand: Command): void {
     .command('status')
     .description('Show Stripe connection status')
     .action(async () => {
-      const { config, apiKey } = requireProject();
-      const client = new CanupClient({ token: apiKey });
+      const { config, client } = requireClient();
 
       try {
         const result = await client.stripeStatus(config.appId);

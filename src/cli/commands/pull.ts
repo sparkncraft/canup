@@ -2,9 +2,8 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import type { Command } from 'commander';
-import { requireProject } from '../config/require-project.js';
+import { requireClient } from '../config/require-project.js';
 import { getActionsDir } from '../config/project-config.js';
-import { CanupClient } from '../api-client.js';
 import { error, hint, info, success, warn } from '../ui/output.js';
 import { withSpinner } from '../ui/spinner.js';
 
@@ -29,13 +28,11 @@ export function registerPullCommand(program: Command): void {
     .option('--force', 'Overwrite local files that differ from remote')
     .action(async (slug?: string, opts?: { force?: boolean }) => {
       try {
-        const { config, apiKey, canupDir } = requireProject();
+        const { config, canupDir, client } = requireClient();
         const actionsDir = getActionsDir(canupDir, config);
 
         // Ensure actions directory exists
         mkdirSync(actionsDir, { recursive: true });
-
-        const client = new CanupClient({ token: apiKey });
 
         // Fetch remote actions with script content
         const remoteActions = await withSpinner(

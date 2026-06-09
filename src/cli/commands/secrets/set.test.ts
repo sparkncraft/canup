@@ -1,14 +1,11 @@
 import { describe, expect, vi } from 'vitest';
 import { test, client, output, project } from '#test/fixtures.js';
-import { mockIsTTY } from '#test/mocks/cli.js';
 
-const { mockReadStdinPipe, mockReadHiddenInput } = vi.hoisted(() => ({
-  mockReadStdinPipe: vi.fn(),
-  mockReadHiddenInput: vi.fn(),
-}));
+const { mockReadSecretInput } = vi.hoisted(() => ({ mockReadSecretInput: vi.fn() }));
 
 vi.mock('../../config/require-project.js', () => ({
   requireProject: vi.fn(() => project),
+  requireClient: vi.fn(() => ({ ...project, client })),
 }));
 vi.mock('../../api-client.js', () => ({
   CanupClient: vi.fn(function () {
@@ -16,13 +13,11 @@ vi.mock('../../api-client.js', () => ({
   }),
 }));
 vi.mock('../../ui/output.js', () => output);
-vi.mock('../../lib/input.js', () => ({
-  readStdinPipe: mockReadStdinPipe,
-  readHiddenInput: mockReadHiddenInput,
-}));
+vi.mock('../../lib/input.js', () => ({ readSecretInput: mockReadSecretInput }));
 
 describe('secrets set command', () => {
   test('sets a new secret with --value flag', async ({ client, output }) => {
+    mockReadSecretInput.mockResolvedValue('my-secret-val');
     client.setSecret.mockResolvedValue({ name: 'MY_KEY', created: true, synced: true });
 
     const { Command } = await import('commander');
@@ -36,11 +31,13 @@ describe('secrets set command', () => {
       from: 'user',
     });
 
+    expect(mockReadSecretInput).toHaveBeenCalledWith('my-secret-val', { prompt: 'Enter value: ' });
     expect(client.setSecret).toHaveBeenCalledWith('test-app-id', 'MY_KEY', 'my-secret-val');
     expect(output.success).toHaveBeenCalledWith('Secret MY_KEY set and synced.');
   });
 
-  test('updates an existing secret with --value flag', async ({ client, output }) => {
+  test('updates an existing secret', async ({ client, output }) => {
+    mockReadSecretInput.mockResolvedValue('updated-val');
     client.setSecret.mockResolvedValue({ name: 'MY_KEY', created: false, synced: true });
 
     const { Command } = await import('commander');
@@ -58,6 +55,7 @@ describe('secrets set command', () => {
   });
 
   test('shows sync failure warning', async ({ client, output }) => {
+    mockReadSecretInput.mockResolvedValue('val');
     client.setSecret.mockResolvedValue({ name: 'MY_KEY', created: true, synced: false });
 
     const { Command } = await import('commander');
@@ -72,11 +70,9 @@ describe('secrets set command', () => {
     expect(output.hint).toHaveBeenCalledWith(expect.stringContaining('Lambda sync failed'));
   });
 
-  test('reads value from interactive prompt when TTY', async ({ client, output }) => {
+  test('acquires the value via readSecretInput when no --value flag', async ({ client }) => {
+    mockReadSecretInput.mockResolvedValue('acquired-secret');
     client.setSecret.mockResolvedValue({ name: 'MY_KEY', created: true, synced: true });
-    mockReadHiddenInput.mockResolvedValue('secret');
-
-    using _tty = mockIsTTY(true);
 
     const { Command } = await import('commander');
     const { registerSecretsSetAction } = await import('../../commands/secrets/set.js');
@@ -87,34 +83,12 @@ describe('secrets set command', () => {
 
     await program.parseAsync(['secrets', 'set', 'MY_KEY'], { from: 'user' });
 
-    expect(mockReadHiddenInput).toHaveBeenCalledWith('Enter value: ');
-    expect(client.setSecret).toHaveBeenCalledWith('test-app-id', 'MY_KEY', 'secret');
-    expect(output.success).toHaveBeenCalledWith('Secret MY_KEY set and synced.');
-  });
-
-  test('reads value from stdin pipe when not TTY', async ({ client, output }) => {
-    client.setSecret.mockResolvedValue({ name: 'MY_KEY', created: true, synced: true });
-    mockReadStdinPipe.mockResolvedValue('piped-secret');
-
-    using _tty = mockIsTTY(undefined);
-
-    const { Command } = await import('commander');
-    const { registerSecretsSetAction } = await import('../../commands/secrets/set.js');
-
-    const program = new Command();
-    const secrets = program.command('secrets');
-    registerSecretsSetAction(secrets);
-
-    await program.parseAsync(['secrets', 'set', 'MY_KEY'], { from: 'user' });
-
-    expect(mockReadStdinPipe).toHaveBeenCalled();
-    expect(client.setSecret).toHaveBeenCalledWith('test-app-id', 'MY_KEY', 'piped-secret');
+    expect(mockReadSecretInput).toHaveBeenCalledWith(undefined, { prompt: 'Enter value: ' });
+    expect(client.setSecret).toHaveBeenCalledWith('test-app-id', 'MY_KEY', 'acquired-secret');
   });
 
   test('exits with error when value is empty', async ({ output, processMocks }) => {
-    mockReadStdinPipe.mockResolvedValue('');
-
-    using _tty = mockIsTTY(undefined);
+    mockReadSecretInput.mockResolvedValue('');
 
     const { Command } = await import('commander');
     const { registerSecretsSetAction } = await import('../../commands/secrets/set.js');
@@ -130,6 +104,7 @@ describe('secrets set command', () => {
   });
 
   test('handles API error', async ({ client, output, processMocks }) => {
+    mockReadSecretInput.mockResolvedValue('val');
     client.setSecret.mockRejectedValue(new Error('Server error'));
 
     const { Command } = await import('commander');

@@ -179,7 +179,7 @@ describe('realtime — dispatch', () => {
     expect(h).not.toHaveBeenCalled();
   });
 
-  test('wire schema accepts cancelAt + email nullable in both directions', async () => {
+  test('balance carries email + cancelAt only on the subscribed arm', async () => {
     const h = vi.fn();
     const { acquire } = await load();
     acquire(h);
@@ -208,7 +208,9 @@ describe('realtime — dispatch', () => {
     expect(h.mock.calls[0][0].balance.email).toBe('cancelled@example.com');
     expect(h.mock.calls[0][0].balance.cancelAt).toBe('2026-07-01T00:00:00.000Z');
 
-    // Unsubscribed brand — explicit nulls.
+    // Unsubscribed brand — the discriminated union has no email/cancelAt on the
+    // free-tier arm, so any the server sends are stripped: a free-tier balance
+    // can't carry a stray subscriber email or cancellation date.
     lastInstance()!._emit(
       'message',
       new MessageEvent('message', {
@@ -229,8 +231,10 @@ describe('realtime — dispatch', () => {
       }),
     );
     expect(h).toHaveBeenCalledTimes(2);
-    expect(h.mock.calls[1][0].balance.email).toBeNull();
-    expect(h.mock.calls[1][0].balance.cancelAt).toBeNull();
+    expect(h.mock.calls[1][0].balance.subscribed).toBe(false);
+    expect(h.mock.calls[1][0].balance.remaining).toBe(10);
+    expect(h.mock.calls[1][0].balance.email).toBeUndefined();
+    expect(h.mock.calls[1][0].balance.cancelAt).toBeUndefined();
   });
 
   test('wire schema rejects payload missing email (forward-compat boundary)', async () => {

@@ -74,16 +74,15 @@ export function useCredits(action: string): UseCreditsResult {
         lastAtByAction.set(action, event.at);
       }
 
-      qc.setQueryData<CreditBalance>(creditKey(action), (old) =>
-        // Spread `old` first so `billingUrl` (the one identity field that
-        // isn't on the SSE wire) survives. `event.balance` then overwrites
-        // every customer-state field — `email` included — so the iframe
-        // reflects the new customer immediately after a re-subscribe or
-        // customer.deleted. When `old` is undefined (first SSE arrives
-        // before the initial fetch resolves), billingUrl is unknown until
-        // the fetch lands and we leave it null.
-        old ? { ...old, ...event.balance } : { ...event.balance, billingUrl: null },
-      );
+      // `event.balance` carries every customer-state field — `email` included
+      // — so the iframe reflects the new customer immediately after a
+      // re-subscribe or customer.deleted. `billingUrl` is the one identity
+      // field NOT on the SSE wire, so it's preserved from the prior value
+      // (null until the initial fetch lands when the first SSE arrives early).
+      qc.setQueryData<CreditBalance>(creditKey(action), (old) => ({
+        ...event.balance,
+        billingUrl: old?.billingUrl ?? null,
+      }));
     });
     return release;
   }, [action, qc]);

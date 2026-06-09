@@ -1,6 +1,7 @@
 import { EventSource } from 'eventsource';
 import { z } from 'zod';
 import { getJwt } from './jwt-cache.js';
+import { creditBalanceSchema } from './credit-balance.js';
 import { DEFAULT_API_URL } from '../../constants.js';
 
 /**
@@ -14,26 +15,9 @@ import { DEFAULT_API_URL } from '../../constants.js';
 const creditsUpdateSchema = z.object({
   type: z.literal('credits.update'),
   action: z.string(),
-  balance: z.object({
-    subscribed: z.boolean(),
-    quota: z.number().nullable(),
-    used: z.number(),
-    remaining: z.number(),
-    // Date is JSON-serialized to ISO string on the wire.
-    resetAt: z.string().nullable(),
-    interval: z.enum(['daily', 'weekly', 'monthly', 'lifetime']).nullable(),
-    // When the subscription will end if cancel_at_period_end is set.
-    // Null when the sub will renew normally OR the brand is unsubscribed.
-    // Same wire shape as resetAt — ISO-8601 string on the wire, Date in
-    // consumer code after re-parsing.
-    cancelAt: z.string().nullable(),
-    // Stripe customer email when the brand has an active subscription;
-    // null when unsubscribed / customer was deleted. Riding this through
-    // SSE refreshes the iframe's "logged in as ..." line when the
-    // customer changes (re-subscribe with a different email, or
-    // customer.deleted) without an iframe reload.
-    email: z.string().nullable(),
-  }),
+  // The balance shape is single-sourced with the public `CreditBalance` type
+  // (minus the HTTP-scoped `billingUrl`, which isn't carried on the wire).
+  balance: creditBalanceSchema,
   // ISO-8601 publish-time timestamp. Consumers compare it against the
   // last accepted update to skip out-of-order deliveries. Optional in
   // the schema so an older server that doesn't emit the field still

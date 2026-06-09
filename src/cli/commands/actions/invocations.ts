@@ -1,7 +1,7 @@
 import chalk from 'chalk';
 import type { Command } from 'commander';
-import { CanupClient } from '../../api-client.js';
-import { requireProject } from '../../config/require-project.js';
+import type { CanupClient } from '../../api-client.js';
+import { requireClient } from '../../config/require-project.js';
 import { error, hint, info, label, dim, formatTable } from '../../ui/output.js';
 
 /**
@@ -31,32 +31,31 @@ function colorStatus(status: string): string {
   return status;
 }
 
-/** Number of leading hex chars shown for an execution id in the logs table. */
-const LOG_ID_DISPLAY_PREFIX_LENGTH = 8;
+/** Number of leading hex chars shown for an invocation id in the table. */
+const INVOCATION_ID_DISPLAY_PREFIX_LENGTH = 8;
 
-export function registerActionsLogsAction(actionsCommand: Command): void {
+export function registerActionsInvocationsAction(actionsCommand: Command): void {
   actionsCommand
-    .command('logs [slug]')
+    .command('invocations [slug]')
     .description('View execution history')
     .option('--id <uuid>', 'Show single execution detail')
     .option('--limit <n>', 'Number of results (default: 20)')
-    .option('--search <term>', 'Filter logs by text search')
+    .option('--search <term>', 'Filter invocations by text search')
     .action(
       async (
         slug: string | undefined,
         options: { id?: string; limit?: string; search?: string },
       ) => {
-        const { config, apiKey } = requireProject();
-        const client = new CanupClient({ token: apiKey });
+        const { config, client } = requireClient();
 
         try {
           if (options.id) {
             // Detail mode
-            await showLogDetail(client, options.id);
+            await showInvocationDetail(client, options.id);
           } else {
             // List mode
             const limit = options.limit ? parseInt(options.limit, 10) : undefined;
-            await showLogsList(client, config.appId, slug, limit, options.search);
+            await showInvocationsList(client, config.appId, slug, limit, options.search);
           }
         } catch (err) {
           const e = err as Error & { statusCode?: number };
@@ -67,7 +66,7 @@ export function registerActionsLogsAction(actionsCommand: Command): void {
           }
           if (e.statusCode === 404) {
             error('Execution not found.');
-            hint('Run `canup actions logs` to see recent executions.');
+            hint('Run `canup actions invocations` to see recent executions.');
             process.exit(1);
           }
           error(e.message);
@@ -80,15 +79,15 @@ export function registerActionsLogsAction(actionsCommand: Command): void {
 /**
  * Show full detail for a single log entry (--id mode).
  */
-async function showLogDetail(client: CanupClient, id: string): Promise<void> {
-  const entry = await client.getLogDetail(id);
+async function showInvocationDetail(client: CanupClient, id: string): Promise<void> {
+  const entry = await client.getInvocationDetail(id);
 
   label('Execution', entry.id);
-  label('Action', entry.actionSlug);
+  label('Action', entry.actionSlug ?? '—');
   label('Status', colorStatus(entry.status));
   label('Duration', `${entry.durationMs}ms`);
   label('Source', entry.source);
-  label('Timestamp', entry.timestamp);
+  label('Timestamp', entry.createdAt);
 
   if (entry.errorType) {
     label('Error Type', entry.errorType);
@@ -109,14 +108,14 @@ async function showLogDetail(client: CanupClient, id: string): Promise<void> {
 /**
  * Show invocation log list.
  */
-async function showLogsList(
+async function showInvocationsList(
   client: CanupClient,
   appId: string,
   slug?: string,
   limit?: number,
   search?: string,
 ): Promise<void> {
-  const result = await client.listLogs(appId, slug, { limit, search });
+  const result = await client.listInvocations(appId, slug, { limit, search });
 
   if (result.items.length === 0) {
     info('No executions found.');
@@ -129,12 +128,12 @@ async function showLogsList(
   const table = formatTable(
     ['ID', 'Action', 'Status', 'Duration', 'Source', 'Time'],
     result.items.map((e) => [
-      e.id.substring(0, LOG_ID_DISPLAY_PREFIX_LENGTH),
-      e.actionSlug,
+      e.id.substring(0, INVOCATION_ID_DISPLAY_PREFIX_LENGTH),
+      e.actionSlug ?? '—',
       colorStatus(e.status),
       `${e.durationMs}ms`,
       e.source,
-      timeAgo(e.timestamp),
+      timeAgo(e.createdAt),
     ]),
   );
   console.log(table);

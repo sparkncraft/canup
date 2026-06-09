@@ -1,7 +1,6 @@
 import * as readline from 'node:readline';
 import type { Command } from 'commander';
-import { CanupClient } from '../../api-client.js';
-import { requireProject } from '../../config/require-project.js';
+import { requireClient } from '../../config/require-project.js';
 import { success, error } from '../../ui/output.js';
 
 /**
@@ -26,7 +25,7 @@ export function registerStripeDisconnectAction(stripeCommand: Command): void {
     .description('Disconnect Stripe from your app')
     .option('--yes', 'Skip confirmation prompt')
     .action(async (options: { yes?: boolean }) => {
-      const { config, apiKey } = requireProject();
+      const { config, client } = requireClient();
 
       if (!options.yes && process.stdin.isTTY) {
         const confirmed = await askConfirmation(
@@ -36,8 +35,6 @@ export function registerStripeDisconnectAction(stripeCommand: Command): void {
           return;
         }
       }
-
-      const client = new CanupClient({ token: apiKey });
 
       try {
         await client.disconnectStripe(config.appId);

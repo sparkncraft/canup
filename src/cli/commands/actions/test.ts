@@ -7,41 +7,11 @@ import { spawn } from 'node:child_process';
 import { requireProject } from '../../config/require-project.js';
 import { getActionsDir, type ProjectConfig } from '../../config/project-config.js';
 import { resolveActionByName } from '../../config/actions-discovery.js';
-import { CanupClient, type TestResult } from '../../api-client.js';
+import { CanupClient } from '../../api-client.js';
 import { success, error, hint, dim } from '../../ui/output.js';
 import { withSpinner } from '../../ui/spinner.js';
-
-/**
- * Parse --params option: inline JSON string, file path to JSON, or empty object.
- */
-function parseParams(paramsArg?: string): unknown {
-  if (!paramsArg) return {};
-
-  const trimmed = paramsArg.trim();
-  if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
-    try {
-      return JSON.parse(trimmed);
-    } catch {
-      error('Invalid --params: failed to parse JSON string.');
-      process.exit(1);
-    }
-  }
-
-  // Try as file path
-  const filePath = resolve(trimmed);
-  if (existsSync(filePath)) {
-    try {
-      const content = readFileSync(filePath, 'utf-8');
-      return JSON.parse(content);
-    } catch {
-      error(`Invalid --params: failed to parse JSON from file ${trimmed}`);
-      process.exit(1);
-    }
-  }
-
-  error('Invalid --params: must be a JSON string or path to a JSON file.');
-  process.exit(1);
-}
+import { formatDuration } from '../../lib/format.js';
+import { parseParams, displayTestResult } from './_shared.js';
 
 /**
  * Detect language from file extension.
@@ -318,41 +288,7 @@ async function runRemoteTest(
     'Test complete',
   );
 
-  displayRemoteTestResult(result);
-}
-
-/**
- * Display remote test result (strict envelope from API).
- */
-function displayRemoteTestResult(result: TestResult): void {
-  if (result.ok) {
-    // Show print output if any
-    if (result.data.printOutput) {
-      console.log(dim('Output:'));
-      console.log(result.data.printOutput);
-    }
-
-    success('Test passed');
-    if (result.data.result !== undefined && result.data.result !== null) {
-      console.log(
-        `Returned: ${JSON.stringify(result.data.result, null, 2)} ${dim(`(${formatDuration(result.data.durationMs)})`)}`,
-      );
-    } else {
-      console.log(dim(`(${formatDuration(result.data.durationMs)})`));
-    }
-  } else {
-    // Show print output if any
-    if (result.error.printOutput) {
-      console.log(dim('Output:'));
-      console.log(result.error.printOutput);
-    }
-
-    error(`Test failed: ${result.error.type}: ${result.error.message}`);
-    if (result.error.stackTrace) {
-      console.error(dim(result.error.stackTrace));
-    }
-    process.exit(1);
-  }
+  displayTestResult(result, { success: 'Test passed', failure: 'Test failed' });
 }
 
 /**
@@ -375,14 +311,6 @@ function displayLocalTestResult(result: LocalTestResult): void {
     }
     process.exit(1);
   }
-}
-
-/**
- * Format milliseconds into a human-readable duration string.
- */
-function formatDuration(ms: number): string {
-  if (ms < 1000) return `${ms}ms`;
-  return `${(ms / 1000).toFixed(1)}s`;
 }
 
 /**

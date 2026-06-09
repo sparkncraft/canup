@@ -12,6 +12,7 @@ vi.mock('node:readline', () => ({
 
 vi.mock('../../config/require-project.js', () => ({
   requireProject: vi.fn(() => project),
+  requireClient: vi.fn(() => ({ ...project, client })),
 }));
 
 vi.mock('../../api-client.js', () => ({

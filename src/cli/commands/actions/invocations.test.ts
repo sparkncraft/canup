@@ -3,6 +3,7 @@ import { test, output, client, project } from '#test/fixtures.js';
 
 vi.mock('../../config/require-project.js', () => ({
   requireProject: vi.fn(() => project),
+  requireClient: vi.fn(() => ({ ...project, client })),
 }));
 
 vi.mock('../../api-client.js', () => ({
@@ -13,20 +14,19 @@ vi.mock('../../api-client.js', () => ({
 
 vi.mock('../../ui/output.js', () => output);
 
-describe('actions logs command', () => {
+describe('actions invocations command', () => {
   test('displays execution list in table format', async ({ client, output, processMocks }) => {
     output.formatTable.mockReturnValue('table-output');
 
-    client.listLogs.mockResolvedValue({
+    client.listInvocations.mockResolvedValue({
       items: [
         {
           id: 'exec-uuid-1234-5678',
-          type: 'invocation',
           actionSlug: 'my-action',
           status: 'success',
           durationMs: 150,
           errorType: null,
-          timestamp: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
           source: 'api',
         },
       ],
@@ -37,13 +37,14 @@ describe('actions logs command', () => {
     const { formatTable } = await import('../../ui/output.js');
 
     const { Command } = await import('commander');
-    const { registerActionsLogsAction } = await import('../../commands/actions/logs.js');
+    const { registerActionsInvocationsAction } =
+      await import('../../commands/actions/invocations.js');
 
     const program = new Command();
     const actions = program.command('actions');
-    registerActionsLogsAction(actions);
+    registerActionsInvocationsAction(actions);
 
-    await program.parseAsync(['actions', 'logs'], { from: 'user' });
+    await program.parseAsync(['actions', 'invocations'], { from: 'user' });
 
     expect(formatTable).toHaveBeenCalledWith(
       ['ID', 'Action', 'Status', 'Duration', 'Source', 'Time'],
@@ -57,26 +58,28 @@ describe('actions logs command', () => {
     output,
     processMocks,
   }) => {
-    client.getLogDetail.mockResolvedValue({
+    client.getInvocationDetail.mockResolvedValue({
       id: 'exec-uuid-success',
-      type: 'invocation',
       actionSlug: 'my-action',
       status: 'success',
       durationMs: 42,
       errorType: null,
-      timestamp: '2026-01-15T12:00:00Z',
+      createdAt: '2026-01-15T12:00:00Z',
       source: 'api',
       detail: null,
     });
 
     const { Command } = await import('commander');
-    const { registerActionsLogsAction } = await import('../../commands/actions/logs.js');
+    const { registerActionsInvocationsAction } =
+      await import('../../commands/actions/invocations.js');
 
     const program = new Command();
     const actions = program.command('actions');
-    registerActionsLogsAction(actions);
+    registerActionsInvocationsAction(actions);
 
-    await program.parseAsync(['actions', 'logs', '--id', 'exec-uuid-success'], { from: 'user' });
+    await program.parseAsync(['actions', 'invocations', '--id', 'exec-uuid-success'], {
+      from: 'user',
+    });
 
     expect(output.label).toHaveBeenCalledWith('Execution', 'exec-uuid-success');
     expect(output.label).toHaveBeenCalledWith('Duration', '42ms');
@@ -85,14 +88,13 @@ describe('actions logs command', () => {
   });
 
   test('shows detail view with --id flag', async ({ client, output, processMocks }) => {
-    client.getLogDetail.mockResolvedValue({
+    client.getInvocationDetail.mockResolvedValue({
       id: 'exec-uuid-1234-5678',
-      type: 'invocation',
       actionSlug: 'my-action',
       status: 'error',
       durationMs: 250,
       errorType: 'TypeError',
-      timestamp: '2026-01-15T12:00:00Z',
+      createdAt: '2026-01-15T12:00:00Z',
       source: 'test',
       detail: {
         errorMessage: 'x is not a function',
@@ -102,13 +104,16 @@ describe('actions logs command', () => {
     });
 
     const { Command } = await import('commander');
-    const { registerActionsLogsAction } = await import('../../commands/actions/logs.js');
+    const { registerActionsInvocationsAction } =
+      await import('../../commands/actions/invocations.js');
 
     const program = new Command();
     const actions = program.command('actions');
-    registerActionsLogsAction(actions);
+    registerActionsInvocationsAction(actions);
 
-    await program.parseAsync(['actions', 'logs', '--id', 'exec-uuid-1234-5678'], { from: 'user' });
+    await program.parseAsync(['actions', 'invocations', '--id', 'exec-uuid-1234-5678'], {
+      from: 'user',
+    });
 
     expect(output.label).toHaveBeenCalledWith('Execution', 'exec-uuid-1234-5678');
     expect(output.label).toHaveBeenCalledWith('Action', 'my-action');
@@ -120,16 +125,17 @@ describe('actions logs command', () => {
   });
 
   test('shows info message for empty execution list', async ({ client, output, processMocks }) => {
-    client.listLogs.mockResolvedValue({ items: [], nextCursor: null, hasMore: false });
+    client.listInvocations.mockResolvedValue({ items: [], nextCursor: null, hasMore: false });
 
     const { Command } = await import('commander');
-    const { registerActionsLogsAction } = await import('../../commands/actions/logs.js');
+    const { registerActionsInvocationsAction } =
+      await import('../../commands/actions/invocations.js');
 
     const program = new Command();
     const actions = program.command('actions');
-    registerActionsLogsAction(actions);
+    registerActionsInvocationsAction(actions);
 
-    await program.parseAsync(['actions', 'logs'], { from: 'user' });
+    await program.parseAsync(['actions', 'invocations'], { from: 'user' });
 
     expect(output.info).toHaveBeenCalledWith('No executions found.');
   });
@@ -137,16 +143,15 @@ describe('actions logs command', () => {
   test('renders non-standard status without coloring', async ({ client, output, processMocks }) => {
     output.formatTable.mockReturnValue('table-output');
 
-    client.listLogs.mockResolvedValue({
+    client.listInvocations.mockResolvedValue({
       items: [
         {
           id: 'exec-uuid-1234-5678',
-          type: 'invocation',
           actionSlug: 'my-action',
           status: 'pending',
           durationMs: 0,
           errorType: null,
-          timestamp: '2026-01-15T12:00:00Z',
+          createdAt: '2026-01-15T12:00:00Z',
           source: 'api',
         },
       ],
@@ -157,13 +162,14 @@ describe('actions logs command', () => {
     const { formatTable } = await import('../../ui/output.js');
 
     const { Command } = await import('commander');
-    const { registerActionsLogsAction } = await import('../../commands/actions/logs.js');
+    const { registerActionsInvocationsAction } =
+      await import('../../commands/actions/invocations.js');
 
     const program = new Command();
     const actions = program.command('actions');
-    registerActionsLogsAction(actions);
+    registerActionsInvocationsAction(actions);
 
-    await program.parseAsync(['actions', 'logs'], { from: 'user' });
+    await program.parseAsync(['actions', 'invocations'], { from: 'user' });
 
     const rows = vi.mocked(formatTable).mock.calls[0][1];
     expect(rows[0][2]).toBe('pending');
@@ -172,16 +178,19 @@ describe('actions logs command', () => {
   test('handles 404 error on detail view', async ({ client, output, processMocks }) => {
     const apiError = new Error('Not found') as Error & { statusCode: number };
     apiError.statusCode = 404;
-    client.getLogDetail.mockRejectedValue(apiError);
+    client.getInvocationDetail.mockRejectedValue(apiError);
 
     const { Command } = await import('commander');
-    const { registerActionsLogsAction } = await import('../../commands/actions/logs.js');
+    const { registerActionsInvocationsAction } =
+      await import('../../commands/actions/invocations.js');
 
     const program = new Command();
     const actions = program.command('actions');
-    registerActionsLogsAction(actions);
+    registerActionsInvocationsAction(actions);
 
-    await program.parseAsync(['actions', 'logs', '--id', 'nonexistent-id'], { from: 'user' });
+    await program.parseAsync(['actions', 'invocations', '--id', 'nonexistent-id'], {
+      from: 'user',
+    });
 
     expect(output.error).toHaveBeenCalledWith('Execution not found.');
     expect(processMocks.exit).toHaveBeenCalledWith(1);
@@ -190,16 +199,17 @@ describe('actions logs command', () => {
   test('handles 401 auth error', async ({ client, output, processMocks }) => {
     const apiError = new Error('Unauthorized') as Error & { statusCode: number };
     apiError.statusCode = 401;
-    client.listLogs.mockRejectedValue(apiError);
+    client.listInvocations.mockRejectedValue(apiError);
 
     const { Command } = await import('commander');
-    const { registerActionsLogsAction } = await import('../../commands/actions/logs.js');
+    const { registerActionsInvocationsAction } =
+      await import('../../commands/actions/invocations.js');
 
     const program = new Command();
     const actions = program.command('actions');
-    registerActionsLogsAction(actions);
+    registerActionsInvocationsAction(actions);
 
-    await program.parseAsync(['actions', 'logs'], { from: 'user' });
+    await program.parseAsync(['actions', 'invocations'], { from: 'user' });
 
     expect(output.error).toHaveBeenCalledWith('Not authenticated.');
     expect(output.hint).toHaveBeenCalledWith('Run `canup init` to re-authenticate.');
@@ -214,46 +224,42 @@ describe('actions logs command', () => {
     output.formatTable.mockReturnValue('table-output');
 
     const now = Date.now();
-    client.listLogs.mockResolvedValue({
+    client.listInvocations.mockResolvedValue({
       items: [
         {
           id: 'aaaaaaaa-0000-0000-0000-000000000001',
-          type: 'invocation',
           actionSlug: 'recent',
           status: 'success',
           durationMs: 10,
           errorType: null,
-          timestamp: new Date(now - 30 * 1000).toISOString(),
+          createdAt: new Date(now - 30 * 1000).toISOString(),
           source: 'api',
         },
         {
           id: 'aaaaaaaa-0000-0000-0000-000000000002',
-          type: 'invocation',
           actionSlug: 'minutes',
           status: 'error',
           durationMs: 20,
           errorType: null,
-          timestamp: new Date(now - 5 * 60 * 1000).toISOString(),
+          createdAt: new Date(now - 5 * 60 * 1000).toISOString(),
           source: 'api',
         },
         {
           id: 'aaaaaaaa-0000-0000-0000-000000000003',
-          type: 'invocation',
           actionSlug: 'hours',
           status: 'success',
           durationMs: 30,
           errorType: null,
-          timestamp: new Date(now - 3 * 60 * 60 * 1000).toISOString(),
+          createdAt: new Date(now - 3 * 60 * 60 * 1000).toISOString(),
           source: 'canva',
         },
         {
           id: 'aaaaaaaa-0000-0000-0000-000000000004',
-          type: 'invocation',
           actionSlug: 'days',
           status: 'success',
           durationMs: 40,
           errorType: null,
-          timestamp: new Date(now - 2 * 24 * 60 * 60 * 1000).toISOString(),
+          createdAt: new Date(now - 2 * 24 * 60 * 60 * 1000).toISOString(),
           source: 'test',
         },
       ],
@@ -263,13 +269,14 @@ describe('actions logs command', () => {
 
     const { formatTable } = await import('../../ui/output.js');
     const { Command } = await import('commander');
-    const { registerActionsLogsAction } = await import('../../commands/actions/logs.js');
+    const { registerActionsInvocationsAction } =
+      await import('../../commands/actions/invocations.js');
 
     const program = new Command();
     const actions = program.command('actions');
-    registerActionsLogsAction(actions);
+    registerActionsInvocationsAction(actions);
 
-    await program.parseAsync(['actions', 'logs'], { from: 'user' });
+    await program.parseAsync(['actions', 'invocations'], { from: 'user' });
 
     const tableCall = vi.mocked(formatTable).mock.calls[0];
     const rows = tableCall[1];
@@ -282,32 +289,34 @@ describe('actions logs command', () => {
 
   test('passes slug filter and limit option to API', async ({ client, output, processMocks }) => {
     output.formatTable.mockReturnValue('table-output');
-    client.listLogs.mockResolvedValue({ items: [], nextCursor: null, hasMore: false });
+    client.listInvocations.mockResolvedValue({ items: [], nextCursor: null, hasMore: false });
 
     const { Command } = await import('commander');
-    const { registerActionsLogsAction } = await import('../../commands/actions/logs.js');
+    const { registerActionsInvocationsAction } =
+      await import('../../commands/actions/invocations.js');
 
     const program = new Command();
     const actions = program.command('actions');
-    registerActionsLogsAction(actions);
+    registerActionsInvocationsAction(actions);
 
-    await program.parseAsync(['actions', 'logs', 'my-action', '--limit', '5'], { from: 'user' });
+    await program.parseAsync(['actions', 'invocations', 'my-action', '--limit', '5'], {
+      from: 'user',
+    });
 
-    expect(client.listLogs).toHaveBeenCalledWith('test-app-id', 'my-action', { limit: 5 });
+    expect(client.listInvocations).toHaveBeenCalledWith('test-app-id', 'my-action', { limit: 5 });
   });
 
   test('passes --search flag to API client', async ({ client, output, processMocks }) => {
     output.formatTable.mockReturnValue('table-output');
-    client.listLogs.mockResolvedValue({
+    client.listInvocations.mockResolvedValue({
       items: [
         {
           id: 'exec-uuid-1234-5678',
-          type: 'invocation',
           actionSlug: 'my-action',
           status: 'success',
           durationMs: 150,
           errorType: null,
-          timestamp: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
           source: 'api',
         },
       ],
@@ -316,15 +325,16 @@ describe('actions logs command', () => {
     });
 
     const { Command } = await import('commander');
-    const { registerActionsLogsAction } = await import('../../commands/actions/logs.js');
+    const { registerActionsInvocationsAction } =
+      await import('../../commands/actions/invocations.js');
 
     const program = new Command();
     const actionsCmd = program.command('actions');
-    registerActionsLogsAction(actionsCmd);
+    registerActionsInvocationsAction(actionsCmd);
 
-    await program.parseAsync(['actions', 'logs', '--search', 'timeout'], { from: 'user' });
+    await program.parseAsync(['actions', 'invocations', '--search', 'timeout'], { from: 'user' });
 
-    expect(client.listLogs).toHaveBeenCalledWith(
+    expect(client.listInvocations).toHaveBeenCalledWith(
       expect.any(String),
       undefined,
       expect.objectContaining({ search: 'timeout' }),
@@ -332,16 +342,17 @@ describe('actions logs command', () => {
   });
 
   test('shows hint when empty list with slug filter', async ({ client, output, processMocks }) => {
-    client.listLogs.mockResolvedValue({ items: [], nextCursor: null, hasMore: false });
+    client.listInvocations.mockResolvedValue({ items: [], nextCursor: null, hasMore: false });
 
     const { Command } = await import('commander');
-    const { registerActionsLogsAction } = await import('../../commands/actions/logs.js');
+    const { registerActionsInvocationsAction } =
+      await import('../../commands/actions/invocations.js');
 
     const program = new Command();
     const actions = program.command('actions');
-    registerActionsLogsAction(actions);
+    registerActionsInvocationsAction(actions);
 
-    await program.parseAsync(['actions', 'logs', 'my-action'], { from: 'user' });
+    await program.parseAsync(['actions', 'invocations', 'my-action'], { from: 'user' });
 
     expect(output.info).toHaveBeenCalledWith('No executions found.');
     expect(output.hint).toHaveBeenCalledWith('Try without a slug filter to see all executions.');

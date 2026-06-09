@@ -21,8 +21,8 @@ export interface MockCanupClient {
   listActionsWithScript: Mock;
   deleteAction: Mock;
   testCode: Mock;
-  listLogs: Mock;
-  getLogDetail: Mock;
+  listInvocations: Mock;
+  getInvocationDetail: Mock;
   setSecret: Mock;
   listSecrets: Mock;
   deleteSecret: Mock;
@@ -79,15 +79,14 @@ export function resetMockCanupClient(client: MockCanupClient): void {
     ok: true,
     data: { result: null, durationMs: 0, printOutput: '' },
   });
-  client.listLogs.mockResolvedValue({ items: [], nextCursor: null, hasMore: false });
-  client.getLogDetail.mockResolvedValue({
+  client.listInvocations.mockResolvedValue({ items: [], nextCursor: null, hasMore: false });
+  client.getInvocationDetail.mockResolvedValue({
     id: 'exec-1',
-    type: 'invocation',
     actionSlug: 'test-action',
     status: 'success',
     durationMs: 50,
     errorType: null,
-    timestamp: '2026-01-01T00:00:00Z',
+    createdAt: '2026-01-01T00:00:00Z',
     source: 'api',
     detail: null,
   });
@@ -172,15 +171,14 @@ export function createMockCanupClient(overrides?: Partial<MockCanupClient>): Moc
       .mockResolvedValue({ ok: true, data: { result: null, durationMs: 0, printOutput: '' } }),
 
     // Invocation logs
-    listLogs: vi.fn().mockResolvedValue({ items: [], nextCursor: null, hasMore: false }),
-    getLogDetail: vi.fn().mockResolvedValue({
+    listInvocations: vi.fn().mockResolvedValue({ items: [], nextCursor: null, hasMore: false }),
+    getInvocationDetail: vi.fn().mockResolvedValue({
       id: 'exec-1',
-      type: 'invocation',
       actionSlug: 'test-action',
       status: 'success',
       durationMs: 50,
       errorType: null,
-      timestamp: '2026-01-01T00:00:00Z',
+      createdAt: '2026-01-01T00:00:00Z',
       source: 'api',
       detail: null,
     }),
