@@ -10,6 +10,7 @@ const { mockExistsSync, mockReadFileSync, mockWriteFileSync, mockMkdirSync } = v
 
 vi.mock('../config/require-project.js', () => ({
   requireProject: vi.fn(() => project),
+  requireClient: vi.fn(() => ({ ...project, client })),
 }));
 
 vi.mock('../config/project-config.js', () => projectConfig);

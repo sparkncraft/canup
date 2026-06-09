@@ -1,6 +1,5 @@
 import type { Command } from 'commander';
-import { CanupClient } from '../../api-client.js';
-import { requireProject } from '../../config/require-project.js';
+import { requireClient } from '../../config/require-project.js';
 import { success, error, hint } from '../../ui/output.js';
 
 export function registerActionsDeleteAction(actionsCommand: Command): void {
@@ -8,8 +7,7 @@ export function registerActionsDeleteAction(actionsCommand: Command): void {
     .command('delete <name>')
     .description('Delete an action')
     .action(async (name: string) => {
-      const { config, apiKey } = requireProject();
-      const client = new CanupClient({ token: apiKey });
+      const { config, client } = requireClient();
 
       try {
         await client.deleteAction(config.appId, name);

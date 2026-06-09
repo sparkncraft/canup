@@ -99,8 +99,8 @@ function MyComponent() {
 | `canup actions list`                | List all actions for the current app      |
 | `canup actions run <name>`          | Invoke a deployed action                  |
 | `canup actions test <name>`         | Test an action locally                    |
-| `canup actions logs <name>`         | View execution logs                       |
-| `canup actions logs <name> --search <term>` | Search logs by text (matches action, user/brand IDs, error type, error message, stack trace, print output) |
+| `canup actions invocations <name>`  | View invocation history                   |
+| `canup actions invocations <name> --search <term>` | Search invocations by text (matches action, user/brand IDs, error type, error message, stack trace, print output) |
 | `canup actions remove <name>`       | Remove a deployed action                  |
 
 ### Secrets & Dependencies

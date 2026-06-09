@@ -1,7 +1,7 @@
 import type { Command } from 'commander';
-import { CanupClient } from '../../api-client.js';
-import { requireProject } from '../../config/require-project.js';
+import { requireClient } from '../../config/require-project.js';
 import { success, error, info } from '../../ui/output.js';
+import { assertLanguage } from './_shared.js';
 
 export function registerDepsClearAction(depsCommand: Command): void {
   depsCommand
@@ -10,14 +10,9 @@ export function registerDepsClearAction(depsCommand: Command): void {
     .requiredOption('-l, --language <language>', 'Language (python or nodejs)')
     .action(async (options: { language: string }) => {
       const { language } = options;
+      assertLanguage(language);
 
-      if (language !== 'python' && language !== 'nodejs') {
-        error(`Invalid language: "${language}". Must be "python" or "nodejs".`);
-        process.exit(1);
-      }
-
-      const { config, apiKey } = requireProject();
-      const client = new CanupClient({ token: apiKey });
+      const { config, client } = requireClient();
 
       try {
         await client.clearDeps(config.appId, language);

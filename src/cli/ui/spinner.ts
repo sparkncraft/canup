@@ -1,6 +1,7 @@
 import chalk from 'chalk';
 import ora from 'ora';
 import type { Ora } from 'ora';
+import { formatDuration } from '../lib/format.js';
 
 /**
  * Ora spinner wrapper with duration tracking.
@@ -30,18 +31,14 @@ export function createSpinner(text: string): Spinner {
   const startTime = Date.now();
   const spinner: Ora = ora({ text, color: 'cyan' }).start();
 
-  function formatDuration(): string {
-    const ms = Date.now() - startTime;
-    if (ms < 1000) return `${ms}ms`;
-    return `${(ms / 1000).toFixed(1)}s`;
-  }
-
   return {
     update(newText: string) {
       spinner.text = newText;
     },
     succeed(successText: string) {
-      spinner.succeed(`${successText} ${chalk.gray(`(${formatDuration()})`)}`);
+      spinner.succeed(
+        `${successText} ${chalk.gray(`(${formatDuration(Date.now() - startTime)})`)}`,
+      );
     },
     fail(failText: string) {
       spinner.fail(failText);

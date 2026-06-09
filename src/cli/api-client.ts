@@ -17,6 +17,53 @@ export interface UserInfo {
   createdAt: string;
 }
 
+/** An app as returned by the API. */
+export interface App {
+  id: string;
+  name: string;
+  createdAt: string;
+}
+
+/** A deployed action's metadata (no script content). */
+export interface ActionSummary {
+  id: string;
+  slug: string;
+  language: string;
+  deployed: boolean;
+  contentHash: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** An action including its stored script content (`null` for track-only actions). */
+export interface ActionWithScript extends ActionSummary {
+  script: string | null;
+}
+
+/**
+ * A single invocation row. `actionSlug` is `null` for invocations not tied to a
+ * named action; `status` and `source` are open strings (their vocabularies are
+ * owned by the server, so the CLI doesn't re-enumerate them).
+ */
+export interface InvocationSummary {
+  id: string;
+  actionSlug: string | null;
+  status: string;
+  durationMs: number | null;
+  errorType: string | null;
+  createdAt: string;
+  source: string;
+}
+
+/** A single invocation plus its structured detail payload (`null` when nothing ran). */
+export interface InvocationDetail extends InvocationSummary {
+  detail: {
+    errorMessage: string | null;
+    stackTrace: string | null;
+    printOutput: string | null;
+  } | null;
+}
+
 interface ApiSuccessResponse<T> {
   ok: true;
   data: T;
@@ -182,8 +229,8 @@ export class CanupClient {
    * Register or upsert an app by Canva App ID.
    * Requires session auth.
    */
-  async registerApp(canvaAppId: string, name: string): Promise<{ id: string; name: string }> {
-    return this.request<{ id: string; name: string }>(`/${API_VERSION}/apps`, {
+  async registerApp(canvaAppId: string, name: string): Promise<Pick<App, 'id' | 'name'>> {
+    return this.request<Pick<App, 'id' | 'name'>>(`/${API_VERSION}/apps`, {
       method: 'POST',
       body: JSON.stringify({ canvaAppId, name }),
     });
@@ -193,18 +240,16 @@ export class CanupClient {
    * List all apps for the current user.
    * Requires session auth (used by init picker before API key exists).
    */
-  async listApps(): Promise<{ id: string; name: string; createdAt: string }[]> {
-    return this.request<{ id: string; name: string; createdAt: string }[]>(`/${API_VERSION}/apps`);
+  async listApps(): Promise<App[]> {
+    return this.request<App[]>(`/${API_VERSION}/apps`);
   }
 
   /**
    * Get app info by ID.
    * Requires API key auth.
    */
-  async getAppInfo(appId: string): Promise<{ id: string; name: string; createdAt: string }> {
-    return this.request<{ id: string; name: string; createdAt: string }>(
-      `/${API_VERSION}/apps/${encodeURIComponent(appId)}`,
-    );
+  async getAppInfo(appId: string): Promise<App> {
+    return this.request<App>(`/${API_VERSION}/apps/${encodeURIComponent(appId)}`);
   }
 
   /**
@@ -237,18 +282,7 @@ export class CanupClient {
     slug: string,
     code: string,
     language: string,
-  ): Promise<{
-    action: {
-      id: string;
-      slug: string;
-      language: string;
-      deployed: boolean;
-      contentHash: string | null;
-      createdAt: string;
-      updatedAt: string;
-    };
-    lambdaReady: boolean;
-  }> {
+  ): Promise<{ action: ActionSummary; lambdaReady: boolean }> {
     return this.request(
       `/${API_VERSION}/apps/${encodeURIComponent(appId)}/actions/${encodeURIComponent(slug)}`,
       {
@@ -261,17 +295,7 @@ export class CanupClient {
   /**
    * List all actions for the app.
    */
-  async listActions(appId: string): Promise<
-    {
-      id: string;
-      slug: string;
-      language: string;
-      deployed: boolean;
-      contentHash: string | null;
-      createdAt: string;
-      updatedAt: string;
-    }[]
-  > {
+  async listActions(appId: string): Promise<ActionSummary[]> {
     return this.request(`/${API_VERSION}/apps/${encodeURIComponent(appId)}/actions`);
   }
 
@@ -279,18 +303,7 @@ export class CanupClient {
    * List all actions with their script content included.
    * Used by the pull command to download action scripts.
    */
-  async listActionsWithScript(appId: string): Promise<
-    {
-      id: string;
-      slug: string;
-      language: string;
-      deployed: boolean;
-      contentHash: string | null;
-      script: string | null;
-      createdAt: string;
-      updatedAt: string;
-    }[]
-  > {
+  async listActionsWithScript(appId: string): Promise<ActionWithScript[]> {
     return this.request(`/${API_VERSION}/apps/${encodeURIComponent(appId)}/actions?include=script`);
   }
 
@@ -356,61 +369,33 @@ export class CanupClient {
   }
 
   // ──────────────────────────────────────────────
-  // Invocation logs (API key auth, app-scoped)
+  // Invocations (API key auth, app-scoped)
   // ──────────────────────────────────────────────
 
   /**
-   * List invocation logs for an app, optionally filtered by action slug.
+   * List invocations for an app, optionally filtered by action slug.
    * Uses cursor-based pagination.
    */
-  async listLogs(
+  async listInvocations(
     appId: string,
     slug?: string,
     options?: { limit?: number; cursor?: string; search?: string },
-  ): Promise<{
-    items: {
-      id: string;
-      type: string;
-      actionSlug: string;
-      status: string;
-      durationMs: number | null;
-      errorType: string | null;
-      timestamp: string;
-      source: string;
-    }[];
-    nextCursor: string | null;
-    hasMore: boolean;
-  }> {
+  ): Promise<{ items: InvocationSummary[]; nextCursor: string | null }> {
     const params = new URLSearchParams();
-    params.set('type', 'invocation');
     params.set('appId', appId);
     if (slug) params.set('action', slug);
     if (options?.limit !== undefined) params.set('limit', String(options.limit));
     if (options?.cursor) params.set('cursor', options.cursor);
     if (options?.search) params.set('search', options.search);
 
-    return this.request(`/${API_VERSION}/logs?${params.toString()}`);
+    return this.request(`/${API_VERSION}/invocations?${params.toString()}`);
   }
 
   /**
-   * Get detailed info about a single log entry.
+   * Get detailed info about a single invocation.
    */
-  async getLogDetail(id: string): Promise<{
-    id: string;
-    type: string;
-    actionSlug: string;
-    status: string;
-    durationMs: number | null;
-    errorType: string | null;
-    timestamp: string;
-    source: string;
-    detail: {
-      errorMessage: string | null;
-      stackTrace: string | null;
-      printOutput: string | null;
-    } | null;
-  }> {
-    return this.request(`/${API_VERSION}/logs/${encodeURIComponent(id)}`);
+  async getInvocationDetail(id: string): Promise<InvocationDetail> {
+    return this.request(`/${API_VERSION}/invocations/${encodeURIComponent(id)}`);
   }
 
   // ──────────────────────────────────────────────

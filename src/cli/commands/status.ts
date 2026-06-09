@@ -1,8 +1,7 @@
 import type { Command } from 'commander';
-import { requireProject } from '../config/require-project.js';
+import { requireClient } from '../config/require-project.js';
 import { getActionsDir } from '../config/project-config.js';
 import { discoverActions } from '../config/actions-discovery.js';
-import { CanupClient } from '../api-client.js';
 import { error, hint, dim } from '../ui/output.js';
 
 /**
@@ -73,9 +72,8 @@ export function registerStatusCommand(program: Command): void {
     .description('Show project status dashboard')
     .action(async () => {
       try {
-        const { config, apiKey, canupDir } = requireProject();
+        const { config, canupDir, client } = requireClient();
         const actionsDir = getActionsDir(canupDir, config);
-        const client = new CanupClient({ token: apiKey });
 
         // Fetch all remote state in parallel (per research: Promise.all is fine for CLI)
         const [appInfo, remoteActions, secrets, pythonDepsResult, nodejsDepsResult] =

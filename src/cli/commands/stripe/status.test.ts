@@ -4,6 +4,7 @@ import { test, client, output, project } from '#test/fixtures.js';
 // Mock require-project
 vi.mock('../../config/require-project.js', () => ({
   requireProject: vi.fn(() => project),
+  requireClient: vi.fn(() => ({ ...project, client })),
 }));
 
 // Mock api-client

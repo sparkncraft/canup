@@ -1,6 +1,58 @@
 import { describe, test, expect, vi } from 'vitest';
 import { EventEmitter } from 'node:events';
 
+describe('readSecretInput', () => {
+  test('returns the flag value without reading stdin', async () => {
+    vi.resetModules();
+    const { readSecretInput } = await import('./input.js');
+    expect(await readSecretInput('flag-value', { prompt: 'Enter: ' })).toBe('flag-value');
+  });
+
+  test('returns an explicit empty flag value (caller guards emptiness)', async () => {
+    vi.resetModules();
+    const { readSecretInput } = await import('./input.js');
+    expect(await readSecretInput('', { prompt: 'Enter: ' })).toBe('');
+  });
+
+  test('reads from the stdin pipe when no flag and not a TTY', async () => {
+    const fakeStdin = Object.assign(new EventEmitter(), { isTTY: undefined });
+    using _spy = vi.spyOn(process, 'stdin', 'get').mockReturnValue(fakeStdin as never);
+
+    vi.resetModules();
+    const { readSecretInput } = await import('./input.js');
+
+    const promise = readSecretInput(undefined, { prompt: 'Enter: ' });
+    fakeStdin.emit('data', Buffer.from(' piped-secret '));
+    fakeStdin.emit('end');
+
+    expect(await promise).toBe('piped-secret');
+  });
+
+  test('prompts for hidden input when no flag and a TTY', async () => {
+    const fakeStdin = Object.assign(new EventEmitter(), {
+      isTTY: true,
+      setRawMode: vi.fn(),
+      resume: vi.fn(),
+      pause: vi.fn(),
+      setEncoding: vi.fn(),
+      removeListener: vi.fn(),
+    });
+    using _stdinSpy = vi.spyOn(process, 'stdin', 'get').mockReturnValue(fakeStdin as never);
+    using _stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+
+    vi.resetModules();
+    const { readSecretInput } = await import('./input.js');
+
+    const promise = readSecretInput(undefined, { prompt: 'Enter secret: ' });
+    const dataHandler = fakeStdin.listeners('data')[0] as (key: string) => void;
+    dataHandler('h');
+    dataHandler('i');
+    dataHandler('\r');
+
+    expect(await promise).toBe('hi');
+  });
+});
+
 describe('readStdinPipe', () => {
   test('concatenates chunks, trims, and resolves', async () => {
     const fakeStdin = new EventEmitter();

@@ -1,5 +1,6 @@
 import { loadProjectConfig, type ProjectConfig } from './project-config.js';
 import { loadApiKey } from '../auth/token-store.js';
+import { CanupClient } from '../api-client.js';
 import { error, hint } from '../ui/output.js';
 
 /**
@@ -35,4 +36,21 @@ export function requireProject(): {
   }
 
   return { config, apiKey, projectRoot, canupDir };
+}
+
+/**
+ * Like {@link requireProject}, but also constructs the authenticated API client
+ * from the project's API key. Use this in the common case where a command needs
+ * both the project config and a client; reach for {@link requireProject} when a
+ * command only needs config or paths.
+ */
+export function requireClient(): {
+  config: ProjectConfig;
+  apiKey: string;
+  projectRoot: string;
+  canupDir: string;
+  client: CanupClient;
+} {
+  const project = requireProject();
+  return { ...project, client: new CanupClient({ token: project.apiKey }) };
 }

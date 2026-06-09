@@ -66,3 +66,19 @@ export function readStdinPipe(): Promise<string> {
     process.stdin.on('error', reject);
   });
 }
+
+/**
+ * Acquire a sensitive value using the standard precedence: an explicit
+ * `--value` flag (CI/scripting), then a piped stdin (non-TTY), then an
+ * interactive hidden prompt. The flag is honored whenever it is present —
+ * including an explicit empty string — so callers apply their own
+ * empty-value guard on the result.
+ */
+export async function readSecretInput(
+  flagValue: string | undefined,
+  { prompt }: { prompt: string },
+): Promise<string> {
+  if (flagValue !== undefined) return flagValue;
+  if (!process.stdin.isTTY) return readStdinPipe();
+  return readHiddenInput(prompt);
+}

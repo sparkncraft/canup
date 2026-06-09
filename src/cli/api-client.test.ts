@@ -617,47 +617,43 @@ describe('CanupClient', () => {
     });
   });
 
-  // ──── listLogs ────
+  // ──── listInvocations ────
 
-  describe('listLogs', () => {
-    test('sends GET to /v1/logs with type=invocation and appId', async () => {
+  describe('listInvocations', () => {
+    test('sends GET to /v1/invocations with appId', async () => {
       const response = { items: [], nextCursor: null, hasMore: false };
       mockFetch.mockResolvedValueOnce(okResponse(response));
       const client = createClient();
-      await client.listLogs('a1');
+      await client.listInvocations('a1');
 
-      expect(fetchUrl()).toBe('https://test.api/v1/logs?type=invocation&appId=a1');
+      expect(fetchUrl()).toBe('https://test.api/v1/invocations?appId=a1');
     });
 
     test('includes action param when slug is provided', async () => {
       const response = { items: [], nextCursor: null, hasMore: false };
       mockFetch.mockResolvedValueOnce(okResponse(response));
       const client = createClient();
-      await client.listLogs('a1', 'greet');
+      await client.listInvocations('a1', 'greet');
 
-      expect(fetchUrl()).toBe('https://test.api/v1/logs?type=invocation&appId=a1&action=greet');
+      expect(fetchUrl()).toBe('https://test.api/v1/invocations?appId=a1&action=greet');
     });
 
     test('appends limit and cursor as query params', async () => {
       const response = { items: [], nextCursor: null, hasMore: false };
       mockFetch.mockResolvedValueOnce(okResponse(response));
       const client = createClient();
-      await client.listLogs('a1', undefined, { limit: 10, cursor: 'abc123' });
+      await client.listInvocations('a1', undefined, { limit: 10, cursor: 'abc123' });
 
-      expect(fetchUrl()).toBe(
-        'https://test.api/v1/logs?type=invocation&appId=a1&limit=10&cursor=abc123',
-      );
+      expect(fetchUrl()).toBe('https://test.api/v1/invocations?appId=a1&limit=10&cursor=abc123');
     });
 
     test('appends search as query param when provided', async () => {
       const response = { items: [], nextCursor: null, hasMore: false };
       mockFetch.mockResolvedValueOnce(okResponse(response));
       const client = createClient();
-      await client.listLogs('a1', undefined, { search: 'timeout error' });
+      await client.listInvocations('a1', undefined, { search: 'timeout error' });
 
-      expect(fetchUrl()).toBe(
-        'https://test.api/v1/logs?type=invocation&appId=a1&search=timeout+error',
-      );
+      expect(fetchUrl()).toBe('https://test.api/v1/invocations?appId=a1&search=timeout+error');
     });
 
     test('returns paginated log entries', async () => {
@@ -665,12 +661,11 @@ describe('CanupClient', () => {
         items: [
           {
             id: 'h1',
-            type: 'invocation',
             actionSlug: 'greet',
             status: 'success',
             durationMs: 100,
             errorType: null,
-            timestamp: '2026-01-01T00:00:00Z',
+            createdAt: '2026-01-01T00:00:00Z',
             source: 'cli',
           },
         ],
@@ -679,32 +674,31 @@ describe('CanupClient', () => {
       };
       mockFetch.mockResolvedValueOnce(okResponse(response));
       const client = createClient();
-      const result = await client.listLogs('a1');
+      const result = await client.listInvocations('a1');
 
       expect(result).toEqual(response);
     });
   });
 
-  // ──── getLogDetail ────
+  // ──── getInvocationDetail ────
 
-  describe('getLogDetail', () => {
-    test('sends GET to /v1/logs/:id', async () => {
+  describe('getInvocationDetail', () => {
+    test('sends GET to /v1/invocations/:id', async () => {
       const detail = {
         id: 'h1',
-        type: 'invocation',
         actionSlug: 'greet',
         status: 'success',
         durationMs: 50,
         errorType: null,
-        timestamp: '2026-01-01T00:00:00Z',
+        createdAt: '2026-01-01T00:00:00Z',
         source: 'cli',
         detail: null,
       };
       mockFetch.mockResolvedValueOnce(okResponse(detail));
       const client = createClient();
-      const result = await client.getLogDetail('h1');
+      const result = await client.getInvocationDetail('h1');
 
-      expect(fetchUrl()).toBe('https://test.api/v1/logs/h1');
+      expect(fetchUrl()).toBe('https://test.api/v1/invocations/h1');
       expect(result).toEqual(detail);
     });
   });

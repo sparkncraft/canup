@@ -6,7 +6,7 @@ import { registerActionsListAction } from './list.js';
 import { registerActionsDeleteAction } from './delete.js';
 import { registerActionsTestAction } from './test.js';
 import { registerActionsRunAction } from './run.js';
-import { registerActionsLogsAction } from './logs.js';
+import { registerActionsInvocationsAction } from './invocations.js';
 import { registerActionsRemoveAction } from './remove.js';
 
 export function registerActionsCommand(program: CommandType): void {
@@ -17,7 +17,7 @@ export function registerActionsCommand(program: CommandType): void {
   registerActionsDeployAction(actions);
   registerActionsRunAction(actions);
   registerActionsListAction(actions);
-  registerActionsLogsAction(actions);
+  registerActionsInvocationsAction(actions);
   registerActionsRemoveAction(actions);
   registerActionsDeleteAction(actions); // Backward compat (same as remove)
 

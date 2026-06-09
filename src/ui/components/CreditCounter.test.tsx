@@ -24,8 +24,6 @@ const mockBalance: CreditBalance = {
   remaining: 90,
   resetAt: '2026-04-01T00:00:00Z',
   interval: 'monthly',
-  cancelAt: null,
-  email: null,
   billingUrl: 'https://canup.link/subscribe/mock-jwt',
 };
 
@@ -143,9 +141,11 @@ describe('CreditCounter', () => {
     expect(container.innerHTML).toBe('');
   });
 
-  test('shows subscriber email when email is non-null', () => {
+  test('shows subscriber email when subscribed with a non-null email', () => {
     mockUseCredits.mockReturnValue(
-      mockCreditsReturn({ data: { ...mockBalance, email: 'user@example.com' } }),
+      mockCreditsReturn({
+        data: { ...mockBalance, subscribed: true, cancelAt: null, email: 'user@example.com' },
+      }),
     );
 
     const { container } = renderWithCanva(<CreditCounter action="my-action" />);

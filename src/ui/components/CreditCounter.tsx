@@ -47,6 +47,21 @@ function CancelScheduledLine({ cancelAt, intl }: { cancelAt: string | null; intl
   );
 }
 
+/**
+ * Subscription footer lines (cancel-scheduled + logged-in-as email), rendered
+ * only for subscribed users. Narrowing on `subscribed` is what makes
+ * `cancelAt` / `email` accessible — they don't exist on the unsubscribed arm.
+ */
+function SubscriptionLines({ data, intl }: { data: CreditBalance; intl: IntlShape }) {
+  if (!data.subscribed) return null;
+  return (
+    <>
+      <CancelScheduledLine cancelAt={data.cancelAt} intl={intl} />
+      <EmailLine email={data.email} intl={intl} />
+    </>
+  );
+}
+
 export type CreditCounterProps = Omit<CanvaRowsProps, 'children' | 'spacing' | 'align'> & {
   action: string;
   footer?: ReactNode;
@@ -109,8 +124,7 @@ export function CreditCounter({
           {formatText(data)}
         </Rows>
         {footer}
-        <CancelScheduledLine cancelAt={data.cancelAt} intl={intl} />
-        <EmailLine email={data.email} intl={intl} />
+        <SubscriptionLines data={data} intl={intl} />
       </Rows>
     );
   }
@@ -130,8 +144,7 @@ export function CreditCounter({
           </Text>
         </Rows>
         {footer}
-        <CancelScheduledLine cancelAt={data.cancelAt} intl={intl} />
-        <EmailLine email={data.email} intl={intl} />
+        <SubscriptionLines data={data} intl={intl} />
       </Rows>
     );
   }
@@ -153,8 +166,7 @@ export function CreditCounter({
         </Text>
       </Rows>
       {footer}
-      <CancelScheduledLine cancelAt={data.cancelAt} intl={intl} />
-      <EmailLine email={data.email} intl={intl} />
+      <SubscriptionLines data={data} intl={intl} />
     </Rows>
   );
 }

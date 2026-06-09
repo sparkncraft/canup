@@ -1,10 +1,10 @@
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import type { Command } from 'commander';
-import { requireProject } from '../../config/require-project.js';
+import { requireClient } from '../../config/require-project.js';
 import { getActionsDir } from '../../config/project-config.js';
 import { discoverActions, resolveActionByName } from '../../config/actions-discovery.js';
-import { CanupClient } from '../../api-client.js';
+import type { CanupClient } from '../../api-client.js';
 import { error, hint, label, success, info } from '../../ui/output.js';
 import { withSpinner } from '../../ui/spinner.js';
 
@@ -118,9 +118,8 @@ export function registerActionsDeployAction(actionsCommand: Command): void {
     .description('Deploy action(s) to production (no args = deploy all)')
     .action(async (name?: string) => {
       try {
-        const { config, apiKey, canupDir } = requireProject();
+        const { config, canupDir, client } = requireClient();
         const actionsDir = getActionsDir(canupDir, config);
-        const client = new CanupClient({ token: apiKey });
 
         // Fetch remote actions with content hashes for skip-unchanged
         const remoteList = await client.listActions(config.appId);

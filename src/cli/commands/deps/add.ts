@@ -1,11 +1,8 @@
 import type { Command } from 'commander';
-import { CanupClient, parsePackageSpecs, formatBytes } from '../../api-client.js';
-import { requireProject } from '../../config/require-project.js';
+import { parsePackageSpecs, formatBytes } from '../../api-client.js';
+import { requireClient } from '../../config/require-project.js';
 import { success, error, info, label } from '../../ui/output.js';
-import { createSpinner } from '../../ui/spinner.js';
-
-const BUILD_POLL_INTERVAL_MS = 2000;
-const MAX_LAYER_SIZE_DISPLAY = '250MB';
+import { assertLanguage, pollLayerBuild, MAX_LAYER_SIZE_DISPLAY } from './_shared.js';
 
 export function registerDepsAddAction(depsCommand: Command): void {
   depsCommand
@@ -14,14 +11,9 @@ export function registerDepsAddAction(depsCommand: Command): void {
     .requiredOption('-l, --language <language>', 'Language (python or nodejs)')
     .action(async (packages: string[], options: { language: string }) => {
       const { language } = options;
+      assertLanguage(language);
 
-      if (language !== 'python' && language !== 'nodejs') {
-        error(`Invalid language: "${language}". Must be "python" or "nodejs".`);
-        process.exit(1);
-      }
-
-      const { config, apiKey } = requireProject();
-      const client = new CanupClient({ token: apiKey });
+      const { config, client } = requireClient();
 
       const parsedPackages = parsePackageSpecs(packages, language);
 
@@ -40,32 +32,14 @@ export function registerDepsAddAction(depsCommand: Command): void {
         }
 
         if (result.buildId) {
-          const spin = createSpinner('Building layer...');
-          const startTime = Date.now();
-
-          while (true) {
-            await new Promise((resolve) => setTimeout(resolve, BUILD_POLL_INTERVAL_MS));
-
-            const build = await client.getBuildStatus(config.appId, language, result.buildId);
-
-            if (build.status === 'success') {
-              const sizeLabel = build.sizeBytes != null ? formatBytes(build.sizeBytes) : '?';
-              spin.succeed(`Layer built (${sizeLabel} / ${MAX_LAYER_SIZE_DISPLAY})`);
-              for (const pkg of result.packages) {
-                label('Package', `${pkg.name}${pkg.version ? `@${pkg.version}` : ''}`);
-              }
-              return;
-            }
-
-            if (build.status === 'failed') {
-              spin.fail(`Build failed: ${build.errorMessage ?? 'Unknown error'}`);
-              process.exit(1);
-            }
-
-            // Still building -- update spinner with elapsed time
-            const elapsed = ((Date.now() - startTime) / 1000).toFixed(0);
-            spin.update(`Building layer... (${elapsed}s)`);
+          await pollLayerBuild(client, config.appId, language, result.buildId, {
+            progress: 'Building layer',
+            done: 'Layer built',
+          });
+          for (const pkg of result.packages) {
+            label('Package', `${pkg.name}${pkg.version ? `@${pkg.version}` : ''}`);
           }
+          return;
         }
 
         // No build triggered, no cache -- just show packages
