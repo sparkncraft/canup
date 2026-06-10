@@ -43,9 +43,7 @@ const mockBalance: CreditBalance = {
   remaining: 90,
   resetAt: '2026-04-01T00:00:00Z',
   interval: 'monthly',
-  cancelAt: null,
-  email: null,
-  billingUrl: 'https://canup.link/subscribe/V1StGXR8_Z5j',
+  billingAvailable: true,
 };
 
 const test = baseTest.extend('_rtl', [
@@ -131,7 +129,7 @@ describe('useCredits', () => {
     });
   });
 
-  test('billingUrl is available via data.billingUrl', async () => {
+  test('billingAvailable is exposed via data.billingAvailable', async () => {
     const { result } = renderHook(() => useCredits('my-action'));
 
     expect(result.current.data).toBeNull();
@@ -140,7 +138,7 @@ describe('useCredits', () => {
       expect(result.current.data).toBeTruthy();
     });
 
-    expect(result.current.data!.billingUrl).toBe('https://canup.link/subscribe/V1StGXR8_Z5j');
+    expect(result.current.data!.billingAvailable).toBe(true);
   });
 
   test('data updates when queryClient.setQueryData is called externally (cross-component sync)', async () => {
@@ -198,13 +196,16 @@ describe('useCredits', () => {
     expect(sseHandlers.size).toBeGreaterThan(0);
   });
 
-  test('SSE credits.update event merges new balance into cache (preserves billingUrl)', async () => {
+  test('SSE credits.update applies billingAvailable from the wire (Stripe connect state)', async () => {
     const { result } = renderHook(() => useCredits('my-action'));
 
     await waitFor(() => {
       expect(result.current.data).toEqual(mockBalance);
     });
+    expect(result.current.data!.billingAvailable).toBe(true);
 
+    // billingAvailable rides the SSE wire, so a Stripe disconnect propagates
+    // and the CTA disappears without an iframe reload — no stale preserve.
     act(() => {
       emitTestEvent({
         type: 'credits.update',
@@ -218,6 +219,7 @@ describe('useCredits', () => {
           interval: 'monthly',
           cancelAt: null,
           email: 'fresh@example.com',
+          billingAvailable: false,
         },
       });
     });
@@ -225,9 +227,7 @@ describe('useCredits', () => {
     await waitFor(() => {
       expect(result.current.data!.remaining).toBe(450);
     });
-
-    // billingUrl is HTTP-scoped and not on the SSE wire — preserved.
-    expect(result.current.data!.billingUrl).toBe(mockBalance.billingUrl);
+    expect(result.current.data!.billingAvailable).toBe(false);
   });
 
   test('SSE credits.update overwrites email when the Stripe customer changes', async () => {
@@ -237,6 +237,7 @@ describe('useCredits', () => {
     mockFetchCredits.mockResolvedValue({
       ...mockBalance,
       subscribed: true,
+      cancelAt: null,
       email: 'old@example.com',
     });
     const { result } = renderHook(() => useCredits('my-action'));
@@ -258,6 +259,7 @@ describe('useCredits', () => {
           interval: 'monthly',
           cancelAt: null,
           email: 'new@example.com',
+          billingAvailable: true,
         },
       });
     });
@@ -265,7 +267,6 @@ describe('useCredits', () => {
     await waitFor(() => {
       expect(result.current.data!.email).toBe('new@example.com');
     });
-    expect(result.current.data!.billingUrl).toBe(mockBalance.billingUrl);
   });
 
   test('SSE credits.update sets email to null on customer.deleted', async () => {
@@ -275,6 +276,7 @@ describe('useCredits', () => {
     mockFetchCredits.mockResolvedValue({
       ...mockBalance,
       subscribed: true,
+      cancelAt: null,
       email: 'deleted@example.com',
     });
     const { result } = renderHook(() => useCredits('my-action'));
@@ -288,7 +290,7 @@ describe('useCredits', () => {
         type: 'credits.update',
         action: 'my-action',
         balance: {
-          subscribed: false,
+          subscribed: true,
           quota: 10,
           used: 0,
           remaining: 10,
@@ -296,6 +298,7 @@ describe('useCredits', () => {
           interval: 'monthly',
           cancelAt: null,
           email: null,
+          billingAvailable: true,
         },
       });
     });
@@ -323,8 +326,7 @@ describe('useCredits', () => {
           remaining: 1,
           resetAt: null,
           interval: 'monthly',
-          cancelAt: null,
-          email: null,
+          billingAvailable: true,
         },
       });
     });
@@ -387,6 +389,7 @@ describe('useCredits', () => {
           interval: 'monthly',
           cancelAt: null,
           email: null,
+          billingAvailable: true,
         },
         at: '2026-05-24T10:00:00.000Z',
       });
@@ -409,6 +412,7 @@ describe('useCredits', () => {
           interval: 'monthly',
           cancelAt: null,
           email: null,
+          billingAvailable: true,
         },
         at: '2026-05-24T10:00:01.000Z',
       });
@@ -439,6 +443,7 @@ describe('useCredits', () => {
           interval: 'monthly',
           cancelAt: null,
           email: null,
+          billingAvailable: true,
         },
         at: '2026-05-24T10:00:05.000Z',
       });
@@ -463,6 +468,7 @@ describe('useCredits', () => {
           interval: 'monthly',
           cancelAt: null,
           email: null,
+          billingAvailable: true,
         },
         at: '2026-05-24T10:00:02.000Z',
       });
@@ -492,6 +498,7 @@ describe('useCredits', () => {
           interval: 'monthly',
           cancelAt: null,
           email: null,
+          billingAvailable: true,
         },
         // no `at` — simulates an older server
       });

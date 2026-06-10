@@ -130,6 +130,7 @@ describe('realtime — dispatch', () => {
         interval: 'monthly',
         cancelAt: null,
         email: 'subscriber@example.com',
+        billingAvailable: true,
       },
     };
     lastInstance()!._emit('message', new MessageEvent('message', { data: JSON.stringify(event) }));
@@ -200,6 +201,7 @@ describe('realtime — dispatch', () => {
             interval: 'monthly',
             cancelAt: '2026-07-01T00:00:00.000Z',
             email: 'cancelled@example.com',
+            billingAvailable: true,
           },
         }),
       }),
@@ -226,6 +228,7 @@ describe('realtime — dispatch', () => {
             interval: 'monthly',
             cancelAt: null,
             email: null,
+            billingAvailable: true,
           },
         }),
       }),
@@ -256,6 +259,7 @@ describe('realtime — dispatch', () => {
             resetAt: '2026-06-01T00:00:00.000Z',
             interval: 'monthly',
             cancelAt: null,
+            billingAvailable: true,
             // email omitted — older server without this field.
           },
         }),
@@ -288,6 +292,7 @@ describe('realtime — dispatch', () => {
             interval: 'monthly',
             cancelAt: null,
             email: null,
+            billingAvailable: true,
           },
         }),
       }),

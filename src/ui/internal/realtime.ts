@@ -15,8 +15,7 @@ import { DEFAULT_API_URL } from '../../constants.js';
 const creditsUpdateSchema = z.object({
   type: z.literal('credits.update'),
   action: z.string(),
-  // The balance shape is single-sourced with the public `CreditBalance` type
-  // (minus the HTTP-scoped `billingUrl`, which isn't carried on the wire).
+  // The balance shape is single-sourced with the public `CreditBalance` type.
   balance: creditBalanceSchema,
   // ISO-8601 publish-time timestamp. Consumers compare it against the
   // last accepted update to skip out-of-order deliveries. Optional in

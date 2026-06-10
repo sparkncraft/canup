@@ -30,15 +30,12 @@ const lastAtByAction = new Map<string, string>();
  * Live credit balance for one action.
  *
  * Reads:
- *  - Initial paint: one `GET /run/:slug/credits` (sets billingUrl + initial
- *    balance shape, including email).
- *  - Live updates: SSE `credits.update` events merge into the same cache key.
- *    The wire carries every field that depends on customer/subscription state
- *    — including `email` — so the iframe's "logged in as ..." line refreshes
- *    on re-subscribe / customer.deleted without an iframe reload. `billingUrl`
- *    is the one identity field NOT on the wire: it's HTTP-scoped (request
- *    origin + per-user token mint) and stable across customer changes, so
- *    the merge preserves the value set on initial fetch.
+ *  - Initial paint: one `GET /run/:slug/credits`.
+ *  - Live updates: SSE `credits.update` events replace the same cache key. The
+ *    wire carries every field that depends on customer/subscription/connection
+ *    state — `email` and the `billingAvailable` CTA flag included — so the
+ *    iframe's "logged in as ..." line and the subscribe/manage CTA refresh on
+ *    re-subscribe / customer.deleted / Stripe (dis)connect without a reload.
  *    Out-of-order deliveries are rejected via the event's `at` timestamp.
  *  - Safety nets (in `query.ts`): `refetchOnWindowFocus` plus a 5-min visible-tab
  *    poll catch the rare case where SSE dies silently (proxy buffers the
@@ -74,15 +71,12 @@ export function useCredits(action: string): UseCreditsResult {
         lastAtByAction.set(action, event.at);
       }
 
-      // `event.balance` carries every customer-state field — `email` included
-      // — so the iframe reflects the new customer immediately after a
-      // re-subscribe or customer.deleted. `billingUrl` is the one identity
-      // field NOT on the SSE wire, so it's preserved from the prior value
-      // (null until the initial fetch lands when the first SSE arrives early).
-      qc.setQueryData<CreditBalance>(creditKey(action), (old) => ({
-        ...event.balance,
-        billingUrl: old?.billingUrl ?? null,
-      }));
+      // `event.balance` carries every field the UI keys off — `email` and the
+      // `billingAvailable` CTA flag included — so the iframe reflects the new
+      // customer / connection state immediately after a re-subscribe,
+      // customer.deleted, or Stripe (dis)connect. The full balance replaces the
+      // cached one; there's no per-field merge to preserve.
+      qc.setQueryData<CreditBalance>(creditKey(action), event.balance);
     });
     return release;
   }, [action, qc]);

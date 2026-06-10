@@ -224,6 +224,43 @@ describe('api-client', () => {
     });
   });
 
+  describe('fetchSubscribeLink', () => {
+    test('POSTs with Authorization header and returns { url }', async () => {
+      let capturedMethod: string | null = null;
+      let capturedHeaders: Headers | null = null;
+
+      server.use(
+        http.post(`${BASE_URL}/subscribe/link`, ({ request }) => {
+          capturedMethod = request.method;
+          capturedHeaders = request.headers;
+          return HttpResponse.json({ ok: true, data: { url: `${BASE_URL}/subscribe/abc123` } });
+        }),
+      );
+
+      const { fetchSubscribeLink } = await getModule();
+      const result = await fetchSubscribeLink();
+
+      expect(capturedMethod).toBe('POST');
+      expect(capturedHeaders!.get('Authorization')).toBe(`Bearer ${TEST_TOKEN}`);
+      expect(result).toEqual({ url: `${BASE_URL}/subscribe/abc123` });
+    });
+
+    test('throws CanupError on error', async () => {
+      server.use(
+        http.post(`${BASE_URL}/subscribe/link`, () =>
+          HttpResponse.json(
+            { ok: false, error: { type: 'HTTP_ERROR', message: 'Unauthorized' } },
+            { status: 401 },
+          ),
+        ),
+      );
+
+      const { fetchSubscribeLink } = await getModule();
+
+      await expect(fetchSubscribeLink()).rejects.toBeInstanceOf(CanupError);
+    });
+  });
+
   describe('base URL', () => {
     test('defaults to https://canup.link when __canup_url is not set', async () => {
       vi.stubGlobal('__canup_url', undefined);

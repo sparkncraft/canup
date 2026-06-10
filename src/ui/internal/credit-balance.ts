@@ -14,9 +14,11 @@ import { z } from 'zod';
 const creditIntervalSchema = z.enum(['daily', 'weekly', 'monthly', 'lifetime']);
 
 /**
- * Fields present on every balance regardless of subscription state — but NOT
- * `billingUrl`, which is HTTP-scoped (request origin + per-user token mint),
- * rides the REST fetch only, and is added by the `CreditBalance` type below.
+ * Fields present on every balance regardless of subscription state.
+ * `billingAvailable` gates the subscribe/manage CTA — true when the app has
+ * billing connected. It's a stable flag (no token), so it rides both the REST
+ * read and the SSE update; the subscribe URL itself is never on the wire — it's
+ * minted on demand at click via `POST /subscribe/link`.
  */
 const balanceCommonShape = {
   quota: z.number().nullable(),
@@ -25,6 +27,7 @@ const balanceCommonShape = {
   // Date is JSON-serialized to ISO string on the wire.
   resetAt: z.string().nullable(),
   interval: creditIntervalSchema.nullable(),
+  billingAvailable: z.boolean(),
 };
 
 export const creditBalanceSchema = z.discriminatedUnion('subscribed', [
@@ -41,11 +44,7 @@ export const creditBalanceSchema = z.discriminatedUnion('subscribed', [
 ]);
 
 /**
- * Credit balance from `GET /run/:slug/credits`. Derived from
- * {@link creditBalanceSchema} so it can't drift from the SSE `credits.update`
- * event, plus the HTTP-scoped `billingUrl` (the billing-portal link, set on the
- * initial fetch and preserved across live updates — it isn't on the SSE wire).
+ * Credit balance from `GET /run/:slug/credits` and the SSE `credits.update`
+ * event. Derived from {@link creditBalanceSchema} so the two can't drift.
  */
-export type CreditBalance = z.infer<typeof creditBalanceSchema> & {
-  billingUrl: string | null;
-};
+export type CreditBalance = z.infer<typeof creditBalanceSchema>;
