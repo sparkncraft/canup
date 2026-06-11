@@ -16,6 +16,16 @@ const mockRunAction = vi.mocked(runAction);
 
 const setQueryDataSpy = vi.spyOn(queryClient, 'setQueryData');
 
+const BALANCE: CreditBalance = {
+  subscribed: false,
+  quota: 10,
+  used: 1,
+  remaining: 9,
+  resetAt: null,
+  interval: 'monthly',
+  billingAvailable: true,
+};
+
 const test = baseTest.extend('_rtl', [
   async ({}, use) => {
     queryClient.clear();
@@ -35,7 +45,7 @@ describe('useAction', () => {
   });
 
   test('loading becomes true during execution, false after', async () => {
-    let resolveAction!: (value: { result: unknown; durationMs: number }) => void;
+    let resolveAction!: (value: { credits: CreditBalance; result: unknown }) => void;
     mockRunAction.mockReturnValue(
       new Promise((resolve) => {
         resolveAction = resolve;
@@ -54,7 +64,7 @@ describe('useAction', () => {
     });
 
     await act(async () => {
-      resolveAction({ result: 'done', durationMs: 42 });
+      resolveAction({ credits: BALANCE, result: 'done' });
       await executePromise;
     });
 
@@ -63,34 +73,25 @@ describe('useAction', () => {
     });
   });
 
-  test('execute(params) calls runAction(action, params) and returns result', async () => {
-    const mockResult = { result: { imageUrl: 'https://example.com/img.png' }, durationMs: 150 };
-    mockRunAction.mockResolvedValue(mockResult);
+  test('execute(params) calls runAction(action, params) and returns the action result', async () => {
+    mockRunAction.mockResolvedValue({
+      credits: BALANCE,
+      result: { imageUrl: 'https://example.com/img.png' },
+    });
 
     const { result } = renderHook(() => useAction('my-action'));
 
-    let actionResult: { result: unknown; durationMs: number };
+    let actionResult: unknown;
     await act(async () => {
       actionResult = await result.current.execute({ prompt: 'hello' });
     });
 
     expect(mockRunAction).toHaveBeenCalledWith('my-action', { prompt: 'hello' });
-    expect(actionResult!).toEqual(mockResult);
+    expect(actionResult).toEqual({ imageUrl: 'https://example.com/img.png' });
   });
 
-  test('on success with credits, queryClient.setQueryData is called with creditKey and balance', async () => {
-    const credits: CreditBalance = {
-      subscribed: false,
-      quota: 10,
-      used: 1,
-      remaining: 9,
-      resetAt: null,
-      interval: 'monthly',
-      cancelAt: null,
-      email: null,
-      billingAvailable: true,
-    };
-    mockRunAction.mockResolvedValue({ result: 'ok', durationMs: 10, credits });
+  test('on success, the post-run balance is written to the credit cache', async () => {
+    mockRunAction.mockResolvedValue({ credits: BALANCE, result: 'ok' });
 
     const { result } = renderHook(() => useAction('my-action'));
 
@@ -98,19 +99,7 @@ describe('useAction', () => {
       await result.current.execute();
     });
 
-    expect(setQueryDataSpy).toHaveBeenCalledWith(creditKey('my-action'), credits);
-  });
-
-  test('on success without credits, queryClient.setQueryData is NOT called', async () => {
-    mockRunAction.mockResolvedValue({ result: 'ok', durationMs: 10 });
-
-    const { result } = renderHook(() => useAction('my-action'));
-
-    await act(async () => {
-      await result.current.execute();
-    });
-
-    expect(setQueryDataSpy).not.toHaveBeenCalled();
+    expect(setQueryDataSpy).toHaveBeenCalledWith(creditKey('my-action'), BALANCE);
   });
 
   test('on CanupError, error is set to the CanupError instance', async () => {

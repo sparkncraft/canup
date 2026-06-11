@@ -21,7 +21,7 @@ export function registerActionsListAction(actionsCommand: Command): void {
         ['Name', 'Language', 'Deployed', 'Updated'],
         actions.map((a) => [
           a.slug,
-          a.language,
+          a.language ?? '—',
           a.deployed ? 'yes' : 'no',
           new Date(a.updatedAt).toLocaleDateString(),
         ]),

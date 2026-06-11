@@ -1,9 +1,9 @@
 import { describe, expect, test as baseTest, vi } from 'vitest';
-import { renderHook, waitFor, cleanup, act } from '@testing-library/react';
-import { useCredits, _resetCreditOrdering } from './use-credits.js';
+import { renderHook, waitFor, cleanup } from '@testing-library/react';
+import { useCredits } from './use-credits.js';
 import { fetchCredits } from '../internal/api-client.js';
 import { queryClient, creditKey } from '../internal/query.js';
-import { acquire, type SdkEvent } from '../internal/realtime.js';
+import { acquire } from '../internal/realtime.js';
 import type { CreditBalance } from '../types.js';
 
 vi.mock('../internal/api-client.js', () => ({
@@ -12,29 +12,16 @@ vi.mock('../internal/api-client.js', () => ({
 vi.mock('../internal/jwt-cache.js', () => ({
   getJwt: vi.fn().mockResolvedValue('mock-jwt'),
 }));
-
-// Stub the realtime singleton so tests can dispatch synthetic events
-// without opening a real EventSource.
-const sseHandlers = new Set<(event: SdkEvent) => void>();
-vi.mock('../internal/realtime.js', async () => {
-  const actual =
-    await vi.importActual<typeof import('../internal/realtime.js')>('../internal/realtime.js');
-  return {
-    ...actual,
-    acquire: vi.fn((handler: (event: SdkEvent) => void) => {
-      sseHandlers.add(handler);
-      return () => {
-        sseHandlers.delete(handler);
-      };
-    }),
-  };
-});
-function emitTestEvent(event: SdkEvent): void {
-  for (const h of sseHandlers) h(event);
-}
+// useCredits only ref-counts the shared SSE connection (acquire → release). The
+// actual SSE → cache handling lives in realtime.ts and is tested there; here we
+// just stub the lifecycle.
+vi.mock('../internal/realtime.js', () => ({
+  acquire: vi.fn(),
+}));
 
 const mockFetchCredits = vi.mocked(fetchCredits);
 const mockAcquire = vi.mocked(acquire);
+const release = vi.fn();
 
 const mockBalance: CreditBalance = {
   subscribed: false,
@@ -50,8 +37,7 @@ const test = baseTest.extend('_rtl', [
   async ({}, use) => {
     queryClient.clear();
     mockFetchCredits.mockResolvedValue(mockBalance);
-    sseHandlers.clear();
-    _resetCreditOrdering();
+    mockAcquire.mockReturnValue(release); // re-apply impl after global mockReset
     await use();
     cleanup();
   },
@@ -106,6 +92,19 @@ describe('useCredits', () => {
     expect(result.current.exhausted).toBe(false);
   });
 
+  test('exhausted is true when remaining is negative (race condition safety)', async () => {
+    const negative: CreditBalance = { ...mockBalance, remaining: -1, used: 101 };
+    mockFetchCredits.mockResolvedValue(negative);
+
+    const { result } = renderHook(() => useCredits('my-action'));
+
+    await waitFor(() => {
+      expect(result.current.data).toBeTruthy();
+    });
+
+    expect(result.current.exhausted).toBe(true);
+  });
+
   test('refresh() triggers a refetch from server', async () => {
     const { result } = renderHook(() => useCredits('my-action'));
 
@@ -132,30 +131,11 @@ describe('useCredits', () => {
   test('billingAvailable is exposed via data.billingAvailable', async () => {
     const { result } = renderHook(() => useCredits('my-action'));
 
-    expect(result.current.data).toBeNull();
-
     await waitFor(() => {
       expect(result.current.data).toBeTruthy();
     });
 
     expect(result.current.data!.billingAvailable).toBe(true);
-  });
-
-  test('data updates when queryClient.setQueryData is called externally (cross-component sync)', async () => {
-    const { result } = renderHook(() => useCredits('my-action'));
-
-    await waitFor(() => {
-      expect(result.current.data).toEqual(mockBalance);
-    });
-
-    expect(result.current.data!.remaining).toBe(90);
-
-    const updated: CreditBalance = { ...mockBalance, used: 50, remaining: 50 };
-    queryClient.setQueryData(creditKey('my-action'), updated);
-
-    await waitFor(() => {
-      expect(result.current.data!.remaining).toBe(50);
-    });
   });
 
   test('exposes error as CanupError when fetch fails after retries', async () => {
@@ -177,335 +157,36 @@ describe('useCredits', () => {
     expect(result.current.error!.message).toBe('Network error');
   });
 
-  test('exhausted is true when remaining is negative (race condition safety)', async () => {
-    const negative: CreditBalance = { ...mockBalance, remaining: -1, used: 101 };
-    mockFetchCredits.mockResolvedValue(negative);
-
+  test('live updates land via the credit cache (realtime.ts writes it, the hook reads it)', async () => {
+    // SSE `credits.update` events are applied in realtime.ts by writing
+    // creditKey(action); useCredits re-renders off that same cache. This is the
+    // consumer side of the live flow — the dispatch itself is tested in
+    // realtime.test.ts.
     const { result } = renderHook(() => useCredits('my-action'));
 
     await waitFor(() => {
-      expect(result.current.data).toBeTruthy();
+      expect(result.current.data).toEqual(mockBalance);
     });
+    expect(result.current.data!.remaining).toBe(90);
 
-    expect(result.current.exhausted).toBe(true);
+    const updated: CreditBalance = { ...mockBalance, used: 50, remaining: 50 };
+    queryClient.setQueryData(creditKey('my-action'), updated);
+
+    await waitFor(() => {
+      expect(result.current.data!.remaining).toBe(50);
+    });
   });
 
-  test('subscribes to the SSE singleton on mount', () => {
+  test('acquires the shared SSE connection on mount', () => {
     renderHook(() => useCredits('my-action'));
-    expect(mockAcquire).toHaveBeenCalled();
-    expect(sseHandlers.size).toBeGreaterThan(0);
+    expect(mockAcquire).toHaveBeenCalledOnce();
   });
 
-  test('SSE credits.update applies billingAvailable from the wire (Stripe connect state)', async () => {
-    const { result } = renderHook(() => useCredits('my-action'));
-
-    await waitFor(() => {
-      expect(result.current.data).toEqual(mockBalance);
-    });
-    expect(result.current.data!.billingAvailable).toBe(true);
-
-    // billingAvailable rides the SSE wire, so a Stripe disconnect propagates
-    // and the CTA disappears without an iframe reload — no stale preserve.
-    act(() => {
-      emitTestEvent({
-        type: 'credits.update',
-        action: 'my-action',
-        balance: {
-          subscribed: true,
-          quota: 500,
-          used: 50,
-          remaining: 450,
-          resetAt: '2026-05-01T00:00:00.000Z',
-          interval: 'monthly',
-          cancelAt: null,
-          email: 'fresh@example.com',
-          billingAvailable: false,
-        },
-      });
-    });
-
-    await waitFor(() => {
-      expect(result.current.data!.remaining).toBe(450);
-    });
-    expect(result.current.data!.billingAvailable).toBe(false);
-  });
-
-  test('SSE credits.update overwrites email when the Stripe customer changes', async () => {
-    // Bug fix: re-subscribing with a different customer email used to leave
-    // the iframe's "logged in as ..." line stale until reload, because the
-    // wire payload didn't carry email and the merge preserved the old one.
-    mockFetchCredits.mockResolvedValue({
-      ...mockBalance,
-      subscribed: true,
-      cancelAt: null,
-      email: 'old@example.com',
-    });
-    const { result } = renderHook(() => useCredits('my-action'));
-
-    await waitFor(() => {
-      expect(result.current.data?.email).toBe('old@example.com');
-    });
-
-    act(() => {
-      emitTestEvent({
-        type: 'credits.update',
-        action: 'my-action',
-        balance: {
-          subscribed: true,
-          quota: 500,
-          used: 0,
-          remaining: 500,
-          resetAt: '2026-05-01T00:00:00.000Z',
-          interval: 'monthly',
-          cancelAt: null,
-          email: 'new@example.com',
-          billingAvailable: true,
-        },
-      });
-    });
-
-    await waitFor(() => {
-      expect(result.current.data!.email).toBe('new@example.com');
-    });
-  });
-
-  test('SSE credits.update sets email to null on customer.deleted', async () => {
-    // The deleted-customer flow emits a balance with email: null. The merge
-    // must propagate the null so the iframe stops claiming the user is
-    // logged in as the deleted address.
-    mockFetchCredits.mockResolvedValue({
-      ...mockBalance,
-      subscribed: true,
-      cancelAt: null,
-      email: 'deleted@example.com',
-    });
-    const { result } = renderHook(() => useCredits('my-action'));
-
-    await waitFor(() => {
-      expect(result.current.data?.email).toBe('deleted@example.com');
-    });
-
-    act(() => {
-      emitTestEvent({
-        type: 'credits.update',
-        action: 'my-action',
-        balance: {
-          subscribed: true,
-          quota: 10,
-          used: 0,
-          remaining: 10,
-          resetAt: null,
-          interval: 'monthly',
-          cancelAt: null,
-          email: null,
-          billingAvailable: true,
-        },
-      });
-    });
-
-    await waitFor(() => {
-      expect(result.current.data!.email).toBeNull();
-    });
-  });
-
-  test('SSE event for a different action does NOT touch this hook cache', async () => {
-    const { result } = renderHook(() => useCredits('my-action'));
-
-    await waitFor(() => {
-      expect(result.current.data).toEqual(mockBalance);
-    });
-
-    act(() => {
-      emitTestEvent({
-        type: 'credits.update',
-        action: 'other-action',
-        balance: {
-          subscribed: false,
-          quota: 100,
-          used: 99,
-          remaining: 1,
-          resetAt: null,
-          interval: 'monthly',
-          billingAvailable: true,
-        },
-      });
-    });
-
-    await new Promise((r) => setTimeout(r, 50));
-
-    expect(result.current.data!.remaining).toBe(90); // unchanged
-  });
-
-  test('unknown event types in the hook dispatcher are silently ignored', async () => {
-    const { result } = renderHook(() => useCredits('my-action'));
-
-    await waitFor(() => {
-      expect(result.current.data).toEqual(mockBalance);
-    });
-
-    // Cast: simulate a future event type that the hook doesn't recognize.
-    // Wire-level unknown events are dropped in realtime.ts via Zod;
-    // this asserts the second line of defense in the hook itself.
-    act(() => {
-      emitTestEvent({ type: 'some.future.event' } as unknown as SdkEvent);
-    });
-
-    await new Promise((r) => setTimeout(r, 50));
-
-    expect(result.current.data).toEqual(mockBalance);
-  });
-
-  test('release function unsubscribes the handler on unmount', () => {
+  test('releases the SSE connection on unmount', () => {
     const { unmount } = renderHook(() => useCredits('my-action'));
-    expect(sseHandlers.size).toBeGreaterThan(0);
+    expect(mockAcquire).toHaveBeenCalledOnce();
+
     unmount();
-    expect(sseHandlers.size).toBe(0);
-  });
-
-  // ─── Out-of-order delivery ────────────────────────────────
-  // Network can reshuffle SSE deliveries. Without ordering protection a
-  // stale snapshot can overwrite a fresh one and the user sees the wrong
-  // remaining count until the next interaction. The hook tracks the
-  // publish-time `at` per action and rejects deliveries older than the
-  // last accepted one.
-
-  test('newer at-timestamp overwrites older cache value (in-order delivery)', async () => {
-    const { result } = renderHook(() => useCredits('my-action'));
-
-    await waitFor(() => {
-      expect(result.current.data).toEqual(mockBalance);
-    });
-
-    act(() => {
-      emitTestEvent({
-        type: 'credits.update',
-        action: 'my-action',
-        balance: {
-          subscribed: true,
-          quota: 100,
-          used: 30,
-          remaining: 70,
-          resetAt: null,
-          interval: 'monthly',
-          cancelAt: null,
-          email: null,
-          billingAvailable: true,
-        },
-        at: '2026-05-24T10:00:00.000Z',
-      });
-    });
-
-    await waitFor(() => {
-      expect(result.current.data!.remaining).toBe(70);
-    });
-
-    act(() => {
-      emitTestEvent({
-        type: 'credits.update',
-        action: 'my-action',
-        balance: {
-          subscribed: true,
-          quota: 100,
-          used: 40,
-          remaining: 60,
-          resetAt: null,
-          interval: 'monthly',
-          cancelAt: null,
-          email: null,
-          billingAvailable: true,
-        },
-        at: '2026-05-24T10:00:01.000Z',
-      });
-    });
-
-    await waitFor(() => {
-      expect(result.current.data!.remaining).toBe(60);
-    });
-  });
-
-  test('older at-timestamp is rejected when cache holds a newer at', async () => {
-    const { result } = renderHook(() => useCredits('my-action'));
-
-    await waitFor(() => {
-      expect(result.current.data).toEqual(mockBalance);
-    });
-
-    act(() => {
-      emitTestEvent({
-        type: 'credits.update',
-        action: 'my-action',
-        balance: {
-          subscribed: true,
-          quota: 100,
-          used: 30,
-          remaining: 70,
-          resetAt: null,
-          interval: 'monthly',
-          cancelAt: null,
-          email: null,
-          billingAvailable: true,
-        },
-        at: '2026-05-24T10:00:05.000Z',
-      });
-    });
-
-    await waitFor(() => {
-      expect(result.current.data!.remaining).toBe(70);
-    });
-
-    // Out-of-order: an older publish time arriving after the newer one.
-    // Must be dropped so the user keeps the more recent value.
-    act(() => {
-      emitTestEvent({
-        type: 'credits.update',
-        action: 'my-action',
-        balance: {
-          subscribed: true,
-          quota: 100,
-          used: 999,
-          remaining: -899,
-          resetAt: null,
-          interval: 'monthly',
-          cancelAt: null,
-          email: null,
-          billingAvailable: true,
-        },
-        at: '2026-05-24T10:00:02.000Z',
-      });
-    });
-
-    await new Promise((r) => setTimeout(r, 50));
-    expect(result.current.data!.remaining).toBe(70); // unchanged
-  });
-
-  test('events without `at` field (older server) still apply (graceful degradation)', async () => {
-    const { result } = renderHook(() => useCredits('my-action'));
-
-    await waitFor(() => {
-      expect(result.current.data).toEqual(mockBalance);
-    });
-
-    act(() => {
-      emitTestEvent({
-        type: 'credits.update',
-        action: 'my-action',
-        balance: {
-          subscribed: true,
-          quota: 100,
-          used: 25,
-          remaining: 75,
-          resetAt: null,
-          interval: 'monthly',
-          cancelAt: null,
-          email: null,
-          billingAvailable: true,
-        },
-        // no `at` — simulates an older server
-      });
-    });
-
-    await waitFor(() => {
-      expect(result.current.data!.remaining).toBe(75);
-    });
+    expect(release).toHaveBeenCalledOnce();
   });
 });

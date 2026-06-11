@@ -1,148 +1,43 @@
 /**
  * HTTP client for the CanUp API.
  *
- * Uses native fetch (Node.js 18+). Handles structured API response envelopes.
- * All methods for action/secret management take appId and use app-scoped URLs.
- * The API returns camelCase natively -- no client-side mapping needed.
+ * Uses native fetch (Node.js 18+). Wire shapes come from `@canup/types`, the
+ * published contract every endpoint serializes — the client casts responses to
+ * those types rather than re-declaring them. All app-scoped methods take an
+ * appId and build app-scoped URLs. The API returns camelCase natively, so there
+ * is no client-side key mapping.
  */
 
+import type {
+  Action,
+  ApiKeyCreateResult,
+  ApiResponse,
+  App,
+  AppListItem,
+  Build,
+  CursorPage,
+  DeleteActionResult,
+  DeployActionResult,
+  DepsClearResult,
+  InvocationDetail,
+  InvocationSummary,
+  PackageList,
+  PackageRemoveResult,
+  PackageSpec,
+  PackagesAddResult,
+  RegisterAppResult,
+  RevokeApiKeyResult,
+  SecretDeleteResult,
+  SecretEntry,
+  SecretSetResult,
+  StripeConnectResult,
+  StripeDisconnectResult,
+  StripeStatusResult,
+  TestResult,
+  User,
+} from '@canup/types';
 import { DEFAULT_API_URL, API_VERSION } from '../constants.js';
 import { CLI_USER_AGENT } from './version.js';
-
-export interface UserInfo {
-  id: string;
-  email: string;
-  name: string | null;
-  image: string | null;
-  createdAt: string;
-}
-
-/** An app as returned by the API. */
-export interface App {
-  id: string;
-  name: string;
-  createdAt: string;
-}
-
-/** A deployed action's metadata (no script content). */
-export interface ActionSummary {
-  id: string;
-  slug: string;
-  language: string;
-  deployed: boolean;
-  contentHash: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-/** An action including its stored script content (`null` for track-only actions). */
-export interface ActionWithScript extends ActionSummary {
-  script: string | null;
-}
-
-/**
- * A single invocation row. `actionSlug` is `null` for invocations not tied to a
- * named action; `status` and `source` are open strings (their vocabularies are
- * owned by the server, so the CLI doesn't re-enumerate them).
- */
-export interface InvocationSummary {
-  id: string;
-  actionSlug: string | null;
-  status: string;
-  durationMs: number | null;
-  errorType: string | null;
-  createdAt: string;
-  source: string;
-}
-
-/** A single invocation plus its structured detail payload (`null` when nothing ran). */
-export interface InvocationDetail extends InvocationSummary {
-  detail: {
-    errorMessage: string | null;
-    stackTrace: string | null;
-    printOutput: string | null;
-  } | null;
-}
-
-interface ApiSuccessResponse<T> {
-  ok: true;
-  data: T;
-}
-
-interface ApiErrorResponse {
-  ok: false;
-  error: {
-    type: string;
-    message: string;
-  };
-}
-
-type ApiResponse<T> = ApiSuccessResponse<T> | ApiErrorResponse;
-
-/** Test endpoint success envelope */
-interface TestSuccess {
-  ok: true;
-  data: {
-    result: unknown;
-    durationMs: number;
-    printOutput: string;
-  };
-}
-
-/** Test endpoint error envelope */
-interface TestError {
-  ok: false;
-  error: {
-    type: string;
-    message: string;
-    stackTrace?: string;
-    durationMs: number;
-    printOutput?: string;
-  };
-}
-
-export type TestResult = TestSuccess | TestError;
-
-// ──────────────────────────────────────────────
-// Deps types
-// ──────────────────────────────────────────────
-
-export interface DepInfo {
-  name: string;
-  version: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface AddDepsResult {
-  cached: boolean;
-  buildId?: string;
-  status?: string;
-  packages: DepInfo[];
-  layerSize?: number | null;
-}
-
-export interface ListDepsResult {
-  packages: DepInfo[];
-  layerSize: number | null;
-  layerArn: string | null;
-}
-
-export interface RemoveDepResult {
-  deleted: string;
-  buildId?: string;
-  status?: string;
-}
-
-export interface BuildStatus {
-  id: string;
-  status: 'building' | 'success' | 'failed';
-  layerVersionArn: string | null;
-  sizeBytes: number | null;
-  errorMessage: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
 
 // ──────────────────────────────────────────────
 // Package spec parser
@@ -155,10 +50,7 @@ export interface BuildStatus {
  * npm: split on last @ (handles scoped packages like @types/node@20)
  * pip: split on ==
  */
-export function parsePackageSpecs(
-  specs: string[],
-  language: string,
-): { name: string; version?: string }[] {
+export function parsePackageSpecs(specs: string[], language: string): PackageSpec[] {
   return specs.map((spec) => {
     if (language === 'nodejs') {
       // npm: split on last @ (handles scoped packages like @types/node@20)
@@ -203,8 +95,8 @@ export class CanupClient {
    * Get the current user's info.
    * Requires a valid session cookie or user-level api key.
    */
-  async getMe(): Promise<UserInfo> {
-    return this.request<UserInfo>(`/${API_VERSION}/me`);
+  async getMe(): Promise<User> {
+    return this.request<User>(`/${API_VERSION}/me`);
   }
 
   /**
@@ -215,7 +107,7 @@ export class CanupClient {
    * errors after a short timeout — see commands/logout.ts).
    */
   async revokeUserKey(keyId: string, init?: { signal?: AbortSignal }): Promise<void> {
-    await this.request<{ revoked: string }>(
+    await this.request<RevokeApiKeyResult>(
       `/${API_VERSION}/me/api-keys/${encodeURIComponent(keyId)}`,
       { method: 'DELETE', signal: init?.signal },
     );
@@ -229,8 +121,8 @@ export class CanupClient {
    * Register or upsert an app by Canva App ID.
    * Requires session auth.
    */
-  async registerApp(canvaAppId: string, name: string): Promise<Pick<App, 'id' | 'name'>> {
-    return this.request<Pick<App, 'id' | 'name'>>(`/${API_VERSION}/apps`, {
+  async registerApp(canvaAppId: string, name: string): Promise<RegisterAppResult> {
+    return this.request<RegisterAppResult>(`/${API_VERSION}/apps`, {
       method: 'POST',
       body: JSON.stringify({ canvaAppId, name }),
     });
@@ -240,8 +132,8 @@ export class CanupClient {
    * List all apps for the current user.
    * Requires session auth (used by init picker before API key exists).
    */
-  async listApps(): Promise<App[]> {
-    return this.request<App[]>(`/${API_VERSION}/apps`);
+  async listApps(): Promise<AppListItem[]> {
+    return this.request<AppListItem[]>(`/${API_VERSION}/apps`);
   }
 
   /**
@@ -256,8 +148,8 @@ export class CanupClient {
    * Create an API key for an app.
    * Requires session auth.
    */
-  async createApiKey(appId: string, name?: string): Promise<{ key: string; prefix: string }> {
-    return this.request<{ key: string; prefix: string }>(
+  async createApiKey(appId: string, name?: string): Promise<ApiKeyCreateResult> {
+    return this.request<ApiKeyCreateResult>(
       `/${API_VERSION}/apps/${encodeURIComponent(appId)}/api-keys`,
       {
         method: 'POST',
@@ -282,8 +174,8 @@ export class CanupClient {
     slug: string,
     code: string,
     language: string,
-  ): Promise<{ action: ActionSummary; lambdaReady: boolean }> {
-    return this.request(
+  ): Promise<DeployActionResult> {
+    return this.request<DeployActionResult>(
       `/${API_VERSION}/apps/${encodeURIComponent(appId)}/actions/${encodeURIComponent(slug)}`,
       {
         method: 'PUT',
@@ -295,23 +187,25 @@ export class CanupClient {
   /**
    * List all actions for the app.
    */
-  async listActions(appId: string): Promise<ActionSummary[]> {
-    return this.request(`/${API_VERSION}/apps/${encodeURIComponent(appId)}/actions`);
+  async listActions(appId: string): Promise<Action[]> {
+    return this.request<Action[]>(`/${API_VERSION}/apps/${encodeURIComponent(appId)}/actions`);
   }
 
   /**
    * List all actions with their script content included.
    * Used by the pull command to download action scripts.
    */
-  async listActionsWithScript(appId: string): Promise<ActionWithScript[]> {
-    return this.request(`/${API_VERSION}/apps/${encodeURIComponent(appId)}/actions?include=script`);
+  async listActionsWithScript(appId: string): Promise<Action[]> {
+    return this.request<Action[]>(
+      `/${API_VERSION}/apps/${encodeURIComponent(appId)}/actions?include=script`,
+    );
   }
 
   /**
    * Delete an action by slug.
    */
-  async deleteAction(appId: string, slug: string): Promise<{ deleted: string }> {
-    return this.request<{ deleted: string }>(
+  async deleteAction(appId: string, slug: string): Promise<DeleteActionResult> {
+    return this.request<DeleteActionResult>(
       `/${API_VERSION}/apps/${encodeURIComponent(appId)}/actions/${encodeURIComponent(slug)}`,
       { method: 'DELETE' },
     );
@@ -325,7 +219,7 @@ export class CanupClient {
    *
    * Script errors return HTTP 422 with { ok: false, error: { ... } } — a
    * valid test result, not an API failure. We read the body on 422 and return
-   * the TestError envelope. Any other non-2xx status is a real API error.
+   * the error envelope. Any other non-2xx status is a real API error.
    */
   async testCode(
     appId: string,
@@ -342,16 +236,14 @@ export class CanupClient {
 
     // 422 = script error — a valid test result, not an API failure
     if (res.status === 422) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- generic JSON response
-      return await res.json();
+      return (await res.json()) as TestResult;
     }
 
     if (!res.ok) {
       // Real HTTP-level error (401, 404, 500, etc.)
       let body: { error?: { type?: string; message?: string } } | undefined;
       try {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Fetch .json() returns any
-        body = await res.json();
+        body = (await res.json()) as { error?: { type?: string; message?: string } };
       } catch {
         // non-JSON error response
       }
@@ -364,8 +256,7 @@ export class CanupClient {
       throw error;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- generic JSON response
-    return await res.json();
+    return (await res.json()) as TestResult;
   }
 
   // ──────────────────────────────────────────────
@@ -380,7 +271,7 @@ export class CanupClient {
     appId: string,
     slug?: string,
     options?: { limit?: number; cursor?: string; search?: string },
-  ): Promise<{ items: InvocationSummary[]; nextCursor: string | null }> {
+  ): Promise<CursorPage<InvocationSummary>> {
     const params = new URLSearchParams();
     params.set('appId', appId);
     if (slug) params.set('action', slug);
@@ -405,12 +296,8 @@ export class CanupClient {
   /**
    * Set (create or update) a secret.
    */
-  async setSecret(
-    appId: string,
-    name: string,
-    value: string,
-  ): Promise<{ name: string; created: boolean; synced: boolean }> {
-    return this.request<{ name: string; created: boolean; synced: boolean }>(
+  async setSecret(appId: string, name: string, value: string): Promise<SecretSetResult> {
+    return this.request<SecretSetResult>(
       `/${API_VERSION}/apps/${encodeURIComponent(appId)}/secrets/${encodeURIComponent(name)}`,
       {
         method: 'PUT',
@@ -423,17 +310,15 @@ export class CanupClient {
    * List all secrets for the app (values masked).
    * Response is camelCase from server.
    */
-  async listSecrets(
-    appId: string,
-  ): Promise<{ name: string; maskedValue: string; updatedAt: string }[]> {
+  async listSecrets(appId: string): Promise<SecretEntry[]> {
     return this.request(`/${API_VERSION}/apps/${encodeURIComponent(appId)}/secrets`);
   }
 
   /**
    * Delete a secret by name.
    */
-  async deleteSecret(appId: string, name: string): Promise<{ deleted: string; synced: boolean }> {
-    return this.request<{ deleted: string; synced: boolean }>(
+  async deleteSecret(appId: string, name: string): Promise<SecretDeleteResult> {
+    return this.request<SecretDeleteResult>(
       `/${API_VERSION}/apps/${encodeURIComponent(appId)}/secrets/${encodeURIComponent(name)}`,
       { method: 'DELETE' },
     );
@@ -450,9 +335,9 @@ export class CanupClient {
   async addDeps(
     appId: string,
     language: string,
-    packages: { name: string; version?: string }[],
-  ): Promise<AddDepsResult> {
-    return this.request<AddDepsResult>(
+    packages: PackageSpec[],
+  ): Promise<PackagesAddResult> {
+    return this.request<PackagesAddResult>(
       `/${API_VERSION}/apps/${encodeURIComponent(appId)}/deps/${encodeURIComponent(language)}`,
       {
         method: 'POST',
@@ -464,8 +349,8 @@ export class CanupClient {
   /**
    * List installed packages for an app+language.
    */
-  async listDeps(appId: string, language: string): Promise<ListDepsResult> {
-    return this.request<ListDepsResult>(
+  async listDeps(appId: string, language: string): Promise<PackageList> {
+    return this.request<PackageList>(
       `/${API_VERSION}/apps/${encodeURIComponent(appId)}/deps/${encodeURIComponent(language)}`,
     );
   }
@@ -474,8 +359,12 @@ export class CanupClient {
    * Remove a single package by name.
    * May trigger a rebuild if packages remain.
    */
-  async removeDep(appId: string, language: string, packageName: string): Promise<RemoveDepResult> {
-    return this.request<RemoveDepResult>(
+  async removeDep(
+    appId: string,
+    language: string,
+    packageName: string,
+  ): Promise<PackageRemoveResult> {
+    return this.request<PackageRemoveResult>(
       `/${API_VERSION}/apps/${encodeURIComponent(appId)}/deps/${encodeURIComponent(language)}/${encodeURIComponent(packageName)}`,
       { method: 'DELETE' },
     );
@@ -484,8 +373,8 @@ export class CanupClient {
   /**
    * Clear all packages for an app+language and detach the layer.
    */
-  async clearDeps(appId: string, language: string): Promise<{ cleared: boolean }> {
-    return this.request<{ cleared: boolean }>(
+  async clearDeps(appId: string, language: string): Promise<DepsClearResult> {
+    return this.request<DepsClearResult>(
       `/${API_VERSION}/apps/${encodeURIComponent(appId)}/deps/${encodeURIComponent(language)}`,
       { method: 'DELETE' },
     );
@@ -494,8 +383,8 @@ export class CanupClient {
   /**
    * Poll build status for a specific build.
    */
-  async getBuildStatus(appId: string, language: string, buildId: string): Promise<BuildStatus> {
-    return this.request<BuildStatus>(
+  async getBuildStatus(appId: string, language: string, buildId: string): Promise<Build> {
+    return this.request<Build>(
       `/${API_VERSION}/apps/${encodeURIComponent(appId)}/deps/${encodeURIComponent(language)}/builds/${encodeURIComponent(buildId)}`,
     );
   }
@@ -508,8 +397,8 @@ export class CanupClient {
    * Connect a Stripe API key to an app.
    * Validates the key, checks permissions, creates webhook endpoint.
    */
-  async connectStripe(appId: string, apiKey: string): Promise<{ connected: boolean }> {
-    return this.request<{ connected: boolean }>(
+  async connectStripe(appId: string, apiKey: string): Promise<StripeConnectResult> {
+    return this.request<StripeConnectResult>(
       `/${API_VERSION}/apps/${encodeURIComponent(appId)}/stripe/api-key`,
       { method: 'PUT', body: JSON.stringify({ apiKey }) },
     );
@@ -518,11 +407,7 @@ export class CanupClient {
   /**
    * Get Stripe connection status for an app.
    */
-  async stripeStatus(appId: string): Promise<{
-    connected: boolean;
-    maskedKey?: string;
-    webhookUrl?: string;
-  }> {
+  async stripeStatus(appId: string): Promise<StripeStatusResult> {
     return this.request(`/${API_VERSION}/apps/${encodeURIComponent(appId)}/stripe`);
   }
 
@@ -530,8 +415,8 @@ export class CanupClient {
    * Disconnect Stripe from an app.
    * Removes webhook endpoint and clears stored key.
    */
-  async disconnectStripe(appId: string): Promise<{ disconnected: boolean }> {
-    return this.request<{ disconnected: boolean }>(
+  async disconnectStripe(appId: string): Promise<StripeDisconnectResult> {
+    return this.request<StripeDisconnectResult>(
       `/${API_VERSION}/apps/${encodeURIComponent(appId)}/stripe`,
       {
         method: 'DELETE',

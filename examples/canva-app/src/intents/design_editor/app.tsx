@@ -19,10 +19,10 @@ export function App() {
   const isSupported = useFeatureSupport();
   const addElement = [addElementAtPoint, addElementAtCursor].find((fn) => isSupported(fn));
 
-  const handleResult = async (data: { result: unknown; durationMs: number }) => {
+  const handleResult = async (actionResult: unknown) => {
     const text =
-      data.result && typeof data.result === 'object' && 'text' in data.result
-        ? String((data.result as { text: unknown }).text)
+      actionResult && typeof actionResult === 'object' && 'text' in actionResult
+        ? String((actionResult as { text: unknown }).text)
         : null;
 
     if (text == null) {

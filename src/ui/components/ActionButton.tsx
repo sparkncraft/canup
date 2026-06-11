@@ -3,7 +3,6 @@ import { Button } from '@canva/app-ui-kit';
 import { useAction } from '../hooks/use-action.js';
 import { useCredits } from '../hooks/use-credits.js';
 import { type CanupError, toCanupError } from '../errors.js';
-import type { ActionResult } from '../types.js';
 
 type CanvaButtonProps = ComponentProps<typeof Button>;
 
@@ -18,7 +17,7 @@ export type ActionButtonProps = DistributiveOmit<
   params?: Record<string, unknown>;
   /** Fires synchronously when the user clicks, before the action runs. Useful for starting an external timer or progress UI. */
   onStart?: () => void;
-  onResult?: (data: ActionResult) => void;
+  onResult?: (result: unknown) => void;
   onError?: (error: CanupError) => void;
   /** Fires after the action settles (success or error). Pair with `onStart` to bracket consumer-side loading state. */
   onSettled?: () => void;

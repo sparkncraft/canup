@@ -27,11 +27,10 @@ describe('actions invocations command', () => {
           durationMs: 150,
           errorType: null,
           createdAt: new Date().toISOString(),
-          source: 'api',
+          source: 'canva',
         },
       ],
       nextCursor: null,
-      hasMore: false,
     });
 
     const { formatTable } = await import('../../ui/output.js');
@@ -65,7 +64,7 @@ describe('actions invocations command', () => {
       durationMs: 42,
       errorType: null,
       createdAt: '2026-01-15T12:00:00Z',
-      source: 'api',
+      source: 'canva',
       detail: null,
     });
 
@@ -125,7 +124,7 @@ describe('actions invocations command', () => {
   });
 
   test('shows info message for empty execution list', async ({ client, output, processMocks }) => {
-    client.listInvocations.mockResolvedValue({ items: [], nextCursor: null, hasMore: false });
+    client.listInvocations.mockResolvedValue({ items: [], nextCursor: null });
 
     const { Command } = await import('commander');
     const { registerActionsInvocationsAction } =
@@ -152,11 +151,10 @@ describe('actions invocations command', () => {
           durationMs: 0,
           errorType: null,
           createdAt: '2026-01-15T12:00:00Z',
-          source: 'api',
+          source: 'canva',
         },
       ],
       nextCursor: null,
-      hasMore: false,
     });
 
     const { formatTable } = await import('../../ui/output.js');
@@ -233,7 +231,7 @@ describe('actions invocations command', () => {
           durationMs: 10,
           errorType: null,
           createdAt: new Date(now - 30 * 1000).toISOString(),
-          source: 'api',
+          source: 'canva',
         },
         {
           id: 'aaaaaaaa-0000-0000-0000-000000000002',
@@ -242,7 +240,7 @@ describe('actions invocations command', () => {
           durationMs: 20,
           errorType: null,
           createdAt: new Date(now - 5 * 60 * 1000).toISOString(),
-          source: 'api',
+          source: 'canva',
         },
         {
           id: 'aaaaaaaa-0000-0000-0000-000000000003',
@@ -264,7 +262,6 @@ describe('actions invocations command', () => {
         },
       ],
       nextCursor: null,
-      hasMore: false,
     });
 
     const { formatTable } = await import('../../ui/output.js');
@@ -289,7 +286,7 @@ describe('actions invocations command', () => {
 
   test('passes slug filter and limit option to API', async ({ client, output, processMocks }) => {
     output.formatTable.mockReturnValue('table-output');
-    client.listInvocations.mockResolvedValue({ items: [], nextCursor: null, hasMore: false });
+    client.listInvocations.mockResolvedValue({ items: [], nextCursor: null });
 
     const { Command } = await import('commander');
     const { registerActionsInvocationsAction } =
@@ -317,11 +314,10 @@ describe('actions invocations command', () => {
           durationMs: 150,
           errorType: null,
           createdAt: new Date().toISOString(),
-          source: 'api',
+          source: 'canva',
         },
       ],
       nextCursor: null,
-      hasMore: false,
     });
 
     const { Command } = await import('commander');
@@ -342,7 +338,7 @@ describe('actions invocations command', () => {
   });
 
   test('shows hint when empty list with slug filter', async ({ client, output, processMocks }) => {
-    client.listInvocations.mockResolvedValue({ items: [], nextCursor: null, hasMore: false });
+    client.listInvocations.mockResolvedValue({ items: [], nextCursor: null });
 
     const { Command } = await import('commander');
     const { registerActionsInvocationsAction } =

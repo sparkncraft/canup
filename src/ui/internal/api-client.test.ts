@@ -94,18 +94,11 @@ describe('api-client', () => {
       });
     });
 
-    test('throws CanupError with type CREDITS_EXHAUSTED on 403', async () => {
+    test('throws CanupError with type + message from a CREDITS_EXHAUSTED error envelope', async () => {
       server.use(
         http.post(`${BASE_URL}/run/my-action`, () =>
           HttpResponse.json(
-            {
-              ok: false,
-              error: {
-                type: 'CREDITS_EXHAUSTED',
-                message: 'Credits exhausted',
-                details: { quota: 10, used: 10, remaining: 0 },
-              },
-            },
+            { ok: false, error: { type: 'CREDITS_EXHAUSTED', message: 'Credits exhausted' } },
             { status: 403 },
           ),
         ),
@@ -119,7 +112,7 @@ describe('api-client', () => {
       } catch (err) {
         expect(err).toBeInstanceOf(CanupError);
         expect((err as CanupError).type).toBe('CREDITS_EXHAUSTED');
-        expect((err as CanupError).details).toEqual({ quota: 10, used: 10, remaining: 0 });
+        expect((err as CanupError).message).toBe('Credits exhausted');
       }
     });
 

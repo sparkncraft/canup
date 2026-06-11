@@ -621,7 +621,7 @@ describe('CanupClient', () => {
 
   describe('listInvocations', () => {
     test('sends GET to /v1/invocations with appId', async () => {
-      const response = { items: [], nextCursor: null, hasMore: false };
+      const response = { items: [], nextCursor: null };
       mockFetch.mockResolvedValueOnce(okResponse(response));
       const client = createClient();
       await client.listInvocations('a1');
@@ -630,7 +630,7 @@ describe('CanupClient', () => {
     });
 
     test('includes action param when slug is provided', async () => {
-      const response = { items: [], nextCursor: null, hasMore: false };
+      const response = { items: [], nextCursor: null };
       mockFetch.mockResolvedValueOnce(okResponse(response));
       const client = createClient();
       await client.listInvocations('a1', 'greet');
@@ -639,7 +639,7 @@ describe('CanupClient', () => {
     });
 
     test('appends limit and cursor as query params', async () => {
-      const response = { items: [], nextCursor: null, hasMore: false };
+      const response = { items: [], nextCursor: null };
       mockFetch.mockResolvedValueOnce(okResponse(response));
       const client = createClient();
       await client.listInvocations('a1', undefined, { limit: 10, cursor: 'abc123' });
@@ -648,7 +648,7 @@ describe('CanupClient', () => {
     });
 
     test('appends search as query param when provided', async () => {
-      const response = { items: [], nextCursor: null, hasMore: false };
+      const response = { items: [], nextCursor: null };
       mockFetch.mockResolvedValueOnce(okResponse(response));
       const client = createClient();
       await client.listInvocations('a1', undefined, { search: 'timeout error' });
@@ -666,11 +666,12 @@ describe('CanupClient', () => {
             durationMs: 100,
             errorType: null,
             createdAt: '2026-01-01T00:00:00Z',
-            source: 'cli',
+            source: 'canva',
+            canvaUserId: 'user-1',
+            canvaBrandId: 'brand-1',
           },
         ],
         nextCursor: 'next-page',
-        hasMore: true,
       };
       mockFetch.mockResolvedValueOnce(okResponse(response));
       const client = createClient();
@@ -691,7 +692,9 @@ describe('CanupClient', () => {
         durationMs: 50,
         errorType: null,
         createdAt: '2026-01-01T00:00:00Z',
-        source: 'cli',
+        source: 'canva',
+        canvaUserId: 'user-1',
+        canvaBrandId: 'brand-1',
         detail: null,
       };
       mockFetch.mockResolvedValueOnce(okResponse(detail));
@@ -856,9 +859,9 @@ describe('CanupClient', () => {
   describe('stripeStatus', () => {
     test('sends GET to /v1/apps/:appId/stripe', async () => {
       const status = {
-        connected: true,
+        state: 'healthy',
         maskedKey: 'sk_test_****xxx',
-        webhookUrl: 'https://canup.link/wh/123',
+        lastCheckedAt: '2026-06-01T00:00:00.000Z',
       };
       mockFetch.mockResolvedValueOnce(okResponse(status));
       const client = createClient();

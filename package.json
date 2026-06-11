@@ -68,8 +68,7 @@
     "eventsource": "^4.1.0",
     "open": "^10.1.0",
     "ora": "^9.3.0",
-    "tsx": "^4.19.4",
-    "zod": "^3.24.2"
+    "tsx": "^4.19.4"
   },
   "peerDependencies": {
     "@canva/app-i18n-kit": "^1.2.0",
@@ -101,6 +100,7 @@
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.2",
+    "@canup/types": "^0.1.0",
     "@canva/app-i18n-kit": "^1.2.0",
     "@canva/app-ui-kit": "^5.9.0",
     "@canva/platform": "^2.2.2",

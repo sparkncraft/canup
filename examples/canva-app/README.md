@@ -64,8 +64,8 @@ import type { CanupError } from 'canup';
 <ActionButton
   action="generate-text"
   params={{ prompt }}
-  onResult={async (data) => {
-    const { text } = data.result as { text: string };
+  onResult={async (result) => {
+    const { text } = result as { text: string };
     await addElement({ type: 'text', children: [text] });
   }}
   onError={(error: CanupError) => {
@@ -98,8 +98,8 @@ function MyComponent() {
   const { data, exhausted, refresh } = useCredits('generate-text');
 
   const handleClick = async () => {
-    const { result, durationMs } = await execute({ prompt: 'Hello' });
-    console.log(result, `completed in ${durationMs}ms`);
+    const result = await execute({ prompt: 'Hello' });
+    console.log(result);
   };
 
   return (

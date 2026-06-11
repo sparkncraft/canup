@@ -1,6 +1,6 @@
 import type { Command } from 'commander';
 import { requireClient } from '../../config/require-project.js';
-import { error, hint } from '../../ui/output.js';
+import { error, hint, warn, label } from '../../ui/output.js';
 
 export function registerStripeStatusAction(stripeCommand: Command): void {
   stripeCommand
@@ -10,19 +10,37 @@ export function registerStripeStatusAction(stripeCommand: Command): void {
       const { config, client } = requireClient();
 
       try {
-        const result = await client.stripeStatus(config.appId);
+        const status = await client.stripeStatus(config.appId);
 
-        if (result.connected) {
-          console.log(`Stripe: Connected`);
-          if (result.maskedKey) {
-            console.log(`API Key: ${result.maskedKey}`);
-          }
-          if (result.webhookUrl) {
-            console.log(`Webhook: ${result.webhookUrl}`);
-          }
-        } else {
+        if (status.state === 'not_connected') {
           console.log('Stripe: Not connected');
           hint('Run `canup stripe connect` to connect your Stripe account.');
+          return;
+        }
+
+        console.log('Stripe: Connected');
+        if (status.maskedKey) {
+          label('API Key', status.maskedKey);
+        }
+
+        switch (status.state) {
+          case 'healthy':
+            label('Health', 'Healthy');
+            break;
+          case 'unknown':
+            label('Health', 'Not checked yet');
+            break;
+          case 'key_invalid':
+            warn('The stored API key was rejected by Stripe.');
+            hint('Run `canup stripe connect` with a valid key to reconnect.');
+            break;
+          case 'webhook_broken':
+            warn('Webhook delivery is impaired — subscription events may be delayed.');
+            break;
+        }
+
+        if (status.lastCheckedAt) {
+          label('Last checked', status.lastCheckedAt);
         }
       } catch (err) {
         const e = err as Error;
