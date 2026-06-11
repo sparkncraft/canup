@@ -241,18 +241,18 @@ export class CanupClient {
 
     if (!res.ok) {
       // Real HTTP-level error (401, 404, 500, etc.)
-      let body: { error?: { type?: string; message?: string } } | undefined;
+      let body: { error?: { code?: string; message?: string } } | undefined;
       try {
-        body = (await res.json()) as { error?: { type?: string; message?: string } };
+        body = (await res.json()) as { error?: { code?: string; message?: string } };
       } catch {
         // non-JSON error response
       }
       const error = new Error(body?.error?.message ?? res.statusText) as Error & {
         statusCode: number;
-        errorType: string;
+        errorCode: string;
       };
       error.statusCode = res.status;
-      error.errorType = body?.error?.type ?? 'HttpError';
+      error.errorCode = body?.error?.code ?? 'HttpError';
       throw error;
     }
 
@@ -463,10 +463,10 @@ export class CanupClient {
     if (!body.ok) {
       const error = new Error(body.error.message) as Error & {
         statusCode: number;
-        errorType: string;
+        errorCode: string;
       };
       error.statusCode = res.status;
-      error.errorType = body.error.type;
+      error.errorCode = body.error.code;
       throw error;
     }
 

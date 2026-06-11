@@ -65,7 +65,21 @@ describe('api-client', () => {
       server.use(
         http.post(`${BASE_URL}/run/my-action`, async ({ request }) => {
           capturedBody = await request.json();
-          return HttpResponse.json({ ok: true, data: { result: 'ok', durationMs: 1 } });
+          return HttpResponse.json({
+            ok: true,
+            data: {
+              credits: {
+                subscribed: false,
+                quota: 100,
+                used: 5,
+                remaining: 95,
+                resetAt: null,
+                interval: 'monthly',
+                billingAvailable: true,
+              },
+              result: 'ok',
+            },
+          });
         }),
       );
 
@@ -75,12 +89,21 @@ describe('api-client', () => {
       expect(capturedBody).toEqual({ params: {} });
     });
 
-    test('returns { result, durationMs } on success', async () => {
+    test('returns RunResult { credits, result } on success', async () => {
+      const credits = {
+        subscribed: false,
+        quota: 100,
+        used: 5,
+        remaining: 95,
+        resetAt: null,
+        interval: 'monthly',
+        billingAvailable: true,
+      };
       server.use(
         http.post(`${BASE_URL}/run/my-action`, () =>
           HttpResponse.json({
             ok: true,
-            data: { result: { imageUrl: 'https://example.com/img.png' }, durationMs: 150 },
+            data: { credits, result: { imageUrl: 'https://example.com/img.png' } },
           }),
         ),
       );
@@ -89,16 +112,16 @@ describe('api-client', () => {
       const result = await runAction('my-action');
 
       expect(result).toEqual({
+        credits,
         result: { imageUrl: 'https://example.com/img.png' },
-        durationMs: 150,
       });
     });
 
-    test('throws CanupError with type + message from a CREDITS_EXHAUSTED error envelope', async () => {
+    test('throws CanupError with code + message from a CREDITS_EXHAUSTED error envelope', async () => {
       server.use(
         http.post(`${BASE_URL}/run/my-action`, () =>
           HttpResponse.json(
-            { ok: false, error: { type: 'CREDITS_EXHAUSTED', message: 'Credits exhausted' } },
+            { ok: false, error: { code: 'CREDITS_EXHAUSTED', message: 'Credits exhausted' } },
             { status: 403 },
           ),
         ),
@@ -111,16 +134,16 @@ describe('api-client', () => {
         expect.fail('should have thrown');
       } catch (err) {
         expect(err).toBeInstanceOf(CanupError);
-        expect((err as CanupError).type).toBe('CREDITS_EXHAUSTED');
+        expect((err as CanupError).code).toBe('CREDITS_EXHAUSTED');
         expect((err as CanupError).message).toBe('Credits exhausted');
       }
     });
 
-    test('throws CanupError with type ACTION_NOT_FOUND on 404', async () => {
+    test('throws CanupError with code ACTION_NOT_FOUND on 404', async () => {
       server.use(
         http.post(`${BASE_URL}/run/missing`, () =>
           HttpResponse.json(
-            { ok: false, error: { type: 'ACTION_NOT_FOUND', message: 'Action not found' } },
+            { ok: false, error: { code: 'ACTION_NOT_FOUND', message: 'Action not found' } },
             { status: 404 },
           ),
         ),
@@ -133,7 +156,7 @@ describe('api-client', () => {
         expect.fail('should have thrown');
       } catch (err) {
         expect(err).toBeInstanceOf(CanupError);
-        expect((err as CanupError).type).toBe('ACTION_NOT_FOUND');
+        expect((err as CanupError).code).toBe('ACTION_NOT_FOUND');
       }
     });
   });
@@ -199,7 +222,7 @@ describe('api-client', () => {
       server.use(
         http.get(`${BASE_URL}/run/my-action/credits`, () =>
           HttpResponse.json(
-            { ok: false, error: { type: 'HTTP_ERROR', message: 'Unauthorized' } },
+            { ok: false, error: { code: 'HTTP_ERROR', message: 'Unauthorized' } },
             { status: 401 },
           ),
         ),
@@ -212,7 +235,7 @@ describe('api-client', () => {
         expect.fail('should have thrown');
       } catch (err) {
         expect(err).toBeInstanceOf(CanupError);
-        expect((err as CanupError).type).toBe('HTTP_ERROR');
+        expect((err as CanupError).code).toBe('HTTP_ERROR');
       }
     });
   });
@@ -242,7 +265,7 @@ describe('api-client', () => {
       server.use(
         http.post(`${BASE_URL}/subscribe/link`, () =>
           HttpResponse.json(
-            { ok: false, error: { type: 'HTTP_ERROR', message: 'Unauthorized' } },
+            { ok: false, error: { code: 'HTTP_ERROR', message: 'Unauthorized' } },
             { status: 401 },
           ),
         ),

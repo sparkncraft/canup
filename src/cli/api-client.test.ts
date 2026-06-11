@@ -23,11 +23,11 @@ function okResponse<T>(data: T) {
 }
 
 /** Return an API error envelope wrapped in a fetch Response-like object. */
-function errorResponse(type: string, message: string, status = 400) {
+function errorResponse(code: string, message: string, status = 400) {
   return {
     ok: false,
     status,
-    json: () => Promise.resolve({ ok: false, error: { type, message } }),
+    json: () => Promise.resolve({ ok: false, error: { code, message } }),
   };
 }
 
@@ -228,18 +228,18 @@ describe('CanupClient', () => {
   // ──── Error handling (via request()) ────
 
   describe('error handling via request()', () => {
-    test('throws with statusCode and errorType on API error envelope', async () => {
+    test('throws with statusCode and errorCode on API error envelope', async () => {
       mockFetch.mockResolvedValueOnce(errorResponse('NotFoundError', 'App not found', 404));
       const client = createClient();
 
-      const err: Error & { statusCode?: number; errorType?: string } = await client
+      const err: Error & { statusCode?: number; errorCode?: string } = await client
         .getMe()
-        .catch((e: unknown) => e as Error & { statusCode?: number; errorType?: string });
+        .catch((e: unknown) => e as Error & { statusCode?: number; errorCode?: string });
 
       expect(err).toBeInstanceOf(Error);
       expect(err.message).toBe('App not found');
       expect(err.statusCode).toBe(404);
-      expect(err.errorType).toBe('NotFoundError');
+      expect(err.errorCode).toBe('NotFoundError');
     });
 
     test('error message matches the API error message', async () => {
@@ -549,23 +549,23 @@ describe('CanupClient', () => {
       expect(result).toHaveProperty('ok', false);
     });
 
-    test('throws on HTTP error with statusCode and errorType', async () => {
+    test('throws on HTTP error with statusCode and errorCode', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
         statusText: 'Unauthorized',
-        json: () => Promise.resolve({ error: { type: 'AuthError', message: 'Invalid token' } }),
+        json: () => Promise.resolve({ error: { code: 'AuthError', message: 'Invalid token' } }),
       });
       const client = createClient();
 
-      const err: Error & { statusCode?: number; errorType?: string } = await client
+      const err: Error & { statusCode?: number; errorCode?: string } = await client
         .testCode('a1', 'code', 'nodejs', {})
-        .catch((e: unknown) => e as Error & { statusCode?: number; errorType?: string });
+        .catch((e: unknown) => e as Error & { statusCode?: number; errorCode?: string });
 
       expect(err).toBeInstanceOf(Error);
       expect(err.message).toBe('Invalid token');
       expect(err.statusCode).toBe(401);
-      expect(err.errorType).toBe('AuthError');
+      expect(err.errorCode).toBe('AuthError');
     });
 
     test('falls back to statusText and HttpError when response is not JSON', async () => {
@@ -577,13 +577,13 @@ describe('CanupClient', () => {
       });
       const client = createClient();
 
-      const err: Error & { statusCode?: number; errorType?: string } = await client
+      const err: Error & { statusCode?: number; errorCode?: string } = await client
         .testCode('a1', 'code', 'nodejs', {})
-        .catch((e: unknown) => e as Error & { statusCode?: number; errorType?: string });
+        .catch((e: unknown) => e as Error & { statusCode?: number; errorCode?: string });
 
       expect(err.message).toBe('Internal Server Error');
       expect(err.statusCode).toBe(500);
-      expect(err.errorType).toBe('HttpError');
+      expect(err.errorCode).toBe('HttpError');
     });
 
     test('sends Authorization header when token is set', async () => {

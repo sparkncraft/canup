@@ -58,8 +58,8 @@ describe('stripe connect command', () => {
 
   test('shows error for invalid Stripe key', async ({ client, output, processMocks }) => {
     mockReadSecretInput.mockResolvedValue('sk_bad');
-    const err = new Error('Invalid API key') as Error & { errorType: string };
-    err.errorType = 'STRIPE_KEY_INVALID';
+    const err = new Error('Invalid API key') as Error & { errorCode: string };
+    err.errorCode = 'STRIPE_KEY_INVALID';
     client.connectStripe.mockRejectedValue(err);
 
     const { Command } = await import('commander');
@@ -80,9 +80,9 @@ describe('stripe connect command', () => {
   test('shows error for permission issue', async ({ client, output, processMocks }) => {
     mockReadSecretInput.mockResolvedValue('sk_test_limited');
     const err = new Error('Missing: charges:read, subscriptions:read') as Error & {
-      errorType: string;
+      errorCode: string;
     };
-    err.errorType = 'STRIPE_PERMISSION_ERROR';
+    err.errorCode = 'STRIPE_PERMISSION_ERROR';
     client.connectStripe.mockRejectedValue(err);
 
     const { Command } = await import('commander');

@@ -119,7 +119,7 @@ describe('useAction', () => {
     await waitFor(() => {
       expect(result.current.error).toBeInstanceOf(CanupError);
     });
-    expect(result.current.error!.type).toBe('ACTION_NOT_FOUND');
+    expect(result.current.error!.code).toBe('ACTION_NOT_FOUND');
   });
 
   test('on non-CanupError, error is wrapped in CanupError("NETWORK_ERROR")', async () => {
@@ -138,7 +138,7 @@ describe('useAction', () => {
     await waitFor(() => {
       expect(result.current.error).toBeInstanceOf(CanupError);
     });
-    expect(result.current.error!.type).toBe('NETWORK_ERROR');
+    expect(result.current.error!.code).toBe('NETWORK_ERROR');
     expect(result.current.error!.message).toBe('Network timeout');
   });
 

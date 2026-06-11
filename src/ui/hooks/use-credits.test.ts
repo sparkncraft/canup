@@ -153,7 +153,7 @@ describe('useCredits', () => {
     expect(result.current.data).toBeNull();
     expect(result.current.exhausted).toBe(false);
     expect(result.current.error).not.toBeNull();
-    expect(result.current.error!.type).toBe('NETWORK_ERROR');
+    expect(result.current.error!.code).toBe('NETWORK_ERROR');
     expect(result.current.error!.message).toBe('Network error');
   });
 

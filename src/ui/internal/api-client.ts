@@ -34,7 +34,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   }
 
   if (!json.ok) {
-    throw new CanupError(json.error.type, json.error.message);
+    throw new CanupError(json.error.code, json.error.message);
   }
 
   return json.data;
