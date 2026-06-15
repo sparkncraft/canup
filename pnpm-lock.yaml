@@ -32,13 +32,13 @@ importers:
       tsx:
         specifier: ^4.19.4
         version: 4.21.0
-      zod:
-        specifier: ^3.24.2
-        version: 3.25.76
     devDependencies:
       '@arethetypeswrong/cli':
         specifier: ^0.18.2
         version: 0.18.2
+      '@canup/types':
+        specifier: ^0.1.0
+        version: 0.1.0
       '@canva/app-i18n-kit':
         specifier: ^1.2.0
         version: 1.2.0(@formatjs/intl@3.1.8(typescript@5.9.3))(intl-messageformat@10.7.18)(react-dom@19.2.4(react@19.2.4))(react-intl@7.1.11(react@19.2.4)(typescript@5.9.3))(react@19.2.4)
@@ -278,6 +278,9 @@ packages:
 
   '@braidai/lang@1.1.2':
     resolution: {integrity: sha512-qBcknbBufNHlui137Hft8xauQMTZDKdophmLFv05r2eNmdIv/MlPuP4TdUknHG68UdWLgVZwgxVe735HzJNIwA==}
+
+  '@canup/types@0.1.0':
+    resolution: {integrity: sha512-Os0udPNvj6wF4mm0FfV/A0oLVOn9gIYkdOj4+aQQl6MtRy/GSfPZQSERI9B54jsk99hlphdY9m2VFsc8UtAWGg==}
 
   '@canva/app-hooks@0.0.0-beta.4':
     resolution: {integrity: sha512-QPIoVyIRz55Ta0PNxD07OHvyGOD7R1irwEPfs1T7At21TJHFAnlTt/Je8IfZcm6lrNR6oOSBBZrRiFeJA49PEg==}
@@ -4130,9 +4133,6 @@ packages:
     resolution: {integrity: sha512-CzhO+pFNo8ajLM2d2IW/R93ipy99LWjtwblvC1RsoSUMZgyLbYFr221TnSNT7GjGdYui6P459mw9JH/g/zW2ug==}
     engines: {node: '>=18'}
 
-  zod@3.25.76:
-    resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
-
 snapshots:
 
   '@andrewbranch/untar.js@1.0.3': {}
@@ -4212,6 +4212,8 @@ snapshots:
   '@bcoe/v8-coverage@1.0.2': {}
 
   '@braidai/lang@1.1.2': {}
+
+  '@canup/types@0.1.0': {}
 
   '@canva/app-hooks@0.0.0-beta.4(@canva/design@2.8.0(@canva/error@2.2.1))(@canva/platform@2.2.2(@canva/error@2.2.1))(react@19.2.4)':
     dependencies:
@@ -8107,5 +8109,3 @@ snapshots:
   yoctocolors-cjs@2.1.3: {}
 
   yoctocolors@2.1.2: {}
-
-  zod@3.25.76: {}
