@@ -1,3 +1,10 @@
+# Publishes `canup` to npm via Changesets + npm Trusted Publishing (OIDC).
+#
+# No npm token is used. Authentication happens through GitHub's OIDC token, which
+# npm exchanges for a short-lived publish credential (requires `id-token: write`
+# and a trusted publisher configured for this package on npmjs.com — see
+# RELEASING.md). Provenance is generated automatically because this is a public
+# repository.
 name: Release
 on:
   push:
@@ -17,7 +24,12 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-          registry-url: 'https://registry.npmjs.org'
+          # No `registry-url`: it writes an .npmrc with `_authToken=${NODE_AUTH_TOKEN}`
+          # that npm prefers over the OIDC token exchange, breaking trusted publishing.
+      # Runners bundle an older npm; trusted publishing needs npm >= 11.5.1, and
+      # pnpm delegates the publish + OIDC exchange to the npm CLI.
+      - name: Use npm >= 11.5.1
+        run: npm install -g npm@latest
       - run: pnpm install --frozen-lockfile
       - run: pnpm run build
       - run: pnpm run test
@@ -27,4 +39,4 @@ jobs:
           version: pnpm changeset version
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: true
