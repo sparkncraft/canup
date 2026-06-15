@@ -21,11 +21,9 @@ vi.mock('../../ui/output.js', () => output);
 describe('deps list command', () => {
   test('displays packages in a table when deps exist', async ({ client, output, processMocks }) => {
     client.listDeps.mockResolvedValue({
-      packages: [
-        { name: 'express', version: '4.18.2', createdAt: '2026-01-15' },
-        { name: 'lodash', version: null, createdAt: '2026-01-16' },
-      ],
+      packages: [{ name: 'express', version: '4.18.2' }, { name: 'lodash' }],
       layerSize: 5000,
+      layerArn: null,
     });
 
     const { Command } = await import('commander');
@@ -40,8 +38,11 @@ describe('deps list command', () => {
     expect(client.listDeps).toHaveBeenCalledWith('test-app-id', 'nodejs');
 
     expect(output.formatTable).toHaveBeenCalledWith(
-      ['Package', 'Version', 'Added'],
-      expect.arrayContaining([expect.arrayContaining(['express', '4.18.2'])]),
+      ['Package', 'Version'],
+      [
+        ['express', '4.18.2'],
+        ['lodash', 'latest'],
+      ],
     );
     expect(processMocks.log).toHaveBeenCalledWith('');
     expect(output.label).toHaveBeenCalledWith('Layer', expect.stringContaining('5000'));

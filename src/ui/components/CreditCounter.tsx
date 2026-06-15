@@ -1,8 +1,9 @@
-import { type ComponentProps, type ReactNode, useCallback } from 'react';
+import { type ComponentProps, type ReactNode, useCallback, useState } from 'react';
 import { Link, Rows, Text, TextPlaceholder } from '@canva/app-ui-kit';
 import { requestOpenExternalUrl } from '@canva/platform';
 import type { IntlShape } from 'react-intl';
 import { useCredits } from '../hooks/use-credits.js';
+import { fetchSubscribeLink, getBaseUrl } from '../internal/api-client.js';
 import { useIntl } from '../internal/i18n/use-intl.js';
 import { creditCounterMessages } from '../internal/i18n/messages.js';
 import type { CreditBalance } from '../types.js';
@@ -80,12 +81,26 @@ export function CreditCounter({
 }: CreditCounterProps) {
   const { data, loading } = useCredits(action);
   const intl = useIntl();
-  const billingUrl = data?.billingUrl ?? null;
+  const [opening, setOpening] = useState(false);
+  const billingAvailable = data?.billingAvailable ?? false;
 
-  const openUrl = useCallback(() => {
-    if (!billingUrl) return;
-    void requestOpenExternalUrl({ url: billingUrl });
-  }, [billingUrl]);
+  // Mint the subscribe link at click time (not on render) so the short-lived
+  // token it embeds is always fresh — there's no cached URL to go stale. Canva
+  // shows its own external-link consent (with the real, short minted URL), so
+  // the fetch-then-open gap is fine; we just guard against a double-mint while
+  // one request is in flight.
+  const openBilling = useCallback(async () => {
+    if (opening) return;
+    setOpening(true);
+    try {
+      const { url } = await fetchSubscribeLink();
+      await requestOpenExternalUrl({ url });
+    } catch {
+      // Best-effort: leave the CTA in place so the user can retry.
+    } finally {
+      setOpening(false);
+    }
+  }, [opening]);
 
   const rowsProps = { ...rest, spacing, align } satisfies CanvaRowsProps;
 
@@ -108,10 +123,10 @@ export function CreditCounter({
   const linkText = data.subscribed
     ? intl.formatMessage(creditCounterMessages.manageSubscription)
     : intl.formatMessage(creditCounterMessages.upgradeForMore);
-  const billingLink = billingUrl ? (
+  const billingLink = billingAvailable ? (
     <>
       {' '}
-      <Link href={billingUrl} requestOpenExternalUrl={openUrl}>
+      <Link href={`${getBaseUrl()}/subscribe`} requestOpenExternalUrl={openBilling}>
         {linkText}
       </Link>
     </>

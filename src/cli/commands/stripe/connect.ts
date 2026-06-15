@@ -28,11 +28,11 @@ export function registerStripeConnectAction(stripeCommand: Command): void {
         success('Stripe connected successfully.');
       } catch (err) {
         spin.fail('Connection failed');
-        const e = err as Error & { errorType?: string };
+        const e = err as Error & { errorCode?: string };
 
-        if (e.errorType === 'STRIPE_KEY_INVALID') {
+        if (e.errorCode === 'STRIPE_KEY_INVALID') {
           error('Invalid Stripe API key. Check that you copied the full key.');
-        } else if (e.errorType === 'STRIPE_PERMISSION_ERROR') {
+        } else if (e.errorCode === 'STRIPE_PERMISSION_ERROR') {
           error(`Stripe key lacks required permissions: ${e.message}`);
         } else {
           error(e.message);

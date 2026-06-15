@@ -1,11 +1,11 @@
 export class CanupError extends Error {
-  readonly type: string;
+  readonly code: string;
   readonly details?: Record<string, unknown>;
 
-  constructor(type: string, message: string, details?: Record<string, unknown>) {
+  constructor(code: string, message: string, details?: Record<string, unknown>) {
     super(message);
     this.name = 'CanupError';
-    this.type = type;
+    this.code = code;
     this.details = details;
   }
 }

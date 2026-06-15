@@ -5,7 +5,9 @@ export default defineConfig([
   {
     entry: { 'ui/index': 'src/ui/index.ts' },
     format: 'esm',
-    dts: true,
+    // eager: full tsc-driven declarations so the re-exported @canup/types types
+    // (e.g. CreditBalance) inline cleanly into the bundled .d.ts.
+    dts: { eager: true },
     platform: 'browser',
     deps: {
       neverBundle: [

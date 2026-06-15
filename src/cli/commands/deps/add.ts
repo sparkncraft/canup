@@ -25,24 +25,15 @@ export function registerDepsAddAction(depsCommand: Command): void {
           for (const pkg of result.packages) {
             label('Package', `${pkg.name}${pkg.version ? `@${pkg.version}` : ''}`);
           }
-          if (result.layerSize != null) {
-            label('Layer', `${formatBytes(result.layerSize)} / ${MAX_LAYER_SIZE_DISPLAY}`);
-          }
+          label('Layer', `${formatBytes(result.layerSize)} / ${MAX_LAYER_SIZE_DISPLAY}`);
           return;
         }
 
-        if (result.buildId) {
-          await pollLayerBuild(client, config.appId, language, result.buildId, {
-            progress: 'Building layer',
-            done: 'Layer built',
-          });
-          for (const pkg of result.packages) {
-            label('Package', `${pkg.name}${pkg.version ? `@${pkg.version}` : ''}`);
-          }
-          return;
-        }
-
-        // No build triggered, no cache -- just show packages
+        // Not cached: a build was kicked off — poll it, then list the packages.
+        await pollLayerBuild(client, config.appId, language, result.buildId, {
+          progress: 'Building layer',
+          done: 'Layer built',
+        });
         for (const pkg of result.packages) {
           label('Package', `${pkg.name}${pkg.version ? `@${pkg.version}` : ''}`);
         }

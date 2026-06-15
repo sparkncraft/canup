@@ -1,3 +1,4 @@
+import type { Language } from '@canup/types';
 import { formatBytes, type CanupClient } from '../../api-client.js';
 import { error } from '../../ui/output.js';
 import { createSpinner } from '../../ui/spinner.js';
@@ -5,10 +6,8 @@ import { createSpinner } from '../../ui/spinner.js';
 export const BUILD_POLL_INTERVAL_MS = 2000;
 export const MAX_LAYER_SIZE_DISPLAY = '250MB';
 
-export type DepLanguage = 'python' | 'nodejs';
-
 /** Validate the `--language` option, exiting with a message on anything else. */
-export function assertLanguage(language: string): asserts language is DepLanguage {
+export function assertLanguage(language: string): asserts language is Language {
   if (language !== 'python' && language !== 'nodejs') {
     error(`Invalid language: "${language}". Must be "python" or "nodejs".`);
     process.exit(1);
@@ -24,7 +23,7 @@ export function assertLanguage(language: string): asserts language is DepLanguag
 export async function pollLayerBuild(
   client: CanupClient,
   appId: string,
-  language: DepLanguage,
+  language: Language,
   buildId: string,
   { progress, done }: { progress: string; done: string },
 ): Promise<void> {

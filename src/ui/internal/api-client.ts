@@ -1,17 +1,13 @@
 import { getJwt } from './jwt-cache.js';
 import { CanupError, toCanupError } from '../errors.js';
-import type { CreditBalance, ActionResult } from '../types.js';
+import type { ApiResponse, CreditBalance, RunResult, SubscribeLinkResult } from '@canup/types';
 import { DEFAULT_API_URL } from '../../constants.js';
-
-type ApiResponse<T> =
-  | { ok: true; data: T }
-  | { ok: false; error?: { type: string; message: string; details?: Record<string, unknown> } };
 
 declare global {
   var __canup_url: string | undefined;
 }
 
-const getBaseUrl = (): string => globalThis.__canup_url ?? DEFAULT_API_URL;
+export const getBaseUrl = (): string => globalThis.__canup_url ?? DEFAULT_API_URL;
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   let res: Response;
@@ -38,11 +34,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   }
 
   if (!json.ok) {
-    throw new CanupError(
-      json.error?.type ?? 'HTTP_ERROR',
-      json.error?.message ?? `Request failed with status ${res.status}`,
-      json.error?.details,
-    );
+    throw new CanupError(json.error.code, json.error.message);
   }
 
   return json.data;
@@ -50,8 +42,16 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 
 export const fetchCredits = (action: string) => request<CreditBalance>(`/run/${action}/credits`);
 
+/**
+ * Mint a fresh subscribe link for the current end-user. Called at click time
+ * (not on render) so the short-lived token it embeds is always fresh — there's
+ * no URL cached in the component to go stale.
+ */
+export const fetchSubscribeLink = () =>
+  request<SubscribeLinkResult>(`/subscribe/link`, { method: 'POST' });
+
 export const runAction = (action: string, params?: Record<string, unknown>) =>
-  request<ActionResult>(`/run/${action}`, {
+  request<RunResult>(`/run/${action}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ params: params ?? {} }),

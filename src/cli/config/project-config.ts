@@ -1,6 +1,5 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join, parse, resolve } from 'node:path';
-import { z } from 'zod';
 import { hint } from '../ui/output.js';
 
 /**
@@ -15,16 +14,27 @@ export const CANUP_DIR = 'canup';
 export const CONFIG_FILE = 'canup.json';
 export const DEFAULT_ACTIONS_DIR = 'actions';
 
-const projectConfigSchema = z.object({
-  appId: z.string().min(1),
-  actions: z
-    .object({
-      dir: z.string(),
-    })
-    .optional(),
-});
+export interface ProjectConfig {
+  appId: string;
+  actions?: { dir: string };
+}
 
-export type ProjectConfig = z.infer<typeof projectConfigSchema>;
+/**
+ * Validate parsed JSON as a {@link ProjectConfig}. Returns the typed config or
+ * `null` if the shape is wrong: `appId` must be a non-empty string, and
+ * `actions`, when present, must carry a string `dir`. Unknown keys are ignored.
+ */
+function parseProjectConfig(value: unknown): ProjectConfig | null {
+  if (typeof value !== 'object' || value === null) return null;
+  const obj = value as Record<string, unknown>;
+  if (typeof obj.appId !== 'string' || obj.appId.length === 0) return null;
+
+  if (obj.actions === undefined) return { appId: obj.appId };
+  if (typeof obj.actions !== 'object' || obj.actions === null) return null;
+  const dir = (obj.actions as Record<string, unknown>).dir;
+  if (typeof dir !== 'string') return null;
+  return { appId: obj.appId, actions: { dir } };
+}
 
 export interface LoadedProject {
   config: ProjectConfig;
@@ -54,10 +64,9 @@ export function loadProjectConfig(): LoadedProject | null {
     if (existsSync(configPath)) {
       try {
         const raw = readFileSync(configPath, 'utf-8');
-        const parsed = JSON.parse(raw) as unknown;
-        const result = projectConfigSchema.safeParse(parsed);
-        if (result.success) {
-          return { config: result.data, projectRoot: dir, canupDir };
+        const config = parseProjectConfig(JSON.parse(raw) as unknown);
+        if (config) {
+          return { config, projectRoot: dir, canupDir };
         }
       } catch {
         // Invalid JSON or read error -- continue searching

@@ -23,8 +23,8 @@ export function registerDepsListAction(depsCommand: Command): void {
       }
 
       const table = formatTable(
-        ['Package', 'Version', 'Added'],
-        result.packages.map((pkg) => [pkg.name, pkg.version ?? 'latest', pkg.createdAt]),
+        ['Package', 'Version'],
+        result.packages.map((pkg) => [pkg.name, pkg.version ?? 'latest']),
       );
       console.log(table);
 

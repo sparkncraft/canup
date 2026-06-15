@@ -1,5 +1,5 @@
 import { describe, expect, test as baseTest, vi } from 'vitest';
-import { render, cleanup, fireEvent } from '@testing-library/react';
+import { render, cleanup, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
 import { IntlProvider } from 'react-intl';
 import { TestAppUiProvider } from '@canva/app-ui-kit';
@@ -7,6 +7,7 @@ import { renderWithCanva } from '#test/setup/ui.js';
 import { CreditCounter } from './CreditCounter.js';
 import { useCredits } from '../hooks/use-credits.js';
 import type { UseCreditsResult } from '../hooks/use-credits.js';
+import { fetchSubscribeLink, getBaseUrl } from '../internal/api-client.js';
 import type { CreditBalance } from '../types.js';
 
 vi.mock('../hooks/use-credits.js', () => ({
@@ -15,7 +16,14 @@ vi.mock('../hooks/use-credits.js', () => ({
 vi.mock('../internal/jwt-cache.js', () => ({
   getJwt: vi.fn().mockResolvedValue('mock-jwt'),
 }));
+vi.mock('../internal/api-client.js', () => ({
+  fetchSubscribeLink: vi.fn(),
+  getBaseUrl: vi.fn(),
+}));
 const mockUseCredits = vi.mocked(useCredits);
+
+const SUBSCRIBE_BASE = 'https://canup.link';
+const MINTED_URL = 'https://canup.link/subscribe/minted-tok';
 
 const mockBalance: CreditBalance = {
   subscribed: false,
@@ -24,7 +32,7 @@ const mockBalance: CreditBalance = {
   remaining: 90,
   resetAt: '2026-04-01T00:00:00Z',
   interval: 'monthly',
-  billingUrl: 'https://canup.link/subscribe/mock-jwt',
+  billingAvailable: true,
 };
 
 function mockCreditsReturn(overrides: Partial<UseCreditsResult> = {}): UseCreditsResult {
@@ -41,6 +49,9 @@ function mockCreditsReturn(overrides: Partial<UseCreditsResult> = {}): UseCredit
 const test = baseTest.extend('_rtl', [
   async ({}, use) => {
     mockUseCredits.mockReturnValue(mockCreditsReturn());
+    // Re-apply mock impls each test (global mockReset clears them).
+    vi.mocked(getBaseUrl).mockReturnValue(SUBSCRIBE_BASE);
+    vi.mocked(fetchSubscribeLink).mockResolvedValue({ url: MINTED_URL });
     await use();
     cleanup();
   },
@@ -169,7 +180,7 @@ describe('CreditCounter', () => {
     expect(container.textContent).toContain('Custom: 90 left');
   });
 
-  test('renders "Upgrade for more credits" link when billingUrl is available', () => {
+  test('renders "Upgrade for more credits" link when billing is available', () => {
     const { container } = renderWithCanva(<CreditCounter action="my-action" />);
 
     const link = container.querySelector('a');
@@ -177,15 +188,15 @@ describe('CreditCounter', () => {
     expect(link!.textContent).toContain('Upgrade for more credits');
   });
 
-  test('link href matches billingUrl from useCredits', () => {
+  test('link href points at the subscribe page (real URL is minted on click)', () => {
     const { container } = renderWithCanva(<CreditCounter action="my-action" />);
 
     const link = container.querySelector('a');
     expect(link).toBeTruthy();
-    expect(link!.getAttribute('href')).toBe('https://canup.link/subscribe/mock-jwt');
+    expect(link!.getAttribute('href')).toBe(`${SUBSCRIBE_BASE}/subscribe`);
   });
 
-  test('no link renders when billingUrl is null (loading state)', () => {
+  test('no link renders while loading (no data yet)', () => {
     mockUseCredits.mockReturnValue(mockCreditsReturn({ data: null, loading: true }));
 
     const { container } = renderWithCanva(<CreditCounter action="my-action" />);
@@ -221,10 +232,10 @@ describe('CreditCounter', () => {
     expect(link).toBeNull();
   });
 
-  test('no link renders when billingUrl is null with data loaded', () => {
+  test('no link renders when billing is unavailable (Stripe not connected)', () => {
     mockUseCredits.mockReturnValue(
       mockCreditsReturn({
-        data: { ...mockBalance, remaining: 50, used: 50, billingUrl: null },
+        data: { ...mockBalance, remaining: 50, used: 50, billingAvailable: false },
       }),
     );
 
@@ -237,7 +248,7 @@ describe('CreditCounter', () => {
   test('shows "Manage subscription" link text when subscribed', () => {
     mockUseCredits.mockReturnValue(
       mockCreditsReturn({
-        data: { ...mockBalance, subscribed: true },
+        data: { ...mockBalance, subscribed: true, cancelAt: null, email: null },
       }),
     );
 
@@ -284,9 +295,9 @@ describe('CreditCounter', () => {
     expect(container.textContent).toContain("don't have enough credits left");
   });
 
-  test('calls requestOpenExternalUrl when link is clicked', async () => {
+  test('mints a fresh link on click, then opens it', async () => {
     const platform = await import('@canva/platform');
-    using _spy = vi.spyOn(platform, 'requestOpenExternalUrl');
+    using _spy = vi.spyOn(platform, 'requestOpenExternalUrl').mockResolvedValue(undefined as never);
 
     const { container } = renderWithCanva(<CreditCounter action="my-action" />);
     const link = container.querySelector('a') as HTMLElement;
@@ -294,8 +305,11 @@ describe('CreditCounter', () => {
 
     fireEvent.click(link);
 
-    expect(platform.requestOpenExternalUrl).toHaveBeenCalledWith({
-      url: 'https://canup.link/subscribe/mock-jwt',
+    await waitFor(() => {
+      expect(fetchSubscribeLink).toHaveBeenCalled();
+    });
+    await waitFor(() => {
+      expect(platform.requestOpenExternalUrl).toHaveBeenCalledWith({ url: MINTED_URL });
     });
   });
 

@@ -11,5 +11,5 @@ export type { ActionButtonProps } from './components/ActionButton.js';
 export type { CreditCounterProps } from './components/CreditCounter.js';
 export type { UseActionResult } from './hooks/use-action.js';
 export type { UseCreditsResult } from './hooks/use-credits.js';
-export type { CreditBalance, ActionResult } from './types.js';
+export type { CreditBalance } from './types.js';
 export { CanupError } from './errors.js';

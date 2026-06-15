@@ -79,7 +79,7 @@ export function resetMockCanupClient(client: MockCanupClient): void {
     ok: true,
     data: { result: null, durationMs: 0, printOutput: '' },
   });
-  client.listInvocations.mockResolvedValue({ items: [], nextCursor: null, hasMore: false });
+  client.listInvocations.mockResolvedValue({ items: [], nextCursor: null });
   client.getInvocationDetail.mockResolvedValue({
     id: 'exec-1',
     actionSlug: 'test-action',
@@ -87,7 +87,7 @@ export function resetMockCanupClient(client: MockCanupClient): void {
     durationMs: 50,
     errorType: null,
     createdAt: '2026-01-01T00:00:00Z',
-    source: 'api',
+    source: 'canva',
     detail: null,
   });
   client.setSecret.mockResolvedValue({ name: 'MY_SECRET', created: true, synced: true });
@@ -98,7 +98,6 @@ export function resetMockCanupClient(client: MockCanupClient): void {
     buildId: 'build-1',
     status: 'building',
     packages: [],
-    layerSize: null,
   });
   client.listDeps.mockResolvedValue({ packages: [], layerSize: null, layerArn: null });
   client.removeDep.mockResolvedValue({
@@ -117,7 +116,11 @@ export function resetMockCanupClient(client: MockCanupClient): void {
     updatedAt: '2026-01-01T00:00:00Z',
   });
   client.connectStripe.mockResolvedValue({ connected: true });
-  client.stripeStatus.mockResolvedValue({ connected: false });
+  client.stripeStatus.mockResolvedValue({
+    state: 'not_connected',
+    maskedKey: null,
+    lastCheckedAt: null,
+  });
   client.disconnectStripe.mockResolvedValue({ disconnected: true });
 }
 
@@ -171,7 +174,7 @@ export function createMockCanupClient(overrides?: Partial<MockCanupClient>): Moc
       .mockResolvedValue({ ok: true, data: { result: null, durationMs: 0, printOutput: '' } }),
 
     // Invocation logs
-    listInvocations: vi.fn().mockResolvedValue({ items: [], nextCursor: null, hasMore: false }),
+    listInvocations: vi.fn().mockResolvedValue({ items: [], nextCursor: null }),
     getInvocationDetail: vi.fn().mockResolvedValue({
       id: 'exec-1',
       actionSlug: 'test-action',
@@ -179,7 +182,7 @@ export function createMockCanupClient(overrides?: Partial<MockCanupClient>): Moc
       durationMs: 50,
       errorType: null,
       createdAt: '2026-01-01T00:00:00Z',
-      source: 'api',
+      source: 'canva',
       detail: null,
     }),
 
@@ -194,7 +197,6 @@ export function createMockCanupClient(overrides?: Partial<MockCanupClient>): Moc
       buildId: 'build-1',
       status: 'building',
       packages: [],
-      layerSize: null,
     }),
     listDeps: vi.fn().mockResolvedValue({ packages: [], layerSize: null, layerArn: null }),
     removeDep: vi
@@ -213,7 +215,9 @@ export function createMockCanupClient(overrides?: Partial<MockCanupClient>): Moc
 
     // Stripe
     connectStripe: vi.fn().mockResolvedValue({ connected: true }),
-    stripeStatus: vi.fn().mockResolvedValue({ connected: false }),
+    stripeStatus: vi
+      .fn()
+      .mockResolvedValue({ state: 'not_connected', maskedKey: null, lastCheckedAt: null }),
     disconnectStripe: vi.fn().mockResolvedValue({ disconnected: true }),
 
     ...overrides,

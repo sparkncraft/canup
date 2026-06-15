@@ -34,7 +34,7 @@ interface MergedAction {
 
 function mergeActionState(
   localActions: { name: string; language: string }[],
-  remoteActions: { slug: string; language: string; deployed: boolean; updatedAt: string }[],
+  remoteActions: { slug: string; language: string | null; deployed: boolean; updatedAt: string }[],
 ): MergedAction[] {
   const seen = new Set<string>();
   const result: MergedAction[] = [];

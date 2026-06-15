@@ -15,8 +15,8 @@ export function registerActionsRunAction(actionsCommand: Command): void {
         const params = parseParams(opts.params);
 
         // Fetch the deployed action's code, then invoke it through the app's
-        // test endpoint. Actions without deployed code (e.g. track-only) have
-        // a null script and cannot be executed from the CLI.
+        // test endpoint. Actions without deployed code (e.g. track-only) carry
+        // no script and cannot be executed from the CLI.
         const actions = await client.listActionsWithScript(config.appId);
         const action = actions.find((a) => a.slug === name);
 
@@ -27,7 +27,7 @@ export function registerActionsRunAction(actionsCommand: Command): void {
           return;
         }
 
-        if (action.script === null || action.language === null) {
+        if (action.script == null || action.language === null) {
           error(`Action '${name}' has no deployed code to run.`);
           hint('Deploy code for this action with `canup actions deploy`.');
           process.exit(1);

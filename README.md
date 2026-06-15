@@ -32,7 +32,7 @@ function App() {
       <ActionButton
         action="generate-text"
         params={{ prompt: 'Hello world' }}
-        onResult={(data) => console.log(data.result)}
+        onResult={(result) => console.log(result)}
         onError={(error) => console.error(error.message)}
         variant="primary"
       >
@@ -60,8 +60,8 @@ function MyComponent() {
   const { data, exhausted, refresh } = useCredits('generate-text');
 
   const handleClick = async () => {
-    const { result, durationMs } = await execute({ prompt: 'Hello' });
-    console.log(result, `${durationMs}ms`);
+    const result = await execute({ prompt: 'Hello' });
+    console.log(result);
   };
 
   return (
@@ -135,7 +135,7 @@ function MyComponent() {
 
 **Hooks:** `useAction`, `useCredits`
 
-**Types:** `ActionButtonProps`, `CreditCounterProps`, `UseActionResult`, `UseCreditsResult`, `CreditBalance`, `ActionResult`, `CanupError`
+**Types:** `ActionButtonProps`, `CreditCounterProps`, `UseActionResult`, `UseCreditsResult`, `CreditBalance`, `CanupError`
 
 ## License
 

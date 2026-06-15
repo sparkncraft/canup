@@ -18,14 +18,15 @@ vi.mock('../../api-client.js', () => ({
 vi.mock('../../ui/output.js', () => output);
 
 describe('stripe status command', () => {
-  test('shows connected status with masked key and webhook URL', async ({
+  test('shows connected status with masked key and health', async ({
     client,
+    output,
     processMocks,
   }) => {
     client.stripeStatus.mockResolvedValue({
-      connected: true,
+      state: 'healthy',
       maskedKey: 'sk_test_...xxxx',
-      webhookUrl: 'https://canup.link/hooks/stripe/app-1',
+      lastCheckedAt: '2026-06-01T00:00:00.000Z',
     });
 
     const { Command } = await import('commander');
@@ -37,15 +38,18 @@ describe('stripe status command', () => {
 
     await program.parseAsync(['stripe', 'status'], { from: 'user' });
 
-    expect(processMocks.log).toHaveBeenCalledWith(expect.stringContaining('Connected'));
-    expect(processMocks.log).toHaveBeenCalledWith(expect.stringContaining('sk_test_...xxxx'));
-    expect(processMocks.log).toHaveBeenCalledWith(
-      expect.stringContaining('https://canup.link/hooks/stripe/app-1'),
-    );
+    expect(processMocks.log).toHaveBeenCalledWith('Stripe: Connected');
+    expect(output.label).toHaveBeenCalledWith('API Key', 'sk_test_...xxxx');
+    expect(output.label).toHaveBeenCalledWith('Health', 'Healthy');
+    expect(output.label).toHaveBeenCalledWith('Last checked', '2026-06-01T00:00:00.000Z');
   });
 
   test('shows not connected status with hint', async ({ client, output, processMocks }) => {
-    client.stripeStatus.mockResolvedValue({ connected: false });
+    client.stripeStatus.mockResolvedValue({
+      state: 'not_connected',
+      maskedKey: null,
+      lastCheckedAt: null,
+    });
 
     const { Command } = await import('commander');
     const { registerStripeStatusAction } = await import('../../commands/stripe/status.js');
@@ -60,11 +64,16 @@ describe('stripe status command', () => {
     expect(output.hint).toHaveBeenCalledWith(expect.stringContaining('canup stripe connect'));
   });
 
-  test('shows connected status without key or webhook details', async ({
+  test('warns and prompts to reconnect when the stored key is invalid', async ({
     client,
+    output,
     processMocks,
   }) => {
-    client.stripeStatus.mockResolvedValue({ connected: true });
+    client.stripeStatus.mockResolvedValue({
+      state: 'key_invalid',
+      maskedKey: null,
+      lastCheckedAt: '2026-06-01T00:00:00.000Z',
+    });
 
     const { Command } = await import('commander');
     const { registerStripeStatusAction } = await import('../../commands/stripe/status.js');
@@ -75,7 +84,9 @@ describe('stripe status command', () => {
 
     await program.parseAsync(['stripe', 'status'], { from: 'user' });
 
-    expect(processMocks.log).toHaveBeenCalledWith(expect.stringContaining('Connected'));
+    expect(processMocks.log).toHaveBeenCalledWith('Stripe: Connected');
+    expect(output.warn).toHaveBeenCalledWith(expect.stringContaining('rejected'));
+    expect(output.hint).toHaveBeenCalledWith(expect.stringContaining('canup stripe connect'));
   });
 
   test('handles API error', async ({ client, output, processMocks }) => {

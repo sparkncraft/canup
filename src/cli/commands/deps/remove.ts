@@ -20,7 +20,7 @@ export function registerDepsRemoveAction(depsCommand: Command): void {
         for (const packageName of packages) {
           const result = await client.removeDep(config.appId, language, packageName);
           success(`Removed: ${result.deleted}`);
-          if (result.buildId) {
+          if (result.status === 'building') {
             lastBuildId = result.buildId;
           }
         }

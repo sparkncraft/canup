@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
+import { queryClient, creditKey } from './query.js';
 
 const { mockEventSourceCtor, mockClose, lastInstance, resetEsState } = vi.hoisted(() => {
   const closeFn = vi.fn();
@@ -56,6 +57,7 @@ vi.mock('./jwt-cache.js', () => ({
 async function load() {
   const mod = await import('./realtime.js');
   mod._reset();
+  queryClient.clear();
   return mod;
 }
 
@@ -63,13 +65,27 @@ afterEach(async () => {
   vi.useRealTimers();
   const mod = await import('./realtime.js');
   mod._reset();
+  queryClient.clear();
   resetEsState();
 });
+
+/** A free-tier balance with a given `remaining`, as the server would serialize it. */
+function freeBalance(remaining: number) {
+  return {
+    subscribed: false,
+    quota: 10,
+    used: 10 - remaining,
+    remaining,
+    resetAt: null,
+    interval: 'monthly',
+    billingAvailable: true,
+  };
+}
 
 describe('realtime — connection', () => {
   test('first acquire opens an EventSource at /events with Bearer-injecting fetch', async () => {
     const { acquire } = await load();
-    const release = acquire(() => {});
+    const release = acquire();
 
     expect(mockEventSourceCtor).toHaveBeenCalledOnce();
     const [url, init] = mockEventSourceCtor.mock.calls[0];
@@ -88,10 +104,10 @@ describe('realtime — connection', () => {
     release();
   });
 
-  test('second acquire reuses the connection (one EventSource for N handlers)', async () => {
+  test('second acquire reuses the connection (one EventSource for N subscribers)', async () => {
     const { acquire } = await load();
-    const a = acquire(() => {});
-    const b = acquire(() => {});
+    const a = acquire();
+    const b = acquire();
 
     expect(mockEventSourceCtor).toHaveBeenCalledOnce();
     a();
@@ -100,8 +116,8 @@ describe('realtime — connection', () => {
 
   test('last release closes the connection', async () => {
     const { acquire } = await load();
-    const a = acquire(() => {});
-    const b = acquire(() => {});
+    const a = acquire();
+    const b = acquire();
 
     a();
     expect(mockClose).not.toHaveBeenCalled();
@@ -111,190 +127,142 @@ describe('realtime — connection', () => {
 });
 
 describe('realtime — dispatch', () => {
-  test('valid credits.update event is forwarded to every handler', async () => {
-    const a = vi.fn();
-    const b = vi.fn();
-    const { acquire } = await load();
-    acquire(a);
-    acquire(b);
+  function emit(data: unknown): void {
+    lastInstance()!._emit(
+      'message',
+      new MessageEvent('message', {
+        data: typeof data === 'string' ? data : JSON.stringify(data),
+      }),
+    );
+  }
 
-    const event = {
+  test('credits.update writes the balance straight into the credit cache', async () => {
+    const { acquire } = await load();
+    acquire();
+
+    const balance = {
+      subscribed: true,
+      quota: 500,
+      used: 13,
+      remaining: 487,
+      resetAt: '2026-06-01T00:00:00.000Z',
+      interval: 'monthly',
+      cancelAt: null,
+      email: 'subscriber@example.com',
+      billingAvailable: true,
+    };
+    emit({ type: 'credits.update', action: 'generate', balance, at: '2026-06-01T00:00:00.000Z' });
+
+    expect(queryClient.getQueryData(creditKey('generate'))).toEqual(balance);
+  });
+
+  test('unknown event types are dropped (forward-compat, no cache write)', async () => {
+    const { acquire } = await load();
+    acquire();
+
+    emit({ type: 'some.future.event', payload: {} });
+    expect(queryClient.getQueryData(creditKey('generate'))).toBeUndefined();
+  });
+
+  test('unparseable JSON is dropped with a warning', async () => {
+    using warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const { acquire } = await load();
+    acquire();
+
+    emit('not json');
+    expect(warnSpy).toHaveBeenCalled();
+    expect(queryClient.getQueryData(creditKey('generate'))).toBeUndefined();
+  });
+
+  test('a non-object payload is dropped', async () => {
+    const { acquire } = await load();
+    acquire();
+
+    emit('42'); // valid JSON, not an object
+    expect(queryClient.getQueryData(creditKey('generate'))).toBeUndefined();
+  });
+
+  test('a newer at-timestamp overwrites; an older one is rejected', async () => {
+    const { acquire } = await load();
+    acquire();
+
+    const newer = freeBalance(8);
+    const older = freeBalance(9);
+    emit({
       type: 'credits.update',
       action: 'generate',
-      balance: {
-        subscribed: true,
-        quota: 500,
-        used: 13,
-        remaining: 487,
-        resetAt: '2026-06-01T00:00:00.000Z',
-        interval: 'monthly',
-        cancelAt: null,
-        email: 'subscriber@example.com',
-      },
-    };
-    lastInstance()!._emit('message', new MessageEvent('message', { data: JSON.stringify(event) }));
-
-    expect(a).toHaveBeenCalledExactlyOnceWith(event);
-    expect(b).toHaveBeenCalledExactlyOnceWith(event);
-  });
-
-  test('malformed JSON is dropped silently', async () => {
-    const h = vi.fn();
-    const { acquire } = await load();
-    acquire(h);
-
-    lastInstance()!._emit('message', new MessageEvent('message', { data: 'not json' }));
-    expect(h).not.toHaveBeenCalled();
-  });
-
-  test('unknown event types are dropped (forward compat)', async () => {
-    const h = vi.fn();
-    const { acquire } = await load();
-    acquire(h);
-
-    lastInstance()!._emit(
-      'message',
-      new MessageEvent('message', {
-        data: JSON.stringify({ type: 'some.future.event', payload: {} }),
-      }),
-    );
-    expect(h).not.toHaveBeenCalled();
-  });
-
-  test('payload that fails schema validation is dropped', async () => {
-    const h = vi.fn();
-    const { acquire } = await load();
-    acquire(h);
-
-    lastInstance()!._emit(
-      'message',
-      new MessageEvent('message', {
-        data: JSON.stringify({
-          type: 'credits.update',
-          action: 'generate',
-          balance: { quota: 'not a number' }, // wrong type
-        }),
-      }),
-    );
-    expect(h).not.toHaveBeenCalled();
-  });
-
-  test('balance carries email + cancelAt only on the subscribed arm', async () => {
-    const h = vi.fn();
-    const { acquire } = await load();
-    acquire(h);
-
-    // Subscribed brand — email + cancelAt populated.
-    lastInstance()!._emit(
-      'message',
-      new MessageEvent('message', {
-        data: JSON.stringify({
-          type: 'credits.update',
-          action: 'generate',
-          balance: {
-            subscribed: true,
-            quota: 100,
-            used: 5,
-            remaining: 95,
-            resetAt: '2026-06-01T00:00:00.000Z',
-            interval: 'monthly',
-            cancelAt: '2026-07-01T00:00:00.000Z',
-            email: 'cancelled@example.com',
-          },
-        }),
-      }),
-    );
-    expect(h).toHaveBeenCalledTimes(1);
-    expect(h.mock.calls[0][0].balance.email).toBe('cancelled@example.com');
-    expect(h.mock.calls[0][0].balance.cancelAt).toBe('2026-07-01T00:00:00.000Z');
-
-    // Unsubscribed brand — the discriminated union has no email/cancelAt on the
-    // free-tier arm, so any the server sends are stripped: a free-tier balance
-    // can't carry a stray subscriber email or cancellation date.
-    lastInstance()!._emit(
-      'message',
-      new MessageEvent('message', {
-        data: JSON.stringify({
-          type: 'credits.update',
-          action: 'generate',
-          balance: {
-            subscribed: false,
-            quota: 10,
-            used: 0,
-            remaining: 10,
-            resetAt: null,
-            interval: 'monthly',
-            cancelAt: null,
-            email: null,
-          },
-        }),
-      }),
-    );
-    expect(h).toHaveBeenCalledTimes(2);
-    expect(h.mock.calls[1][0].balance.subscribed).toBe(false);
-    expect(h.mock.calls[1][0].balance.remaining).toBe(10);
-    expect(h.mock.calls[1][0].balance.email).toBeUndefined();
-    expect(h.mock.calls[1][0].balance.cancelAt).toBeUndefined();
-  });
-
-  test('wire schema rejects payload missing email (forward-compat boundary)', async () => {
-    const h = vi.fn();
-    const { acquire } = await load();
-    acquire(h);
-
-    lastInstance()!._emit(
-      'message',
-      new MessageEvent('message', {
-        data: JSON.stringify({
-          type: 'credits.update',
-          action: 'generate',
-          balance: {
-            subscribed: true,
-            quota: 100,
-            used: 0,
-            remaining: 100,
-            resetAt: '2026-06-01T00:00:00.000Z',
-            interval: 'monthly',
-            cancelAt: null,
-            // email omitted — older server without this field.
-          },
-        }),
-      }),
-    );
-    expect(h).not.toHaveBeenCalled();
-  });
-
-  test('throwing handler does not stop other handlers', async () => {
-    using consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    const ok = vi.fn();
-    const { acquire } = await load();
-    acquire(() => {
-      throw new Error('boom');
+      balance: newer,
+      at: '2026-06-01T00:00:02.000Z',
     });
-    acquire(ok);
+    emit({
+      type: 'credits.update',
+      action: 'generate',
+      balance: older,
+      at: '2026-06-01T00:00:01.000Z',
+    });
 
-    lastInstance()!._emit(
-      'message',
-      new MessageEvent('message', {
-        data: JSON.stringify({
-          type: 'credits.update',
-          action: 'generate',
-          balance: {
-            subscribed: false,
-            quota: 100,
-            used: 0,
-            remaining: 100,
-            resetAt: null,
-            interval: 'monthly',
-            cancelAt: null,
-            email: null,
-          },
-        }),
-      }),
+    expect(queryClient.getQueryData(creditKey('generate'))).toEqual(newer);
+  });
+
+  test('events without an `at` still apply (graceful degradation)', async () => {
+    const { acquire } = await load();
+    acquire();
+
+    const balance = freeBalance(7);
+    emit({ type: 'credits.update', action: 'generate', balance });
+
+    expect(queryClient.getQueryData(creditKey('generate'))).toEqual(balance);
+  });
+
+  test('an update for one action does not touch another action cache', async () => {
+    const { acquire } = await load();
+    acquire();
+
+    const balance = freeBalance(5);
+    emit({ type: 'credits.update', action: 'generate', balance, at: '2026-06-01T00:00:00.000Z' });
+
+    expect(queryClient.getQueryData(creditKey('generate'))).toEqual(balance);
+    expect(queryClient.getQueryData(creditKey('other'))).toBeUndefined();
+  });
+
+  test('a later balance replaces the cached one wholesale — a customer.deleted email clears', async () => {
+    // Each update writes the whole balance, so a re-subscribe (new email) or a
+    // customer.deleted (email: null) simply overwrites the prior value — there is
+    // no field-level merge that could leave a stale email behind.
+    const { acquire } = await load();
+    acquire();
+
+    const subscribed = {
+      subscribed: true,
+      quota: 500,
+      used: 13,
+      remaining: 487,
+      resetAt: '2026-06-01T00:00:00.000Z',
+      interval: 'monthly',
+      cancelAt: null,
+      email: 'old@example.com',
+      billingAvailable: true,
+    };
+    emit({
+      type: 'credits.update',
+      action: 'generate',
+      balance: subscribed,
+      at: '2026-06-01T00:00:00.000Z',
+    });
+    expect(queryClient.getQueryData<typeof subscribed>(creditKey('generate'))?.email).toBe(
+      'old@example.com',
     );
 
-    expect(ok).toHaveBeenCalledOnce();
-    expect(consoleSpy).toHaveBeenCalled();
+    const afterDelete = { ...subscribed, email: null };
+    emit({
+      type: 'credits.update',
+      action: 'generate',
+      balance: afterDelete,
+      at: '2026-06-01T00:00:01.000Z',
+    });
+
+    expect(queryClient.getQueryData(creditKey('generate'))).toEqual(afterDelete);
+    expect(queryClient.getQueryData<typeof afterDelete>(creditKey('generate'))?.email).toBeNull();
   });
 });
 
@@ -302,7 +270,7 @@ describe('realtime — error recovery', () => {
   test('5xx error schedules manual reopen after delay', async () => {
     vi.useFakeTimers();
     const { acquire } = await load();
-    acquire(() => {});
+    acquire();
 
     const instance = lastInstance()!;
     instance.readyState = 2; // CLOSED
@@ -319,7 +287,7 @@ describe('realtime — error recovery', () => {
   test('401 error does NOT trigger manual reopen', async () => {
     vi.useFakeTimers();
     const { acquire } = await load();
-    acquire(() => {});
+    acquire();
 
     const instance = lastInstance()!;
     instance.readyState = 2;
@@ -334,7 +302,7 @@ describe('realtime — error recovery', () => {
   test('transient error (readyState=CONNECTING) does not schedule manual reopen', async () => {
     vi.useFakeTimers();
     const { acquire } = await load();
-    acquire(() => {});
+    acquire();
 
     const instance = lastInstance()!;
     instance.readyState = 0; // CONNECTING — library is retrying
@@ -347,7 +315,7 @@ describe('realtime — error recovery', () => {
   test('release before scheduled reopen cancels it', async () => {
     vi.useFakeTimers();
     const { acquire } = await load();
-    const release = acquire(() => {});
+    const release = acquire();
 
     const instance = lastInstance()!;
     instance.readyState = 2;

@@ -10,7 +10,7 @@ import { withSpinner } from '../ui/spinner.js';
 /**
  * Map a language identifier to its file extension.
  */
-function extensionForLanguage(language: string): string {
+function extensionForLanguage(language: string | null): string {
   return language === 'python' ? '.py' : '.ts';
 }
 
@@ -51,8 +51,9 @@ export function registerPullCommand(program: Command): void {
           }
         }
 
-        // Filter to actions with scripts (deployed)
-        const deployedActions = actions.filter((a) => a.script !== null);
+        // Filter to actions with scripts (deployed). Track-only actions omit
+        // `script` entirely, so guard against both null and undefined.
+        const deployedActions = actions.filter((a) => a.script != null);
         if (deployedActions.length === 0) {
           info('No deployed actions to pull');
           return;

@@ -23,7 +23,7 @@ vi.mock('../../ui/spinner.js', () => spinner);
 
 describe('deps remove command', () => {
   test('removes a single package successfully', async ({ client, output }) => {
-    client.removeDep.mockResolvedValue({ deleted: 'express' });
+    client.removeDep.mockResolvedValue({ deleted: 'express', status: 'detached' });
 
     const { Command } = await import('commander');
     const { registerDepsRemoveAction } = await import('../../commands/deps/remove.js');
@@ -42,8 +42,8 @@ describe('deps remove command', () => {
 
   test('removes multiple packages in a loop', async ({ client, timers }) => {
     client.removeDep
-      .mockResolvedValueOnce({ deleted: 'express' })
-      .mockResolvedValueOnce({ deleted: 'lodash', buildId: 'build-456' });
+      .mockResolvedValueOnce({ deleted: 'express', status: 'detached' })
+      .mockResolvedValueOnce({ deleted: 'lodash', status: 'building', buildId: 'build-456' });
     client.getBuildStatus.mockResolvedValue({
       status: 'success',
       sizeBytes: 2048,
@@ -72,7 +72,11 @@ describe('deps remove command', () => {
   });
 
   test('shows "?" when rebuild sizeBytes is null', async ({ client, timers }) => {
-    client.removeDep.mockResolvedValue({ deleted: 'express', buildId: 'build-null' });
+    client.removeDep.mockResolvedValue({
+      deleted: 'express',
+      status: 'building',
+      buildId: 'build-null',
+    });
     client.getBuildStatus.mockResolvedValue({ status: 'success', sizeBytes: null });
 
     const { Command } = await import('commander');
@@ -94,7 +98,11 @@ describe('deps remove command', () => {
     processMocks,
     timers,
   }) => {
-    client.removeDep.mockResolvedValue({ deleted: 'express', buildId: 'build-null-err' });
+    client.removeDep.mockResolvedValue({
+      deleted: 'express',
+      status: 'building',
+      buildId: 'build-null-err',
+    });
     client.getBuildStatus
       .mockResolvedValueOnce({ status: 'failed', errorMessage: null })
       .mockResolvedValue({ status: 'success', sizeBytes: 0 });
@@ -150,7 +158,11 @@ describe('deps remove command', () => {
   });
 
   test('handles build failure during layer rebuild', async ({ client, processMocks, timers }) => {
-    client.removeDep.mockResolvedValue({ deleted: 'express', buildId: 'build-fail' });
+    client.removeDep.mockResolvedValue({
+      deleted: 'express',
+      status: 'building',
+      buildId: 'build-fail',
+    });
     client.getBuildStatus
       .mockResolvedValueOnce({ status: 'failed', errorMessage: 'Out of space' })
       .mockResolvedValue({ status: 'success', sizeBytes: 1024 });
@@ -174,7 +186,11 @@ describe('deps remove command', () => {
   });
 
   test('updates spinner text during build polling', async ({ client, spinner, timers }) => {
-    client.removeDep.mockResolvedValue({ deleted: 'express', buildId: 'build-poll' });
+    client.removeDep.mockResolvedValue({
+      deleted: 'express',
+      status: 'building',
+      buildId: 'build-poll',
+    });
 
     let callCount = 0;
     client.getBuildStatus.mockImplementation(() => {
