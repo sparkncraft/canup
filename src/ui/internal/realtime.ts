@@ -1,32 +1,37 @@
 import { EventSource } from 'eventsource';
 import type { RealtimeEvent } from '@canup/types';
 import { getJwt } from './jwt-cache.js';
-import { queryClient, creditKey } from './query.js';
+import { queryClient, creditKey, customerKey } from './query.js';
 import { DEFAULT_API_URL } from '../../constants.js';
 
 /**
- * One SSE connection shared by the whole SDK consumer. Every mounted credit
- * counter calls `acquire()` to keep it open; the connection opens on the first
- * acquire and closes on the last release.
+ * One SSE connection shared by the whole SDK consumer. Every mounted hook calls
+ * `acquire()` to keep it open; the connection opens on the first acquire and
+ * closes on the last release.
  *
- * Incoming messages are routed by event type. `credits.update` writes the new
- * balance straight into the query cache — the same module-level client the rest
- * of the SDK reads — so any `useCredits` re-renders without supplying a handler.
- * Unknown event types are dropped, so an older SDK quietly ignores events a
- * newer server adds.
+ * Incoming messages are routed by event type. A `credits` event writes the new
+ * per-action balance into the query cache; a `customer` event writes the new
+ * per-brand customer resource. Both target the same module-level client the
+ * rest of the SDK reads, so `useCredits` / `useCustomer` re-render without
+ * supplying a handler. Unknown event types are dropped, so an older SDK quietly
+ * ignores events a newer server adds.
  */
 
 const REOPEN_DELAY_MS = 5_000;
 const NO_RETRY_STATUSES = new Set([401, 403]);
 
 /**
- * Last accepted publish timestamp per action, to reject out-of-order SSE
+ * Last accepted publish timestamp per stream, to reject out-of-order SSE
  * deliveries: the network can reorder messages, and without this a stale
  * snapshot could overwrite a fresh one. ISO-8601 strings sort lexically in time
  * order, so a string compare suffices. A missing `at` bypasses the guard —
  * degrade gracefully rather than drop the update.
+ *
+ * Credits are keyed by action (each action has its own balance stream); the
+ * customer stream has no action, so it gets a single scalar guard.
  */
 const lastAtByAction = new Map<string, string>();
+let lastCustomerAt: string | undefined;
 
 let subscribers = 0;
 let connection: EventSource | null = null;
@@ -48,21 +53,32 @@ export function handleServerEvent(data: unknown): void {
   if (typeof event !== 'object' || event === null) return;
 
   switch ((event as { type?: unknown }).type) {
-    case 'credits.update':
-      applyCreditsUpdate(event as RealtimeEvent);
+    case 'credits':
+      applyCreditsUpdate(event as Extract<RealtimeEvent, { type: 'credits' }>);
+      break;
+    case 'customer':
+      applyCustomerUpdate(event as Extract<RealtimeEvent, { type: 'customer' }>);
       break;
     default:
       break; // unknown event type — drop (forward-compat)
   }
 }
 
-function applyCreditsUpdate(event: RealtimeEvent): void {
+function applyCreditsUpdate(event: Extract<RealtimeEvent, { type: 'credits' }>): void {
   if (event.at) {
     const prev = lastAtByAction.get(event.action);
     if (prev && event.at < prev) return; // out-of-order delivery — ignore
     lastAtByAction.set(event.action, event.at);
   }
   queryClient.setQueryData(creditKey(event.action), event.balance);
+}
+
+function applyCustomerUpdate(event: Extract<RealtimeEvent, { type: 'customer' }>): void {
+  if (event.at) {
+    if (lastCustomerAt && event.at < lastCustomerAt) return; // out-of-order delivery — ignore
+    lastCustomerAt = event.at;
+  }
+  queryClient.setQueryData(customerKey(), event.customer);
 }
 
 function open(): void {
@@ -127,6 +143,7 @@ export function _reset(): void {
   close();
   subscribers = 0;
   lastAtByAction.clear();
+  lastCustomerAt = undefined;
 }
 
 export function _isConnected(): boolean {

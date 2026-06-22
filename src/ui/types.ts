@@ -1,1 +1,1 @@
-export type { CreditBalance } from '@canup/types';
+export type { CreditBalance, Customer, SubscriptionStatus } from '@canup/types';

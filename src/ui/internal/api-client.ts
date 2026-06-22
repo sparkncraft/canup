@@ -1,6 +1,12 @@
 import { getJwt } from './jwt-cache.js';
 import { CanupError, toCanupError } from '../errors.js';
-import type { ApiResponse, CreditBalance, RunResult, SubscribeLinkResult } from '@canup/types';
+import type {
+  ApiResponse,
+  CreditBalance,
+  Customer,
+  RunResult,
+  SubscribeLinkResult,
+} from '@canup/types';
 import { DEFAULT_API_URL } from '../../constants.js';
 
 declare global {
@@ -41,6 +47,13 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 export const fetchCredits = (action: string) => request<CreditBalance>(`/run/${action}/credits`);
+
+/**
+ * The current end-user's per-brand customer resource (app-name attribution,
+ * subscription status, trial/cancel schedule, the `billingAvailable` CTA flag).
+ * Action-independent — one fetch serves every component on the page.
+ */
+export const fetchCustomer = () => request<Customer>(`/customer`);
 
 /**
  * Mint a fresh subscribe link for the current end-user. Called at click time

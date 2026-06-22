@@ -16,6 +16,12 @@ const SAFETY_POLL_INTERVAL_MS = 5 * 60_000;
 
 export const creditKey = (action: string) => ['credits', action] as const;
 
+/**
+ * The per-brand customer resource is action-independent, so its cache key is a
+ * single constant — one entry shared by every `useCustomer()` consumer.
+ */
+export const customerKey = () => ['customer'] as const;
+
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {

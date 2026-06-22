@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
-import { queryClient, creditKey } from './query.js';
+import { queryClient, creditKey, customerKey } from './query.js';
 
 const { mockEventSourceCtor, mockClose, lastInstance, resetEsState } = vi.hoisted(() => {
   const closeFn = vi.fn();
@@ -69,16 +69,27 @@ afterEach(async () => {
   resetEsState();
 });
 
-/** A free-tier balance with a given `remaining`, as the server would serialize it. */
-function freeBalance(remaining: number) {
+/** A per-action balance with a given `remaining`, as the server serializes it. */
+function balance(remaining: number) {
   return {
-    subscribed: false,
     quota: 10,
     used: 10 - remaining,
     remaining,
     resetAt: null,
-    interval: 'monthly',
+    interval: 'monthly' as const,
+  };
+}
+
+/** A per-brand customer resource, as the server serializes it. */
+function customer(overrides: Record<string, unknown> = {}) {
+  return {
+    appName: 'Acme',
+    subscriptionStatus: 'active' as const,
+    cancelAt: null,
+    trialEnd: null,
+    email: 'subscriber@example.com',
     billingAvailable: true,
+    ...overrides,
   };
 }
 
@@ -136,24 +147,24 @@ describe('realtime — dispatch', () => {
     );
   }
 
-  test('credits.update writes the balance straight into the credit cache', async () => {
+  test('a credits event writes the balance straight into the credit cache', async () => {
     const { acquire } = await load();
     acquire();
 
-    const balance = {
-      subscribed: true,
-      quota: 500,
-      used: 13,
-      remaining: 487,
-      resetAt: '2026-06-01T00:00:00.000Z',
-      interval: 'monthly',
-      cancelAt: null,
-      email: 'subscriber@example.com',
-      billingAvailable: true,
-    };
-    emit({ type: 'credits.update', action: 'generate', balance, at: '2026-06-01T00:00:00.000Z' });
+    const b = balance(7);
+    emit({ type: 'credits', action: 'generate', balance: b, at: '2026-06-01T00:00:00.000Z' });
 
-    expect(queryClient.getQueryData(creditKey('generate'))).toEqual(balance);
+    expect(queryClient.getQueryData(creditKey('generate'))).toEqual(b);
+  });
+
+  test('a customer event writes the customer straight into the customer cache', async () => {
+    const { acquire } = await load();
+    acquire();
+
+    const c = customer();
+    emit({ type: 'customer', customer: c, at: '2026-06-01T00:00:00.000Z' });
+
+    expect(queryClient.getQueryData(customerKey())).toEqual(c);
   });
 
   test('unknown event types are dropped (forward-compat, no cache write)', async () => {
@@ -162,6 +173,7 @@ describe('realtime — dispatch', () => {
 
     emit({ type: 'some.future.event', payload: {} });
     expect(queryClient.getQueryData(creditKey('generate'))).toBeUndefined();
+    expect(queryClient.getQueryData(customerKey())).toBeUndefined();
   });
 
   test('unparseable JSON is dropped with a warning', async () => {
@@ -182,87 +194,85 @@ describe('realtime — dispatch', () => {
     expect(queryClient.getQueryData(creditKey('generate'))).toBeUndefined();
   });
 
-  test('a newer at-timestamp overwrites; an older one is rejected', async () => {
+  test('credits: a newer at-timestamp overwrites; an older one is rejected', async () => {
     const { acquire } = await load();
     acquire();
 
-    const newer = freeBalance(8);
-    const older = freeBalance(9);
-    emit({
-      type: 'credits.update',
-      action: 'generate',
-      balance: newer,
-      at: '2026-06-01T00:00:02.000Z',
-    });
-    emit({
-      type: 'credits.update',
-      action: 'generate',
-      balance: older,
-      at: '2026-06-01T00:00:01.000Z',
-    });
+    const newer = balance(8);
+    const older = balance(9);
+    emit({ type: 'credits', action: 'generate', balance: newer, at: '2026-06-01T00:00:02.000Z' });
+    emit({ type: 'credits', action: 'generate', balance: older, at: '2026-06-01T00:00:01.000Z' });
 
     expect(queryClient.getQueryData(creditKey('generate'))).toEqual(newer);
   });
 
-  test('events without an `at` still apply (graceful degradation)', async () => {
+  test('credits: events without an `at` still apply (graceful degradation)', async () => {
     const { acquire } = await load();
     acquire();
 
-    const balance = freeBalance(7);
-    emit({ type: 'credits.update', action: 'generate', balance });
+    const b = balance(7);
+    emit({ type: 'credits', action: 'generate', balance: b });
 
-    expect(queryClient.getQueryData(creditKey('generate'))).toEqual(balance);
+    expect(queryClient.getQueryData(creditKey('generate'))).toEqual(b);
   });
 
-  test('an update for one action does not touch another action cache', async () => {
+  test('credits: an update for one action does not touch another action cache', async () => {
     const { acquire } = await load();
     acquire();
 
-    const balance = freeBalance(5);
-    emit({ type: 'credits.update', action: 'generate', balance, at: '2026-06-01T00:00:00.000Z' });
+    const b = balance(5);
+    emit({ type: 'credits', action: 'generate', balance: b, at: '2026-06-01T00:00:00.000Z' });
 
-    expect(queryClient.getQueryData(creditKey('generate'))).toEqual(balance);
+    expect(queryClient.getQueryData(creditKey('generate'))).toEqual(b);
     expect(queryClient.getQueryData(creditKey('other'))).toBeUndefined();
   });
 
-  test('a later balance replaces the cached one wholesale — a customer.deleted email clears', async () => {
-    // Each update writes the whole balance, so a re-subscribe (new email) or a
+  test('customer: a newer at-timestamp overwrites; an older one is rejected', async () => {
+    const { acquire } = await load();
+    acquire();
+
+    const newer = customer({ email: 'new@example.com' });
+    const older = customer({ email: 'old@example.com' });
+    emit({ type: 'customer', customer: newer, at: '2026-06-01T00:00:02.000Z' });
+    emit({ type: 'customer', customer: older, at: '2026-06-01T00:00:01.000Z' });
+
+    expect(queryClient.getQueryData(customerKey())).toEqual(newer);
+  });
+
+  test('the credits and customer streams have independent out-of-order guards', async () => {
+    const { acquire } = await load();
+    acquire();
+
+    // A late credits event must not be rejected by an earlier customer event's
+    // timestamp (and vice versa) — the guards are separate.
+    emit({ type: 'customer', customer: customer(), at: '2026-06-01T00:00:05.000Z' });
+    const b = balance(3);
+    emit({ type: 'credits', action: 'generate', balance: b, at: '2026-06-01T00:00:01.000Z' });
+
+    expect(queryClient.getQueryData(creditKey('generate'))).toEqual(b);
+  });
+
+  test('a later customer event replaces the cached one wholesale — a deleted email clears', async () => {
+    // Each update writes the whole customer, so a re-subscribe (new email) or a
     // customer.deleted (email: null) simply overwrites the prior value — there is
     // no field-level merge that could leave a stale email behind.
     const { acquire } = await load();
     acquire();
 
-    const subscribed = {
-      subscribed: true,
-      quota: 500,
-      used: 13,
-      remaining: 487,
-      resetAt: '2026-06-01T00:00:00.000Z',
-      interval: 'monthly',
-      cancelAt: null,
-      email: 'old@example.com',
-      billingAvailable: true,
-    };
     emit({
-      type: 'credits.update',
-      action: 'generate',
-      balance: subscribed,
+      type: 'customer',
+      customer: customer({ email: 'old@example.com' }),
       at: '2026-06-01T00:00:00.000Z',
     });
-    expect(queryClient.getQueryData<typeof subscribed>(creditKey('generate'))?.email).toBe(
+    expect(queryClient.getQueryData<ReturnType<typeof customer>>(customerKey())?.email).toBe(
       'old@example.com',
     );
 
-    const afterDelete = { ...subscribed, email: null };
-    emit({
-      type: 'credits.update',
-      action: 'generate',
-      balance: afterDelete,
-      at: '2026-06-01T00:00:01.000Z',
-    });
+    const afterDelete = customer({ email: null, subscriptionStatus: 'none' });
+    emit({ type: 'customer', customer: afterDelete, at: '2026-06-01T00:00:01.000Z' });
 
-    expect(queryClient.getQueryData(creditKey('generate'))).toEqual(afterDelete);
-    expect(queryClient.getQueryData<typeof afterDelete>(creditKey('generate'))?.email).toBeNull();
+    expect(queryClient.getQueryData(customerKey())).toEqual(afterDelete);
+    expect(queryClient.getQueryData<typeof afterDelete>(customerKey())?.email).toBeNull();
   });
 });
 

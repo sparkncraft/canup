@@ -37,8 +37,8 @@ importers:
         specifier: ^0.18.2
         version: 0.18.2
       '@canup/types':
-        specifier: ^0.1.0
-        version: 0.1.0
+        specifier: ^0.2.0
+        version: 0.2.0
       '@canva/app-i18n-kit':
         specifier: ^1.2.0
         version: 1.2.0(@formatjs/intl@3.1.8(typescript@5.9.3))(intl-messageformat@10.7.18)(react-dom@19.2.4(react@19.2.4))(react-intl@7.1.11(react@19.2.4)(typescript@5.9.3))(react@19.2.4)
@@ -279,8 +279,8 @@ packages:
   '@braidai/lang@1.1.2':
     resolution: {integrity: sha512-qBcknbBufNHlui137Hft8xauQMTZDKdophmLFv05r2eNmdIv/MlPuP4TdUknHG68UdWLgVZwgxVe735HzJNIwA==}
 
-  '@canup/types@0.1.0':
-    resolution: {integrity: sha512-Os0udPNvj6wF4mm0FfV/A0oLVOn9gIYkdOj4+aQQl6MtRy/GSfPZQSERI9B54jsk99hlphdY9m2VFsc8UtAWGg==}
+  '@canup/types@0.2.0':
+    resolution: {integrity: sha512-RT1luUfZ730VpO0uODJs5EfHiGl7uxZQn/pPB75kVHZ9dbCHR1v+ivmT5wylg+Y2X14LYzQRCvU4lskCnK5HMQ==}
 
   '@canva/app-hooks@0.0.0-beta.4':
     resolution: {integrity: sha512-QPIoVyIRz55Ta0PNxD07OHvyGOD7R1irwEPfs1T7At21TJHFAnlTt/Je8IfZcm6lrNR6oOSBBZrRiFeJA49PEg==}
@@ -4213,7 +4213,7 @@ snapshots:
 
   '@braidai/lang@1.1.2': {}
 
-  '@canup/types@0.1.0': {}
+  '@canup/types@0.2.0': {}
 
   '@canva/app-hooks@0.0.0-beta.4(@canva/design@2.8.0(@canva/error@2.2.1))(@canva/platform@2.2.2(@canva/error@2.2.1))(react@19.2.4)':
     dependencies:

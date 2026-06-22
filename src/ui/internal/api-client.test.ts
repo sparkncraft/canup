@@ -69,13 +69,11 @@ describe('api-client', () => {
             ok: true,
             data: {
               credits: {
-                subscribed: false,
                 quota: 100,
                 used: 5,
                 remaining: 95,
                 resetAt: null,
                 interval: 'monthly',
-                billingAvailable: true,
               },
               result: 'ok',
             },
@@ -91,13 +89,11 @@ describe('api-client', () => {
 
     test('returns RunResult { credits, result } on success', async () => {
       const credits = {
-        subscribed: false,
         quota: 100,
         used: 5,
         remaining: 95,
         resetAt: null,
         interval: 'monthly',
-        billingAvailable: true,
       };
       server.use(
         http.post(`${BASE_URL}/run/my-action`, () =>
@@ -176,7 +172,6 @@ describe('api-client', () => {
               remaining: 95,
               resetAt: null,
               interval: 'monthly',
-              email: null,
             },
           });
         }),
@@ -199,7 +194,6 @@ describe('api-client', () => {
               remaining: 95,
               resetAt: '2026-04-01T00:00:00Z',
               interval: 'monthly',
-              email: 'user@example.com',
             },
           }),
         ),
@@ -214,7 +208,6 @@ describe('api-client', () => {
         remaining: 95,
         resetAt: '2026-04-01T00:00:00Z',
         interval: 'monthly',
-        email: 'user@example.com',
       });
     });
 
@@ -237,6 +230,49 @@ describe('api-client', () => {
         expect(err).toBeInstanceOf(CanupError);
         expect((err as CanupError).code).toBe('HTTP_ERROR');
       }
+    });
+  });
+
+  describe('fetchCustomer', () => {
+    const sampleCustomer = {
+      appName: 'Acme',
+      subscriptionStatus: 'active' as const,
+      cancelAt: null,
+      trialEnd: null,
+      email: 'subscriber@example.com',
+      billingAvailable: true,
+    };
+
+    test('sends GET /customer with Authorization header and returns the Customer', async () => {
+      let capturedHeaders: Headers | null = null;
+
+      server.use(
+        http.get(`${BASE_URL}/customer`, ({ request }) => {
+          capturedHeaders = request.headers;
+          return HttpResponse.json({ ok: true, data: sampleCustomer });
+        }),
+      );
+
+      const { fetchCustomer } = await getModule();
+      const result = await fetchCustomer();
+
+      expect(capturedHeaders!.get('Authorization')).toBe(`Bearer ${TEST_TOKEN}`);
+      expect(result).toEqual(sampleCustomer);
+    });
+
+    test('throws CanupError on error', async () => {
+      server.use(
+        http.get(`${BASE_URL}/customer`, () =>
+          HttpResponse.json(
+            { ok: false, error: { code: 'HTTP_ERROR', message: 'Unauthorized' } },
+            { status: 401 },
+          ),
+        ),
+      );
+
+      const { fetchCustomer } = await getModule();
+
+      await expect(fetchCustomer()).rejects.toBeInstanceOf(CanupError);
     });
   });
 

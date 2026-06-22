@@ -24,13 +24,11 @@ const mockAcquire = vi.mocked(acquire);
 const release = vi.fn();
 
 const mockBalance: CreditBalance = {
-  subscribed: false,
   quota: 100,
   used: 10,
   remaining: 90,
   resetAt: '2026-04-01T00:00:00Z',
   interval: 'monthly',
-  billingAvailable: true,
 };
 
 const test = baseTest.extend('_rtl', [
@@ -128,16 +126,6 @@ describe('useCredits', () => {
     });
   });
 
-  test('billingAvailable is exposed via data.billingAvailable', async () => {
-    const { result } = renderHook(() => useCredits('my-action'));
-
-    await waitFor(() => {
-      expect(result.current.data).toBeTruthy();
-    });
-
-    expect(result.current.data!.billingAvailable).toBe(true);
-  });
-
   test('exposes error as CanupError when fetch fails after retries', async () => {
     mockFetchCredits.mockRejectedValue(new Error('Network error'));
 
@@ -158,7 +146,7 @@ describe('useCredits', () => {
   });
 
   test('live updates land via the credit cache (realtime.ts writes it, the hook reads it)', async () => {
-    // SSE `credits.update` events are applied in realtime.ts by writing
+    // SSE `credits` events are applied in realtime.ts by writing
     // creditKey(action); useCredits re-renders off that same cache. This is the
     // consumer side of the live flow — the dispatch itself is tested in
     // realtime.test.ts.

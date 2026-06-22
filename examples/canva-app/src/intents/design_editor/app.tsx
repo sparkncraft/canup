@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Alert, FormField, Rows, Text, TextInput } from '@canva/app-ui-kit';
 import { addElementAtPoint, addElementAtCursor } from '@canva/design';
 import { useFeatureSupport } from '@canva/app-hooks';
-import { ActionButton, CreditCounter } from 'canup';
+import { ActionButton } from 'canup';
 import type { CanupError } from 'canup';
 import * as styles from 'styles/components.css';
 
@@ -42,7 +42,7 @@ export function App() {
   const handleError = (error: CanupError) => {
     setResult({
       kind: 'error',
-      message: error.type === 'CREDITS_EXHAUSTED' ? 'No credits remaining.' : error.message,
+      message: error.code === 'CREDITS_EXHAUSTED' ? 'No credits remaining.' : error.message,
     });
   };
 
@@ -73,7 +73,6 @@ export function App() {
         >
           Generate Text
         </ActionButton>
-        <CreditCounter action="generate-text" />
         {result.kind === 'success' && (
           <Alert tone="positive" title="Generated">
             <Text>{result.text}</Text>
