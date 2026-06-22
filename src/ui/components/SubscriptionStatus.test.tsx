@@ -52,7 +52,7 @@ describe('SubscriptionStatus', () => {
   test('active + email: shows the logged-in-as line', () => {
     mockUseCustomer.mockReturnValue(customer({ email: 'user@example.com' }));
     renderWithCanva(<SubscriptionStatus />);
-    expect(screen.getByText('Logged in as user@example.com.')).toBeTruthy();
+    expect(screen.getByText("You're logged in as user@example.com.")).toBeTruthy();
   });
 
   test('trialing: shows trial status, trial-end date, and a manage CTA', () => {
