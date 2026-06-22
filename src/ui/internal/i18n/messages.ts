@@ -33,6 +33,49 @@ export const creditsMessages = defineMessages({
   },
 });
 
+/**
+ * Customer-level subscription status strings (`<SubscriptionStatus>`). Same
+ * `{hasApp, select, …}` attribution approach as the credit strings.
+ */
+export const subscriptionMessages = defineMessages({
+  subscribed: {
+    id: 'canup.subscription.subscribed',
+    defaultMessage:
+      "{hasApp, select, true {You're subscribed to {appName}} other {You're subscribed}}",
+  },
+  manage: {
+    id: 'canup.subscription.manage',
+    defaultMessage:
+      '{hasApp, select, true {Manage {appName} subscription} other {Manage subscription}}',
+  },
+  cancelScheduled: {
+    id: 'canup.subscription.cancelScheduled',
+    defaultMessage: 'Subscription ends {cancelDate}.',
+  },
+  trial: {
+    id: 'canup.subscription.trial',
+    defaultMessage:
+      "{hasApp, select, true {You're on a trial of {appName}} other {You're on a trial}}",
+  },
+  trialEnds: {
+    id: 'canup.subscription.trialEnds',
+    defaultMessage: 'Trial ends {trialEndDate}.',
+  },
+  pastDueTitle: {
+    id: 'canup.subscription.pastDueTitle',
+    defaultMessage:
+      "{hasApp, select, true {There's a problem with your {appName} payment} other {There's a problem with your payment}}",
+  },
+  subscribe: {
+    id: 'canup.subscription.subscribe',
+    defaultMessage: '{hasApp, select, true {Subscribe to {appName}} other {Subscribe}}',
+  },
+  loggedInAs: {
+    id: 'canup.subscription.loggedInAs',
+    defaultMessage: 'Logged in as {email}.',
+  },
+});
+
 export const creditCounterMessages = defineMessages({
   loggedInAs: {
     id: 'canup.creditCounter.loggedInAs',
