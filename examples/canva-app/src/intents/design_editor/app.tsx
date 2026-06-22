@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Alert, FormField, Rows, Text, TextInput } from '@canva/app-ui-kit';
 import { addElementAtPoint, addElementAtCursor } from '@canva/design';
 import { useFeatureSupport } from '@canva/app-hooks';
-import { ActionButton } from 'canup';
+import { ActionButton, SubscriptionStatus } from 'canup';
 import type { CanupError } from 'canup';
 import * as styles from 'styles/components.css';
 
@@ -62,6 +62,7 @@ export function App() {
             />
           )}
         />
+        {/* Action panel: the button plus its live credit status, one drop-in. */}
         <ActionButton
           action="generate-text"
           params={{ prompt }}
@@ -70,6 +71,7 @@ export function App() {
           variant="primary"
           stretch
           disabled={!addElement}
+          showCredits
         >
           Generate Text
         </ActionButton>
@@ -88,6 +90,8 @@ export function App() {
             <Text>{result.message}</Text>
           </Alert>
         )}
+        {/* Account area: subscription status + manage/subscribe pathway. */}
+        <SubscriptionStatus />
       </Rows>
     </div>
   );
