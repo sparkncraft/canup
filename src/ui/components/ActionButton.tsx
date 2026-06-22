@@ -1,7 +1,8 @@
 import { type ComponentProps, useCallback, useRef } from 'react';
-import { Button } from '@canva/app-ui-kit';
+import { Button, Rows } from '@canva/app-ui-kit';
 import { useAction } from '../hooks/use-action.js';
 import { useCredits } from '../hooks/use-credits.js';
+import { ActionCredits } from './ActionCredits.js';
 import { type CanupError, toCanupError } from '../errors.js';
 
 type CanvaButtonProps = ComponentProps<typeof Button>;
@@ -21,6 +22,8 @@ export type ActionButtonProps = DistributiveOmit<
   onError?: (error: CanupError) => void;
   /** Fires after the action settles (success or error). Pair with `onStart` to bracket consumer-side loading state. */
   onSettled?: () => void;
+  /** When true, renders `<ActionCredits action={action}>` directly below the button — the common action-panel layout as one drop-in. Default off. */
+  showCredits?: boolean;
 };
 
 export function ActionButton({
@@ -30,6 +33,7 @@ export function ActionButton({
   onResult,
   onError,
   onSettled,
+  showCredits,
   disabled,
   children,
   variant,
@@ -65,6 +69,15 @@ export function ActionButton({
     disabled: disabled || exhausted,
     children,
   } as unknown as CanvaButtonProps;
+
+  if (showCredits) {
+    return (
+      <Rows spacing="1u">
+        <Button {...buttonProps} />
+        <ActionCredits action={action} />
+      </Rows>
+    );
+  }
 
   return <Button {...buttonProps} />;
 }

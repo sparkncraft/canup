@@ -16,6 +16,13 @@ vi.mock('../hooks/use-credits.js', () => ({
 vi.mock('../internal/jwt-cache.js', () => ({
   getJwt: vi.fn().mockResolvedValue('mock-jwt'),
 }));
+// ActionCredits is unit-tested on its own; here we only assert ActionButton
+// renders it when asked, so stub it to a recognizable sentinel.
+vi.mock('./ActionCredits.js', () => ({
+  ActionCredits: ({ action }: { action: string }) => (
+    <div data-testid="action-credits">{action}</div>
+  ),
+}));
 const mockUseAction = vi.mocked(useAction);
 const mockUseCredits = vi.mocked(useCredits);
 
@@ -27,17 +34,7 @@ const test = baseTest.extend('_rtl', [
       error: null,
     });
     mockUseCredits.mockReturnValue({
-      data: {
-        subscribed: false,
-        quota: 100,
-        used: 10,
-        remaining: 90,
-        resetAt: null,
-        interval: 'monthly',
-        cancelAt: null,
-        email: null,
-        billingAvailable: true,
-      },
+      data: { quota: 100, used: 10, remaining: 90, resetAt: null, interval: 'monthly' },
       loading: false,
       exhausted: false,
       error: null,
@@ -95,17 +92,7 @@ describe('ActionButton', () => {
 
   test('marks button as aria-disabled when credits exhausted', () => {
     mockUseCredits.mockReturnValue({
-      data: {
-        subscribed: false,
-        quota: 10,
-        used: 10,
-        remaining: 0,
-        resetAt: null,
-        interval: 'monthly',
-        cancelAt: null,
-        email: null,
-        billingAvailable: true,
-      },
+      data: { quota: 10, used: 10, remaining: 0, resetAt: null, interval: 'monthly' },
       loading: false,
       exhausted: true,
       error: null,
@@ -238,5 +225,27 @@ describe('ActionButton', () => {
     );
 
     expect(screen.getByRole('button', { name: 'Go' })).toBeTruthy();
+  });
+
+  test('renders ActionCredits below the button when showCredits is set', () => {
+    renderWithCanva(
+      <ActionButton action="my-action" variant="primary" showCredits>
+        Go
+      </ActionButton>,
+    );
+
+    expect(screen.getByRole('button', { name: 'Go' })).toBeTruthy();
+    const credits = screen.getByTestId('action-credits');
+    expect(credits.textContent).toBe('my-action');
+  });
+
+  test('does not render ActionCredits by default', () => {
+    renderWithCanva(
+      <ActionButton action="my-action" variant="primary">
+        Go
+      </ActionButton>,
+    );
+
+    expect(screen.queryByTestId('action-credits')).toBeNull();
   });
 });
