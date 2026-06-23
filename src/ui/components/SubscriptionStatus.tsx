@@ -1,23 +1,22 @@
-import { Rows, Text, TextPlaceholder } from '@canva/app-ui-kit';
+import { Alert, Rows, Text, TextPlaceholder } from '@canva/app-ui-kit';
 import { useCustomer } from '../hooks/use-customer.js';
 import { useIntl } from '../internal/i18n/use-intl.js';
 import { subscriptionMessages } from '../internal/i18n/messages.js';
 import { formatDate } from '../internal/format.js';
-import { MonetizationAlert } from '../internal/MonetizationAlert.js';
-import { BillingLink } from '../internal/BillingLink.js';
+import { ManageSubscriptionLink, SubscribeLink } from '../internal/billing.js';
 
 /**
  * Customer-level billing surface — the account-area half of Canva's
- * Monetization Status pattern. Reads the customer resource and renders the right
- * state for the current subscription:
+ * Monetization Status pattern. Renders the state matching the live subscription:
  *
  *  - `active`    → "subscribed" + a manage CTA (+ a cancel-scheduled line)
  *  - `trialing`  → "on a trial" + trial-end date + a manage CTA
  *  - `past_due`  → a critical Alert + a manage CTA
- *  - `none`      → a subscribe CTA when Stripe is connected, otherwise nothing
+ *  - `none`      → "free plan" + a subscribe CTA when Stripe is connected, else nothing
  *
- * Every plan/manage noun is app-name-attributed; every CTA is payments-gated via
- * {@link BillingLink}; status text is never gated.
+ * Every plan/manage noun is app-name-attributed; every CTA is payments-gated;
+ * status text is never gated. Waits for the customer resource before rendering,
+ * so attribution is never missing.
  */
 export function SubscriptionStatus() {
   const { appName, subscriptionStatus, cancelAt, trialEnd, email, billingAvailable, loading } =
@@ -26,13 +25,10 @@ export function SubscriptionStatus() {
 
   if (loading) return <TextPlaceholder size="small" />;
 
-  const hasApp = appName ? 'true' : 'false';
-  const appNameArg = appName ?? '';
-  const m = subscriptionMessages;
+  // No app name to attribute to, or no resolved status — show nothing.
+  if (appName == null || subscriptionStatus == null) return null;
 
-  const manageCta = (
-    <BillingLink label={intl.formatMessage(m.manage, { hasApp, appName: appNameArg })} />
-  );
+  const m = subscriptionMessages;
   const emailLine =
     email != null ? (
       <Text size="xsmall" tone="tertiary">
@@ -46,9 +42,9 @@ export function SubscriptionStatus() {
       return (
         <Rows spacing="1u" align="center">
           <Text alignment="center" tone="secondary">
-            {intl.formatMessage(m.subscribed, { hasApp, appName: appNameArg })}
+            {intl.formatMessage(m.subscribed, { appName })}
           </Text>
-          {manageCta}
+          <ManageSubscriptionLink appName={appName} />
           {cancelDate ? (
             <Text size="xsmall" tone="tertiary">
               {intl.formatMessage(m.cancelScheduled, { cancelDate })}
@@ -63,35 +59,35 @@ export function SubscriptionStatus() {
       return (
         <Rows spacing="1u" align="center">
           <Text alignment="center" tone="secondary">
-            {intl.formatMessage(m.trial, { hasApp, appName: appNameArg })}
+            {intl.formatMessage(m.trial, { appName })}
           </Text>
           {trialEndDate ? (
             <Text size="xsmall" tone="tertiary">
               {intl.formatMessage(m.trialEnds, { trialEndDate })}
             </Text>
           ) : null}
-          {manageCta}
+          <ManageSubscriptionLink appName={appName} />
           {emailLine}
         </Rows>
       );
     }
     case 'past_due':
       return (
-        <MonetizationAlert
-          title={intl.formatMessage(m.pastDueTitle, { hasApp, appName: appNameArg })}
-        >
-          {manageCta}
-        </MonetizationAlert>
+        <Alert tone="critical" title={intl.formatMessage(m.pastDueTitle, { appName })}>
+          <ManageSubscriptionLink appName={appName} />
+        </Alert>
       );
     case 'none':
-      // Never-subscribed (or terminal, which collapses to `none`): offer to
-      // subscribe only when the app has Stripe connected.
+      // Never-subscribed (or terminal, which collapses to `none`). Show the free
+      // status + an upgrade pathway, but only when the app has Stripe connected.
       if (!billingAvailable) return null;
       return (
-        <BillingLink label={intl.formatMessage(m.subscribe, { hasApp, appName: appNameArg })} />
+        <Rows spacing="1u" align="center">
+          <Text alignment="center" tone="secondary">
+            {intl.formatMessage(m.freePlan, { appName })}
+          </Text>
+          <SubscribeLink appName={appName} />
+        </Rows>
       );
-    default:
-      // Status not yet resolved (or unknown) — render nothing.
-      return null;
   }
 }

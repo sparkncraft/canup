@@ -4,19 +4,23 @@ import { renderWithCanva } from '#test/setup/ui.js';
 import { ActionCredits } from './ActionCredits.js';
 import { useCredits } from '../hooks/use-credits.js';
 import { useCustomer } from '../hooks/use-customer.js';
-import { canAcceptPayments } from '../internal/can-accept-payments.js';
 
 vi.mock('../hooks/use-credits.js', () => ({ useCredits: vi.fn() }));
 vi.mock('../hooks/use-customer.js', () => ({ useCustomer: vi.fn() }));
-vi.mock('../internal/can-accept-payments.js', () => ({ canAcceptPayments: vi.fn() }));
+// The buy CTA (gate + mint) is unit-tested in billing.test; here we only assert
+// ActionCredits renders it with the right app name.
+vi.mock('../internal/billing.js', () => ({
+  BuyCreditsLink: ({ appName }: { appName: string }) => (
+    <div data-testid="buy-credits">{appName}</div>
+  ),
+}));
 
 const mockUseCredits = vi.mocked(useCredits);
 const mockUseCustomer = vi.mocked(useCustomer);
-const mockCanAccept = vi.mocked(canAcceptPayments);
 
 function credits(over: Partial<ReturnType<typeof useCredits>['data'] & object> = {}) {
   return {
-    data: { quota: 100, used: 10, remaining: 90, resetAt: null, interval: 'monthly', ...over },
+    data: { quota: 100, used: 88, remaining: 12, resetAt: null, interval: 'monthly', ...over },
     loading: false,
     exhausted: false,
     error: null,
@@ -43,7 +47,6 @@ const test = baseTest.extend('_rtl', [
   async ({}, use) => {
     mockUseCredits.mockReturnValue(credits());
     mockUseCustomer.mockReturnValue(customer());
-    mockCanAccept.mockReturnValue(true);
     await use();
     cleanup();
   },
@@ -51,9 +54,9 @@ const test = baseTest.extend('_rtl', [
 ]);
 
 describe('ActionCredits', () => {
-  test('shows attributed usage with the app name', () => {
+  test('shows remaining credits attributed with the app name', () => {
     renderWithCanva(<ActionCredits action="generate" />);
-    expect(screen.getByText(/Used 10 of 100 Acme credits/)).toBeTruthy();
+    expect(screen.getByText(/12 of 100 Acme credits left/)).toBeTruthy();
   });
 
   test('appends the refresh interval when not lifetime', () => {
@@ -64,7 +67,6 @@ describe('ActionCredits', () => {
   test('omits the refresh interval for lifetime credits', () => {
     mockUseCredits.mockReturnValue(credits({ interval: 'lifetime' }));
     renderWithCanva(<ActionCredits action="generate" />);
-    expect(screen.getByText(/Used 10 of 100 Acme credits/)).toBeTruthy();
     expect(screen.queryByText(/refreshes/)).toBeNull();
   });
 
@@ -74,39 +76,26 @@ describe('ActionCredits', () => {
     );
     renderWithCanva(<ActionCredits action="generate" />);
 
-    expect(screen.getByText("You're out of Acme credits")).toBeTruthy();
-    expect(screen.getByText('Buy Acme credits')).toBeTruthy();
+    expect(screen.getByText("You're out of Acme credits.")).toBeTruthy();
     expect(screen.getByText(/Credits refresh .*2026/)).toBeTruthy();
-  });
-
-  test('withholds the buy CTA when payments are not accepted, but still shows status', () => {
-    mockCanAccept.mockReturnValue(false);
-    mockUseCredits.mockReturnValue(credits({ used: 100, remaining: 0 }));
-    renderWithCanva(<ActionCredits action="generate" />);
-
-    expect(screen.getByText("You're out of Acme credits")).toBeTruthy();
-    expect(screen.queryByText('Buy Acme credits')).toBeNull();
-  });
-
-  test('falls back to unattributed copy when the app name has not resolved', () => {
-    mockUseCustomer.mockReturnValue(customer({ appName: null }));
-    mockUseCredits.mockReturnValue(credits({ used: 100, remaining: 0 }));
-    renderWithCanva(<ActionCredits action="generate" />);
-
-    expect(screen.getByText("You're out of credits")).toBeTruthy();
-    expect(screen.getByText('Buy more credits')).toBeTruthy();
+    expect(screen.getByTestId('buy-credits').textContent).toBe('Acme');
   });
 
   test('renders nothing for a pure-subscription action (quota null)', () => {
     mockUseCredits.mockReturnValue(credits({ quota: null }));
     renderWithCanva(<ActionCredits action="generate" />);
-    expect(screen.queryByText(/Used/)).toBeNull();
-    expect(screen.queryByText(/out of/)).toBeNull();
+    expect(screen.queryByText(/credits/)).toBeNull();
   });
 
-  test('shows a placeholder (no usage text) while loading', () => {
+  test('renders nothing until the app name resolves (no unattributed surface)', () => {
+    mockUseCustomer.mockReturnValue(customer({ appName: null }));
+    renderWithCanva(<ActionCredits action="generate" />);
+    expect(screen.queryByText(/credits/)).toBeNull();
+  });
+
+  test('shows a placeholder (no credit text) while loading', () => {
     mockUseCredits.mockReturnValue({ ...credits(), data: null, loading: true });
     renderWithCanva(<ActionCredits action="generate" />);
-    expect(screen.queryByText(/Used/)).toBeNull();
+    expect(screen.queryByText(/credits/)).toBeNull();
   });
 });

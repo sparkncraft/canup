@@ -3,13 +3,18 @@ import { screen, cleanup } from '@testing-library/react';
 import { renderWithCanva } from '#test/setup/ui.js';
 import { SubscriptionStatus } from './SubscriptionStatus.js';
 import { useCustomer } from '../hooks/use-customer.js';
-import { canAcceptPayments } from '../internal/can-accept-payments.js';
 
 vi.mock('../hooks/use-customer.js', () => ({ useCustomer: vi.fn() }));
-vi.mock('../internal/can-accept-payments.js', () => ({ canAcceptPayments: vi.fn() }));
+// CTAs (gate + mint) are unit-tested in billing.test; here we only assert which
+// one renders per state, with the right app name.
+vi.mock('../internal/billing.js', () => ({
+  ManageSubscriptionLink: ({ appName }: { appName: string }) => (
+    <div data-testid="manage">{appName}</div>
+  ),
+  SubscribeLink: ({ appName }: { appName: string }) => <div data-testid="subscribe">{appName}</div>,
+}));
 
 const mockUseCustomer = vi.mocked(useCustomer);
-const mockCanAccept = vi.mocked(canAcceptPayments);
 
 function customer(over: Partial<ReturnType<typeof useCustomer>> = {}) {
   return {
@@ -29,7 +34,6 @@ function customer(over: Partial<ReturnType<typeof useCustomer>> = {}) {
 const test = baseTest.extend('_rtl', [
   async ({}, use) => {
     mockUseCustomer.mockReturnValue(customer());
-    mockCanAccept.mockReturnValue(true);
     await use();
     cleanup();
   },
@@ -39,8 +43,8 @@ const test = baseTest.extend('_rtl', [
 describe('SubscriptionStatus', () => {
   test('active: shows subscribed status and a manage CTA', () => {
     renderWithCanva(<SubscriptionStatus />);
-    expect(screen.getByText("You're subscribed to Acme")).toBeTruthy();
-    expect(screen.getByText('Manage Acme subscription')).toBeTruthy();
+    expect(screen.getByText("You're subscribed to Acme.")).toBeTruthy();
+    expect(screen.getByTestId('manage').textContent).toBe('Acme');
   });
 
   test('active + cancelAt: shows the cancellation date line', () => {
@@ -60,24 +64,25 @@ describe('SubscriptionStatus', () => {
       customer({ subscriptionStatus: 'trialing', trialEnd: '2026-07-01T00:00:00.000Z' }),
     );
     renderWithCanva(<SubscriptionStatus />);
-    expect(screen.getByText("You're on a trial of Acme")).toBeTruthy();
+    expect(screen.getByText("You're on a trial of Acme.")).toBeTruthy();
     expect(screen.getByText(/Trial ends .*2026/)).toBeTruthy();
-    expect(screen.getByText('Manage Acme subscription')).toBeTruthy();
+    expect(screen.getByTestId('manage').textContent).toBe('Acme');
   });
 
   test('past_due: renders a critical alert with a manage CTA', () => {
     mockUseCustomer.mockReturnValue(customer({ subscriptionStatus: 'past_due' }));
     renderWithCanva(<SubscriptionStatus />);
-    expect(screen.getByText("There's a problem with your Acme payment")).toBeTruthy();
-    expect(screen.getByText('Manage Acme subscription')).toBeTruthy();
+    expect(screen.getByText("There's a problem with your Acme payment.")).toBeTruthy();
+    expect(screen.getByTestId('manage').textContent).toBe('Acme');
   });
 
-  test('none + billingAvailable: shows a subscribe CTA', () => {
+  test('none + billingAvailable: shows free-plan status and a subscribe CTA', () => {
     mockUseCustomer.mockReturnValue(
       customer({ subscriptionStatus: 'none', billingAvailable: true }),
     );
     renderWithCanva(<SubscriptionStatus />);
-    expect(screen.getByText('Subscribe to Acme')).toBeTruthy();
+    expect(screen.getByText("You're on the Acme free plan.")).toBeTruthy();
+    expect(screen.getByTestId('subscribe').textContent).toBe('Acme');
   });
 
   test('none + no Stripe connected: renders nothing', () => {
@@ -85,31 +90,18 @@ describe('SubscriptionStatus', () => {
       customer({ subscriptionStatus: 'none', billingAvailable: false }),
     );
     renderWithCanva(<SubscriptionStatus />);
-    expect(screen.queryByText(/Subscribe/)).toBeNull();
+    expect(screen.queryByText(/free plan/)).toBeNull();
+    expect(screen.queryByTestId('subscribe')).toBeNull();
   });
 
-  test('CTA is withheld when payments are not accepted, but status still shows', () => {
-    mockCanAccept.mockReturnValue(false);
-    renderWithCanva(<SubscriptionStatus />);
-    expect(screen.getByText("You're subscribed to Acme")).toBeTruthy();
-    expect(screen.queryByText('Manage Acme subscription')).toBeNull();
-  });
-
-  test('falls back to unattributed copy when the app name has not resolved', () => {
+  test('renders nothing until the app name resolves', () => {
     mockUseCustomer.mockReturnValue(customer({ appName: null }));
-    renderWithCanva(<SubscriptionStatus />);
-    expect(screen.getByText("You're subscribed")).toBeTruthy();
-    expect(screen.getByText('Manage subscription')).toBeTruthy();
-  });
-
-  test('shows a placeholder (no status text) while loading', () => {
-    mockUseCustomer.mockReturnValue(customer({ loading: true, subscriptionStatus: null }));
     renderWithCanva(<SubscriptionStatus />);
     expect(screen.queryByText(/subscribed/)).toBeNull();
   });
 
-  test('renders nothing when the status is unresolved (not loading)', () => {
-    mockUseCustomer.mockReturnValue(customer({ subscriptionStatus: null }));
+  test('shows a placeholder (no status text) while loading', () => {
+    mockUseCustomer.mockReturnValue(customer({ loading: true, subscriptionStatus: null }));
     renderWithCanva(<SubscriptionStatus />);
     expect(screen.queryByText(/subscribed/)).toBeNull();
   });

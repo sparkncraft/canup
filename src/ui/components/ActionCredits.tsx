@@ -1,11 +1,10 @@
-import { Text, TextPlaceholder } from '@canva/app-ui-kit';
+import { Alert, Rows, Text, TextPlaceholder } from '@canva/app-ui-kit';
 import { useCredits } from '../hooks/use-credits.js';
 import { useCustomer } from '../hooks/use-customer.js';
 import { useIntl } from '../internal/i18n/use-intl.js';
 import { creditsMessages } from '../internal/i18n/messages.js';
 import { formatDate } from '../internal/format.js';
-import { MonetizationAlert } from '../internal/MonetizationAlert.js';
-import { BillingLink } from '../internal/BillingLink.js';
+import { BuyCreditsLink } from '../internal/billing.js';
 
 export interface ActionCreditsProps {
   /** The action whose credit balance to display. */
@@ -13,53 +12,51 @@ export interface ActionCreditsProps {
 }
 
 /**
- * Per-action credit status. Reads the live balance for `action` and the
- * customer resource (for app-name attribution). Renders only when the action is
- * credit-metered (`quota != null`); a pure-subscription action shows nothing
- * here. When the balance is exhausted, renders a critical Alert with a
- * (payments-gated) "Buy credits" CTA, per Canva's Monetization Status pattern.
+ * Per-action credit status. Shows the live balance for `action`, attributed with
+ * the app name. Renders only when the action is credit-metered (`quota != null`).
+ * When the balance is exhausted, renders a critical Alert with a payments-gated
+ * "Buy credits" CTA, per Canva's Monetization Status pattern.
+ *
+ * Waits for the customer resource (which carries `appName`) before rendering, so
+ * attribution is never missing; if it can't resolve, the surface is omitted
+ * rather than shown unattributed.
  */
 export function ActionCredits({ action }: ActionCreditsProps) {
-  const { data, loading } = useCredits(action);
-  const { appName } = useCustomer();
+  const { data, loading: creditsLoading } = useCredits(action);
+  const { appName, loading: customerLoading } = useCustomer();
   const intl = useIntl();
 
-  if (loading) return <TextPlaceholder size="small" />;
+  if (creditsLoading || customerLoading) return <TextPlaceholder size="small" />;
 
-  // Pure-subscription action — no per-action credits to show.
-  if (data?.quota == null) return null;
-
-  // `appName` may lag the balance by a beat; the `hasApp` branch keeps the copy
-  // correct either way and re-renders attributed once the customer resolves.
-  const hasApp = appName ? 'true' : 'false';
-  const appNameArg = appName ?? '';
+  // No per-action credits to show, or no app name to attribute them to.
+  if (data?.quota == null || appName == null) return null;
 
   if (data.remaining <= 0) {
     const resetDate = formatDate(data.resetAt);
     return (
-      <MonetizationAlert
-        title={intl.formatMessage(creditsMessages.exhaustedTitle, { hasApp, appName: appNameArg })}
+      <Alert
+        tone="critical"
+        title={intl.formatMessage(creditsMessages.exhaustedTitle, { appName })}
       >
-        {resetDate ? (
-          <Text size="small">
-            {intl.formatMessage(creditsMessages.exhaustedRefresh, { resetDate })}
-          </Text>
-        ) : null}
-        <BillingLink
-          label={intl.formatMessage(creditsMessages.buy, { hasApp, appName: appNameArg })}
-        />
-      </MonetizationAlert>
+        <Rows spacing="1u">
+          {resetDate ? (
+            <Text size="small">
+              {intl.formatMessage(creditsMessages.exhaustedRefresh, { resetDate })}
+            </Text>
+          ) : null}
+          <BuyCreditsLink appName={appName} />
+        </Rows>
+      </Alert>
     );
   }
 
   const showInterval = data.interval != null && data.interval !== 'lifetime';
   return (
     <Text alignment="center" tone="secondary">
-      {intl.formatMessage(creditsMessages.usage, {
-        used: data.used,
+      {intl.formatMessage(creditsMessages.remaining, {
+        remaining: data.remaining,
         quota: data.quota,
-        hasApp,
-        appName: appNameArg,
+        appName,
       })}
       {showInterval
         ? intl.formatMessage(creditsMessages.refreshSuffix, { interval: data.interval })
