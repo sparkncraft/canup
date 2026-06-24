@@ -1,62 +1,51 @@
 # Releasing
 
-Releases are automated with [Changesets](https://github.com/changesets/changesets)
-and [npm Trusted Publishing](https://docs.npmjs.com/trusted-publishers) (OIDC).
-**No npm token is involved** — GitHub Actions authenticates to npm via a
-short-lived OIDC credential, and packages are published with
+`@canup/ui` and `@canup/cli` publish to npm via
+[npm Trusted Publishing](https://docs.npmjs.com/trusted-publishers) (OIDC).
+**No npm token is involved** — GitHub Actions authenticates with a short-lived
+OIDC credential, and packages publish with
 [provenance](https://docs.npmjs.com/generating-provenance-statements).
 
-## For contributors
+The two packages version in lockstep: bump them to the same version and release
+them together.
 
-If your change affects published behavior, add a changeset in the same PR:
+## Cutting a release
+
+1. On a branch, bump the `version` in both `packages/ui/package.json` and
+   `packages/cli/package.json` to the new version and update each package's
+   `CHANGELOG.md`. Merge to `main`.
+2. Run the **Release** workflow from the Actions tab (`workflow_dispatch`). It
+   builds, tests, and publishes — with provenance, no token. (pnpm skips any
+   package whose version is already on npm, so a re-run without a bump is a
+   no-op.)
+
+## First publish (one-time, per package)
+
+npm Trusted Publishing can't bootstrap a package name that doesn't exist yet, so
+the **first** publish of each package is manual and requires your npm 2FA:
 
 ```sh
-pnpm changeset
+pnpm install --frozen-lockfile
+pnpm build
+pnpm --filter @canup/ui publish --access public
+pnpm --filter @canup/cli publish --access public
 ```
 
-Pick the bump type (patch / minor / major) and write a short, user-facing
-summary. CI reminds you if a PR is missing one.
+Then configure the trusted publisher for **each** package at
+`https://www.npmjs.com/package/<name>/access` → **Trusted Publisher** →
+**GitHub Actions**:
 
-That's it — you don't publish anything. Maintainers merge the automated release
-PR (below) when it's time to ship.
+| Field                | Value                                          |
+| -------------------- | ---------------------------------------------- |
+| Organization or user | `sparkncraft`                                  |
+| Repository           | `canup`                                        |
+| Workflow filename    | `release.yml` _(filename only, not a path)_    |
+| Environment          | _(leave blank)_                                |
 
-## How a release happens
-
-1. PRs merge to `main`, each carrying a changeset.
-2. The release workflow opens (and keeps updating) a **"Version Packages"** PR
-   that bumps the version and updates `CHANGELOG.md`.
-3. Merging that PR publishes the new version to npm — with provenance, no token.
-
-## Maintainer setup (one-time)
-
-npm Trusted Publishing requires the package to exist before a trusted publisher
-can be attached, so the very first release is published manually; every release
-after that is automated.
-
-1. **First publish (once, requires npm 2FA):**
-
-   ```sh
-   pnpm install --frozen-lockfile
-   pnpm run build
-   npm publish --access public
-   ```
-
-2. **Configure the trusted publisher** at
-   <https://www.npmjs.com/package/canup/access> → **Trusted Publisher** →
-   **GitHub Actions**:
-
-   | Field | Value |
-   |-------|-------|
-   | Organization or user | `sparkncraft` |
-   | Repository | `canup` |
-   | Workflow filename | `release.yml` *(filename only, not a path)* |
-   | Environment | *(leave blank)* |
-
-After this, no token is needed and the `release.yml` workflow publishes on its
-own. Any previously configured `NPM_TOKEN` secret can be deleted.
+After that, the `release.yml` workflow publishes on its own — no token needed.
 
 ## Requirements (handled by the workflow)
 
-- npm **≥ 11.5.1** and Node **≥ 22.14.0** — the workflow installs `npm@latest`
+- npm **≥ 11.5.1** and Node **≥ 22** — the workflow installs `npm@latest`
   because runners ship an older npm and pnpm delegates the publish to the npm CLI.
 - `id-token: write` permission on the release job.

@@ -1,0 +1,809 @@
+import { describe, test as baseTest, expect, vi } from 'vitest';
+import { CanupClient } from './api-client.js';
+import { ApiError } from './errors.js';
+
+// ──────────────────────────────────────────────
+// Fetch mock setup
+// ──────────────────────────────────────────────
+
+const mockFetch = vi.fn();
+
+const test = baseTest.extend<{ _fetch: void }>({
+  _fetch: [
+    async ({}, use) => {
+      vi.stubGlobal('fetch', mockFetch);
+      await use();
+    },
+    { auto: true },
+  ],
+});
+
+/** Wrap data in the standard API success envelope and return a fetch Response-like object. */
+function okResponse<T>(data: T) {
+  return { ok: true, status: 200, json: () => Promise.resolve({ ok: true, data }) };
+}
+
+/** Return an API error envelope wrapped in a fetch Response-like object. */
+function errorResponse(code: string, message: string, status = 400) {
+  return {
+    ok: false,
+    status,
+    json: () => Promise.resolve({ ok: false, error: { code, message } }),
+  };
+}
+
+/** For testCode which returns raw TestResult (not unwrapped). */
+function rawResponse(body: unknown, httpOk = true, status = 200) {
+  return { ok: httpOk, status, json: () => Promise.resolve(body) };
+}
+
+// ──────────────────────────────────────────────
+// CanupClient tests
+// ──────────────────────────────────────────────
+
+describe('CanupClient', () => {
+  // Helper: create a client with defaults for most tests
+  function createClient(opts?: { apiUrl?: string; token?: string }) {
+    return new CanupClient({ apiUrl: 'https://test.api', token: 'test-token', ...opts });
+  }
+
+  // Helper: extract the URL string passed to fetch
+  function fetchUrl(): string {
+    return mockFetch.mock.calls[0][0] as string;
+  }
+
+  // Helper: extract the RequestInit options passed to fetch
+  function fetchOpts(): RequestInit & { headers: Record<string, string> } {
+    return mockFetch.mock.calls[0][1] as RequestInit & { headers: Record<string, string> };
+  }
+
+  // ──── Constructor ────
+
+  describe('constructor', () => {
+    test('uses apiUrl from options when provided', async () => {
+      mockFetch.mockResolvedValueOnce(
+        okResponse({ id: '1', email: 'a@b.c', name: null, image: null, createdAt: '' }),
+      );
+      const client = new CanupClient({ apiUrl: 'https://custom.test', token: 'tok' });
+      await client.getMe();
+      expect(fetchUrl()).toMatch(/^https:\/\/custom\.test/);
+    });
+
+    test('falls back to CANUP_URL env var', async () => {
+      vi.stubEnv('CANUP_URL', 'https://env.test');
+      mockFetch.mockResolvedValueOnce(
+        okResponse({ id: '1', email: 'a@b.c', name: null, image: null, createdAt: '' }),
+      );
+      const client = new CanupClient({ token: 'tok' });
+      await client.getMe();
+      expect(fetchUrl()).toMatch(/^https:\/\/env\.test/);
+    });
+
+    test('defaults to https://canup.link when neither option nor env set', async () => {
+      mockFetch.mockResolvedValueOnce(
+        okResponse({ id: '1', email: 'a@b.c', name: null, image: null, createdAt: '' }),
+      );
+      const client = new CanupClient({ token: 'tok' });
+      await client.getMe();
+      expect(fetchUrl()).toMatch(/^https:\/\/canup\.link/);
+    });
+  });
+
+  // ──── Auth header ────
+
+  describe('auth header', () => {
+    test('sends Authorization: Bearer when token is set', async () => {
+      mockFetch.mockResolvedValueOnce(
+        okResponse({ id: '1', email: 'a@b.c', name: null, image: null, createdAt: '' }),
+      );
+      const client = createClient();
+      await client.getMe();
+      expect(fetchOpts().headers.Authorization).toBe('Bearer test-token');
+    });
+
+    test('omits Authorization header when no token', async () => {
+      mockFetch.mockResolvedValueOnce(
+        okResponse({ id: '1', email: 'a@b.c', name: null, image: null, createdAt: '' }),
+      );
+      const client = new CanupClient({ apiUrl: 'https://test.api' });
+      await client.getMe();
+      expect(fetchOpts().headers).not.toHaveProperty('Authorization');
+    });
+  });
+
+  // ──── Content-Type header ────
+
+  describe('content-type header', () => {
+    test('always sends Content-Type: application/json', async () => {
+      mockFetch.mockResolvedValueOnce(okResponse([]));
+      const client = createClient();
+      await client.listApps();
+      expect(fetchOpts().headers['Content-Type']).toBe('application/json');
+    });
+  });
+
+  // ──── X-Canup-Client header ────
+
+  describe('X-Canup-Client header', () => {
+    test('sends canup-cli/<semver> on JSON requests', async () => {
+      mockFetch.mockResolvedValueOnce(okResponse([]));
+      const client = createClient();
+      await client.listApps();
+      expect(fetchOpts().headers['X-Canup-Client']).toMatch(/^canup-cli\/\d+\.\d+\.\d+/);
+    });
+
+    test('sends canup-cli/<semver> on the test endpoint', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ ok: true, data: { result: null, durationMs: 0, printOutput: '' } }),
+      });
+      const client = createClient();
+      await client.testCode('app-1', 'x', 'python', {});
+      expect(fetchOpts().headers['X-Canup-Client']).toMatch(/^canup-cli\/\d+\.\d+\.\d+/);
+    });
+
+    test('sends the header even without an auth token', async () => {
+      mockFetch.mockResolvedValueOnce(okResponse([]));
+      const client = new CanupClient({ apiUrl: 'https://test.api' });
+      await client.listApps();
+      expect(fetchOpts().headers['X-Canup-Client']).toMatch(/^canup-cli\/\d+\.\d+\.\d+/);
+    });
+  });
+
+  // ──── Error handling (via request()) ────
+
+  describe('error handling via request()', () => {
+    test('throws an ApiError with statusCode and code on API error envelope', async () => {
+      mockFetch.mockResolvedValueOnce(errorResponse('NotFoundError', 'App not found', 404));
+      const client = createClient();
+
+      const err = await client.getMe().catch((e: unknown) => e);
+
+      expect(err).toBeInstanceOf(ApiError);
+      expect((err as ApiError).message).toBe('App not found');
+      expect((err as ApiError).statusCode).toBe(404);
+      expect((err as ApiError).code).toBe('NotFoundError');
+    });
+
+    test('error message matches the API error message', async () => {
+      mockFetch.mockResolvedValueOnce(errorResponse('ValidationError', 'Invalid input', 422));
+      const client = createClient();
+
+      await expect(client.listApps()).rejects.toThrow('Invalid input');
+    });
+
+    test('throws when response is not valid JSON', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: () => Promise.reject(new SyntaxError('Unexpected token')),
+      });
+      const client = createClient();
+
+      await expect(client.getMe()).rejects.toThrow();
+    });
+  });
+
+  // ──── getMe ────
+
+  describe('getMe', () => {
+    test('sends GET to /v1/me and returns user info', async () => {
+      const user = {
+        id: 'u1',
+        email: 'a@b.c',
+        name: 'Test',
+        image: null,
+        createdAt: '2026-01-01',
+      };
+      mockFetch.mockResolvedValueOnce(okResponse(user));
+      const client = createClient();
+      const result = await client.getMe();
+
+      expect(fetchUrl()).toBe('https://test.api/v1/me');
+      expect(fetchOpts().method).toBeUndefined(); // defaults to GET
+      expect(result).toEqual(user);
+    });
+  });
+
+  // ──── revokeUserKey ────
+
+  describe('revokeUserKey', () => {
+    test('sends DELETE to /v1/me/api-keys/:keyId with URL encoding', async () => {
+      mockFetch.mockResolvedValueOnce(okResponse({ revoked: 'apikey_abc' }));
+      const client = createClient();
+      await client.revokeUserKey('apikey/abc');
+
+      expect(fetchUrl()).toBe('https://test.api/v1/me/api-keys/apikey%2Fabc');
+      expect(fetchOpts().method).toBe('DELETE');
+    });
+
+    test('forwards AbortSignal to underlying fetch', async () => {
+      mockFetch.mockResolvedValueOnce(okResponse({ revoked: 'apikey_x' }));
+      const client = createClient();
+      const ac = new AbortController();
+      await client.revokeUserKey('apikey_x', { signal: ac.signal });
+
+      // The actual signal the SDK passed must be the SAME instance reaching fetch,
+      // otherwise the timeout in `canup logout` would be decorative.
+      expect(fetchOpts().signal).toBe(ac.signal);
+    });
+
+    test('AbortError surfaces when the signal aborts before fetch resolves', async () => {
+      mockFetch.mockImplementation(async (_url: string, init: RequestInit) => {
+        // Simulate fetch honoring the signal: if it's aborted, reject with AbortError.
+        if (init.signal?.aborted) {
+          const err = new Error('aborted') as Error & { name: string };
+          err.name = 'AbortError';
+          throw err;
+        }
+        return okResponse({ revoked: 'apikey_x' });
+      });
+
+      const client = createClient();
+      const ac = new AbortController();
+      ac.abort();
+
+      await expect(client.revokeUserKey('apikey_x', { signal: ac.signal })).rejects.toMatchObject({
+        name: 'AbortError',
+      });
+    });
+  });
+
+  // ──── registerApp ────
+
+  describe('registerApp', () => {
+    test('sends POST to /v1/apps with canvaAppId and name', async () => {
+      const app = { id: 'AAFcanva123', name: 'My App' };
+      mockFetch.mockResolvedValueOnce(okResponse(app));
+      const client = createClient();
+      const result = await client.registerApp('canva-123', 'My App');
+
+      expect(fetchUrl()).toBe('https://test.api/v1/apps');
+      expect(fetchOpts().method).toBe('POST');
+      expect(JSON.parse(fetchOpts().body as string)).toEqual({
+        canvaAppId: 'canva-123',
+        name: 'My App',
+      });
+      expect(result).toEqual(app);
+    });
+  });
+
+  // ──── listApps ────
+
+  describe('listApps', () => {
+    test('sends GET to /v1/apps and returns array', async () => {
+      const apps = [{ id: 'AAFapp1', name: 'App1', createdAt: '' }];
+      mockFetch.mockResolvedValueOnce(okResponse(apps));
+      const client = createClient();
+      const result = await client.listApps();
+
+      expect(fetchUrl()).toBe('https://test.api/v1/apps');
+      expect(result).toEqual(apps);
+    });
+  });
+
+  // ──── getAppInfo ────
+
+  describe('getAppInfo', () => {
+    test('sends GET to /v1/apps/:appId with URL encoding', async () => {
+      const app = { id: 'AAFapp1', name: 'App1', createdAt: '' };
+      mockFetch.mockResolvedValueOnce(okResponse(app));
+      const client = createClient();
+      const result = await client.getAppInfo('app/special');
+
+      expect(fetchUrl()).toBe('https://test.api/v1/apps/app%2Fspecial');
+      expect(result).toEqual(app);
+    });
+  });
+
+  // ──── createApiKey ────
+
+  describe('createApiKey', () => {
+    test('sends POST to /v1/apps/:appId/api-keys', async () => {
+      const key = { key: 'sk_live_xxx', prefix: 'sk_live' };
+      mockFetch.mockResolvedValueOnce(okResponse(key));
+      const client = createClient();
+      const result = await client.createApiKey('a1', 'production');
+
+      expect(fetchUrl()).toBe('https://test.api/v1/apps/a1/api-keys');
+      expect(fetchOpts().method).toBe('POST');
+      expect(JSON.parse(fetchOpts().body as string)).toEqual({ name: 'production' });
+      expect(result).toEqual(key);
+    });
+  });
+
+  // ──── deployAction ────
+
+  describe('deployAction', () => {
+    test('sends PUT to /v1/apps/:appId/actions/:slug with code and language', async () => {
+      const deployed = {
+        action: {
+          id: 'act1',
+          slug: 'greet',
+          language: 'nodejs',
+          deployed: true,
+          contentHash: 'abc123',
+          createdAt: '',
+          updatedAt: '',
+        },
+        lambdaReady: true,
+      };
+      mockFetch.mockResolvedValueOnce(okResponse(deployed));
+      const client = createClient();
+      const result = await client.deployAction('a1', 'greet', 'console.log("hi")', 'nodejs');
+
+      expect(fetchUrl()).toBe('https://test.api/v1/apps/a1/actions/greet');
+      expect(fetchOpts().method).toBe('PUT');
+      expect(JSON.parse(fetchOpts().body as string)).toEqual({
+        code: 'console.log("hi")',
+        language: 'nodejs',
+      });
+      expect(result).toEqual(deployed);
+    });
+
+    test('encodes appId and slug in URL', async () => {
+      mockFetch.mockResolvedValueOnce(
+        okResponse({
+          action: {
+            id: '',
+            slug: '',
+            language: '',
+            deployed: false,
+            contentHash: null,
+            createdAt: '',
+            updatedAt: '',
+          },
+          lambdaReady: false,
+        }),
+      );
+      const client = createClient();
+      await client.deployAction('a/1', 's/lug', 'code', 'python');
+
+      expect(fetchUrl()).toBe('https://test.api/v1/apps/a%2F1/actions/s%2Flug');
+    });
+  });
+
+  // ──── listActions ────
+
+  describe('listActions', () => {
+    test('sends GET to /v1/apps/:appId/actions', async () => {
+      const actions = [
+        {
+          id: 'act1',
+          slug: 'greet',
+          language: 'nodejs',
+          deployed: true,
+          contentHash: null,
+          createdAt: '',
+          updatedAt: '',
+        },
+      ];
+      mockFetch.mockResolvedValueOnce(okResponse(actions));
+      const client = createClient();
+      const result = await client.listActions('a1');
+
+      expect(fetchUrl()).toBe('https://test.api/v1/apps/a1/actions');
+      expect(result).toEqual(actions);
+    });
+  });
+
+  // ──── listActionsWithScript ────
+
+  describe('listActionsWithScript', () => {
+    test('sends GET to /v1/apps/:appId/actions?include=script', async () => {
+      const actions = [
+        {
+          id: 'act1',
+          slug: 'greet',
+          language: 'nodejs',
+          deployed: true,
+          contentHash: null,
+          script: 'code',
+          createdAt: '',
+          updatedAt: '',
+        },
+      ];
+      mockFetch.mockResolvedValueOnce(okResponse(actions));
+      const client = createClient();
+      const result = await client.listActionsWithScript('a1');
+
+      expect(fetchUrl()).toBe('https://test.api/v1/apps/a1/actions?include=script');
+      expect(result).toEqual(actions);
+    });
+  });
+
+  // ──── deleteAction ────
+
+  describe('deleteAction', () => {
+    test('sends DELETE to /v1/apps/:appId/actions/:slug', async () => {
+      mockFetch.mockResolvedValueOnce(okResponse({ deleted: 'greet' }));
+      const client = createClient();
+      const result = await client.deleteAction('a1', 'greet');
+
+      expect(fetchUrl()).toBe('https://test.api/v1/apps/a1/actions/greet');
+      expect(fetchOpts().method).toBe('DELETE');
+      expect(result).toEqual({ deleted: 'greet' });
+    });
+  });
+
+  // ──── testCode (custom fetch handling) ────
+
+  describe('testCode', () => {
+    test('sends POST to /v1/apps/:appId/test with code, language, params', async () => {
+      const testResult = { ok: true, data: { result: 42, durationMs: 100, printOutput: '' } };
+      mockFetch.mockResolvedValueOnce(rawResponse(testResult));
+      const client = createClient();
+      const result = await client.testCode('a1', 'console.log(1)', 'nodejs', { x: 1 });
+
+      expect(fetchUrl()).toBe('https://test.api/v1/apps/a1/test');
+      expect(fetchOpts().method).toBe('POST');
+      expect(JSON.parse(fetchOpts().body as string)).toEqual({
+        code: 'console.log(1)',
+        language: 'nodejs',
+        params: { x: 1 },
+      });
+      expect(result).toEqual(testResult);
+    });
+
+    test('returns raw TestResult on success (full envelope, not unwrapped)', async () => {
+      const testResult = {
+        ok: true,
+        data: { result: { greeting: 'hi' }, durationMs: 50, printOutput: 'debug' },
+      };
+      mockFetch.mockResolvedValueOnce(rawResponse(testResult));
+      const client = createClient();
+      const result = await client.testCode('a1', 'code', 'nodejs', {});
+
+      expect(result).toEqual(testResult);
+      expect(result).toHaveProperty('ok', true);
+      expect(result).toHaveProperty('data');
+    });
+
+    test('returns raw TestError on script failure (full envelope)', async () => {
+      const testError = {
+        ok: false,
+        error: { type: 'RuntimeError', message: 'boom', durationMs: 10 },
+      };
+      mockFetch.mockResolvedValueOnce(rawResponse(testError));
+      const client = createClient();
+      const result = await client.testCode('a1', 'code', 'nodejs', {});
+
+      expect(result).toEqual(testError);
+      expect(result).toHaveProperty('ok', false);
+    });
+
+    test('throws an ApiError on HTTP error with statusCode and code', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        statusText: 'Unauthorized',
+        json: () => Promise.resolve({ error: { code: 'AuthError', message: 'Invalid token' } }),
+      });
+      const client = createClient();
+
+      const err = await client.testCode('a1', 'code', 'nodejs', {}).catch((e: unknown) => e);
+
+      expect(err).toBeInstanceOf(ApiError);
+      expect((err as ApiError).message).toBe('Invalid token');
+      expect((err as ApiError).statusCode).toBe(401);
+      expect((err as ApiError).code).toBe('AuthError');
+    });
+
+    test('falls back to statusText and HttpError when response is not JSON', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        statusText: 'Internal Server Error',
+        json: () => Promise.reject(new SyntaxError('Unexpected token')),
+      });
+      const client = createClient();
+
+      const err = await client.testCode('a1', 'code', 'nodejs', {}).catch((e: unknown) => e);
+
+      expect(err).toBeInstanceOf(ApiError);
+      expect((err as ApiError).message).toBe('Internal Server Error');
+      expect((err as ApiError).statusCode).toBe(500);
+      expect((err as ApiError).code).toBe('HttpError');
+    });
+
+    test('sends Authorization header when token is set', async () => {
+      mockFetch.mockResolvedValueOnce(
+        rawResponse({ ok: true, data: { result: null, durationMs: 0, printOutput: '' } }),
+      );
+      const client = createClient();
+      await client.testCode('a1', 'code', 'nodejs', {});
+
+      expect(fetchOpts().headers.Authorization).toBe('Bearer test-token');
+    });
+
+    test('omits Authorization header when no token', async () => {
+      mockFetch.mockResolvedValueOnce(
+        rawResponse({ ok: true, data: { result: null, durationMs: 0, printOutput: '' } }),
+      );
+      const client = new CanupClient({ apiUrl: 'https://test.api' });
+      await client.testCode('a1', 'code', 'nodejs', {});
+
+      expect(fetchOpts().headers).not.toHaveProperty('Authorization');
+    });
+
+    test('encodes appId in URL', async () => {
+      mockFetch.mockResolvedValueOnce(
+        rawResponse({ ok: true, data: { result: null, durationMs: 0, printOutput: '' } }),
+      );
+      const client = createClient();
+      await client.testCode('a/1', 'code', 'nodejs', {});
+
+      expect(fetchUrl()).toBe('https://test.api/v1/apps/a%2F1/test');
+    });
+  });
+
+  // ──── listInvocations ────
+
+  describe('listInvocations', () => {
+    test('sends GET to /v1/invocations with appId', async () => {
+      const response = { items: [], nextCursor: null };
+      mockFetch.mockResolvedValueOnce(okResponse(response));
+      const client = createClient();
+      await client.listInvocations('a1');
+
+      expect(fetchUrl()).toBe('https://test.api/v1/invocations?appId=a1');
+    });
+
+    test('includes action param when slug is provided', async () => {
+      const response = { items: [], nextCursor: null };
+      mockFetch.mockResolvedValueOnce(okResponse(response));
+      const client = createClient();
+      await client.listInvocations('a1', 'greet');
+
+      expect(fetchUrl()).toBe('https://test.api/v1/invocations?appId=a1&action=greet');
+    });
+
+    test('appends limit and cursor as query params', async () => {
+      const response = { items: [], nextCursor: null };
+      mockFetch.mockResolvedValueOnce(okResponse(response));
+      const client = createClient();
+      await client.listInvocations('a1', undefined, { limit: 10, cursor: 'abc123' });
+
+      expect(fetchUrl()).toBe('https://test.api/v1/invocations?appId=a1&limit=10&cursor=abc123');
+    });
+
+    test('appends search as query param when provided', async () => {
+      const response = { items: [], nextCursor: null };
+      mockFetch.mockResolvedValueOnce(okResponse(response));
+      const client = createClient();
+      await client.listInvocations('a1', undefined, { search: 'timeout error' });
+
+      expect(fetchUrl()).toBe('https://test.api/v1/invocations?appId=a1&search=timeout+error');
+    });
+
+    test('returns paginated log entries', async () => {
+      const response = {
+        items: [
+          {
+            id: 'h1',
+            actionSlug: 'greet',
+            status: 'success',
+            durationMs: 100,
+            errorType: null,
+            createdAt: '2026-01-01T00:00:00Z',
+            source: 'canva',
+            canvaUserId: 'user-1',
+            canvaBrandId: 'brand-1',
+          },
+        ],
+        nextCursor: 'next-page',
+      };
+      mockFetch.mockResolvedValueOnce(okResponse(response));
+      const client = createClient();
+      const result = await client.listInvocations('a1');
+
+      expect(result).toEqual(response);
+    });
+  });
+
+  // ──── getInvocationDetail ────
+
+  describe('getInvocationDetail', () => {
+    test('sends GET to /v1/invocations/:id', async () => {
+      const detail = {
+        id: 'h1',
+        actionSlug: 'greet',
+        status: 'success',
+        durationMs: 50,
+        errorType: null,
+        createdAt: '2026-01-01T00:00:00Z',
+        source: 'canva',
+        canvaUserId: 'user-1',
+        canvaBrandId: 'brand-1',
+        detail: null,
+      };
+      mockFetch.mockResolvedValueOnce(okResponse(detail));
+      const client = createClient();
+      const result = await client.getInvocationDetail('h1');
+
+      expect(fetchUrl()).toBe('https://test.api/v1/invocations/h1');
+      expect(result).toEqual(detail);
+    });
+  });
+
+  // ──── setSecret ────
+
+  describe('setSecret', () => {
+    test('sends PUT to /v1/apps/:appId/secrets/:name with value', async () => {
+      mockFetch.mockResolvedValueOnce(okResponse({ name: 'API_KEY', created: true, synced: true }));
+      const client = createClient();
+      const result = await client.setSecret('a1', 'API_KEY', 'secret-value');
+
+      expect(fetchUrl()).toBe('https://test.api/v1/apps/a1/secrets/API_KEY');
+      expect(fetchOpts().method).toBe('PUT');
+      expect(JSON.parse(fetchOpts().body as string)).toEqual({ value: 'secret-value' });
+      expect(result).toEqual({ name: 'API_KEY', created: true, synced: true });
+    });
+  });
+
+  // ──── listSecrets ────
+
+  describe('listSecrets', () => {
+    test('sends GET to /v1/apps/:appId/secrets', async () => {
+      const secrets = [{ name: 'API_KEY', maskedValue: '****', updatedAt: '' }];
+      mockFetch.mockResolvedValueOnce(okResponse(secrets));
+      const client = createClient();
+      const result = await client.listSecrets('a1');
+
+      expect(fetchUrl()).toBe('https://test.api/v1/apps/a1/secrets');
+      expect(result).toEqual(secrets);
+    });
+  });
+
+  // ──── deleteSecret ────
+
+  describe('deleteSecret', () => {
+    test('sends DELETE to /v1/apps/:appId/secrets/:name', async () => {
+      mockFetch.mockResolvedValueOnce(okResponse({ deleted: 'API_KEY', synced: true }));
+      const client = createClient();
+      const result = await client.deleteSecret('a1', 'API_KEY');
+
+      expect(fetchUrl()).toBe('https://test.api/v1/apps/a1/secrets/API_KEY');
+      expect(fetchOpts().method).toBe('DELETE');
+      expect(result).toEqual({ deleted: 'API_KEY', synced: true });
+    });
+  });
+
+  // ──── addDeps ────
+
+  describe('addDeps', () => {
+    test('sends POST to /v1/apps/:appId/deps/:language with packages', async () => {
+      const depsResult = {
+        cached: false,
+        buildId: 'b1',
+        status: 'building',
+        packages: [],
+        layerSize: null,
+      };
+      mockFetch.mockResolvedValueOnce(okResponse(depsResult));
+      const client = createClient();
+      const result = await client.addDeps('a1', 'nodejs', [{ name: 'express', version: '4.18.2' }]);
+
+      expect(fetchUrl()).toBe('https://test.api/v1/apps/a1/deps/nodejs');
+      expect(fetchOpts().method).toBe('POST');
+      expect(JSON.parse(fetchOpts().body as string)).toEqual({
+        packages: [{ name: 'express', version: '4.18.2' }],
+      });
+      expect(result).toEqual(depsResult);
+    });
+  });
+
+  // ──── listDeps ────
+
+  describe('listDeps', () => {
+    test('sends GET to /v1/apps/:appId/deps/:language', async () => {
+      const depsResult = { packages: [], layerSize: null, layerArn: null };
+      mockFetch.mockResolvedValueOnce(okResponse(depsResult));
+      const client = createClient();
+      const result = await client.listDeps('a1', 'nodejs');
+
+      expect(fetchUrl()).toBe('https://test.api/v1/apps/a1/deps/nodejs');
+      expect(result).toEqual(depsResult);
+    });
+  });
+
+  // ──── removeDep ────
+
+  describe('removeDep', () => {
+    test('sends DELETE to /v1/apps/:appId/deps/:language/:packageName', async () => {
+      mockFetch.mockResolvedValueOnce(
+        okResponse({ deleted: 'express', buildId: 'b2', status: 'building' }),
+      );
+      const client = createClient();
+      const result = await client.removeDep('a1', 'nodejs', 'express');
+
+      expect(fetchUrl()).toBe('https://test.api/v1/apps/a1/deps/nodejs/express');
+      expect(fetchOpts().method).toBe('DELETE');
+      expect(result).toEqual({ deleted: 'express', buildId: 'b2', status: 'building' });
+    });
+  });
+
+  // ──── clearDeps ────
+
+  describe('clearDeps', () => {
+    test('sends DELETE to /v1/apps/:appId/deps/:language', async () => {
+      mockFetch.mockResolvedValueOnce(okResponse({ cleared: true }));
+      const client = createClient();
+      const result = await client.clearDeps('a1', 'python');
+
+      expect(fetchUrl()).toBe('https://test.api/v1/apps/a1/deps/python');
+      expect(fetchOpts().method).toBe('DELETE');
+      expect(result).toEqual({ cleared: true });
+    });
+  });
+
+  // ──── getBuildStatus ────
+
+  describe('getBuildStatus', () => {
+    test('sends GET to /v1/apps/:appId/deps/:language/builds/:buildId', async () => {
+      const status = {
+        id: 'b1',
+        status: 'success',
+        layerVersionArn: 'arn:aws:...',
+        sizeBytes: 1024,
+        errorMessage: null,
+        createdAt: '',
+        updatedAt: '',
+      };
+      mockFetch.mockResolvedValueOnce(okResponse(status));
+      const client = createClient();
+      const result = await client.getBuildStatus('a1', 'nodejs', 'b1');
+
+      expect(fetchUrl()).toBe('https://test.api/v1/apps/a1/deps/nodejs/builds/b1');
+      expect(result).toEqual(status);
+    });
+  });
+
+  // ──── connectStripe ────
+
+  describe('connectStripe', () => {
+    test('sends PUT to /v1/apps/:appId/stripe/api-key with apiKey', async () => {
+      mockFetch.mockResolvedValueOnce(okResponse({ connected: true }));
+      const client = createClient();
+      const result = await client.connectStripe('a1', 'sk_test_xxx');
+
+      expect(fetchUrl()).toBe('https://test.api/v1/apps/a1/stripe/api-key');
+      expect(fetchOpts().method).toBe('PUT');
+      expect(JSON.parse(fetchOpts().body as string)).toEqual({ apiKey: 'sk_test_xxx' });
+      expect(result).toEqual({ connected: true });
+    });
+  });
+
+  // ──── stripeStatus ────
+
+  describe('stripeStatus', () => {
+    test('sends GET to /v1/apps/:appId/stripe', async () => {
+      const status = {
+        state: 'healthy',
+        maskedKey: 'sk_test_****xxx',
+        lastCheckedAt: '2026-06-01T00:00:00.000Z',
+      };
+      mockFetch.mockResolvedValueOnce(okResponse(status));
+      const client = createClient();
+      const result = await client.stripeStatus('a1');
+
+      expect(fetchUrl()).toBe('https://test.api/v1/apps/a1/stripe');
+      expect(result).toEqual(status);
+    });
+  });
+
+  // ──── disconnectStripe ────
+
+  describe('disconnectStripe', () => {
+    test('sends DELETE to /v1/apps/:appId/stripe', async () => {
+      mockFetch.mockResolvedValueOnce(okResponse({ disconnected: true }));
+      const client = createClient();
+      const result = await client.disconnectStripe('a1');
+
+      expect(fetchUrl()).toBe('https://test.api/v1/apps/a1/stripe');
+      expect(fetchOpts().method).toBe('DELETE');
+      expect(result).toEqual({ disconnected: true });
+    });
+  });
+});

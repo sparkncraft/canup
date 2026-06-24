@@ -1,0 +1,348 @@
+import { describe, test as baseTest, expect, vi, beforeAll, afterAll, afterEach } from 'vitest';
+import { http, HttpResponse } from 'msw';
+import { setupServer } from 'msw/node';
+import { CanupError } from '../errors.js';
+
+function createMockJwt(exp: number): string {
+  const header = btoa(JSON.stringify({ alg: 'RS256' }));
+  const payload = btoa(JSON.stringify({ exp, aud: 'test-app', userId: 'u1', brandId: 'b1' }));
+  return `${header}.${payload}.signature`;
+}
+
+const TEST_TOKEN = createMockJwt(Math.floor(Date.now() / 1000) + 3600);
+const BASE_URL = 'http://test-canup.local';
+
+const { mockGetJwt } = vi.hoisted(() => ({
+  mockGetJwt: vi.fn(),
+}));
+vi.mock('../internal/jwt-cache.js', () => ({
+  getJwt: mockGetJwt,
+}));
+const server = setupServer();
+
+beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
+afterEach(() => server.resetHandlers());
+afterAll(() => server.close());
+
+const test = baseTest.extend<{ _setup: void }>({
+  _setup: [
+    async ({}, use) => {
+      mockGetJwt.mockResolvedValue(TEST_TOKEN);
+      vi.stubGlobal('__canup_url', BASE_URL);
+      await use();
+    },
+    { auto: true },
+  ],
+});
+
+describe('api-client', () => {
+  const getModule = async () => import('../internal/api-client.js');
+
+  describe('runAction', () => {
+    test('sends POST with params and Authorization header', async () => {
+      let capturedHeaders: Headers | null = null;
+      let capturedBody: unknown = null;
+
+      server.use(
+        http.post(`${BASE_URL}/run/my-action`, async ({ request }) => {
+          capturedHeaders = request.headers;
+          capturedBody = await request.json();
+          return HttpResponse.json({ ok: true, data: { result: 'done', durationMs: 42 } });
+        }),
+      );
+
+      const { runAction } = await getModule();
+      await runAction('my-action', { prompt: 'hello' });
+
+      expect(capturedHeaders!.get('Authorization')).toBe(`Bearer ${TEST_TOKEN}`);
+      expect(capturedHeaders!.get('Content-Type')).toBe('application/json');
+      expect(capturedBody).toEqual({ params: { prompt: 'hello' } });
+    });
+
+    test('sends { params: {} } when no params provided', async () => {
+      let capturedBody: unknown = null;
+
+      server.use(
+        http.post(`${BASE_URL}/run/my-action`, async ({ request }) => {
+          capturedBody = await request.json();
+          return HttpResponse.json({
+            ok: true,
+            data: {
+              credits: {
+                quota: 100,
+                used: 5,
+                remaining: 95,
+                resetAt: null,
+                interval: 'monthly',
+              },
+              result: 'ok',
+            },
+          });
+        }),
+      );
+
+      const { runAction } = await getModule();
+      await runAction('my-action');
+
+      expect(capturedBody).toEqual({ params: {} });
+    });
+
+    test('returns RunResult { credits, result } on success', async () => {
+      const credits = {
+        quota: 100,
+        used: 5,
+        remaining: 95,
+        resetAt: null,
+        interval: 'monthly',
+      };
+      server.use(
+        http.post(`${BASE_URL}/run/my-action`, () =>
+          HttpResponse.json({
+            ok: true,
+            data: { credits, result: { imageUrl: 'https://example.com/img.png' } },
+          }),
+        ),
+      );
+
+      const { runAction } = await getModule();
+      const result = await runAction('my-action');
+
+      expect(result).toEqual({
+        credits,
+        result: { imageUrl: 'https://example.com/img.png' },
+      });
+    });
+
+    test('throws CanupError with code + message from a CREDITS_EXHAUSTED error envelope', async () => {
+      server.use(
+        http.post(`${BASE_URL}/run/my-action`, () =>
+          HttpResponse.json(
+            { ok: false, error: { code: 'CREDITS_EXHAUSTED', message: 'Credits exhausted' } },
+            { status: 403 },
+          ),
+        ),
+      );
+
+      const { runAction } = await getModule();
+
+      try {
+        await runAction('my-action');
+        expect.fail('should have thrown');
+      } catch (err) {
+        expect(err).toBeInstanceOf(CanupError);
+        expect((err as CanupError).code).toBe('CREDITS_EXHAUSTED');
+        expect((err as CanupError).message).toBe('Credits exhausted');
+      }
+    });
+
+    test('throws CanupError with code ACTION_NOT_FOUND on 404', async () => {
+      server.use(
+        http.post(`${BASE_URL}/run/missing`, () =>
+          HttpResponse.json(
+            { ok: false, error: { code: 'ACTION_NOT_FOUND', message: 'Action not found' } },
+            { status: 404 },
+          ),
+        ),
+      );
+
+      const { runAction } = await getModule();
+
+      try {
+        await runAction('missing');
+        expect.fail('should have thrown');
+      } catch (err) {
+        expect(err).toBeInstanceOf(CanupError);
+        expect((err as CanupError).code).toBe('ACTION_NOT_FOUND');
+      }
+    });
+  });
+
+  describe('fetchCredits', () => {
+    test('sends GET with Authorization header', async () => {
+      let capturedHeaders: Headers | null = null;
+
+      server.use(
+        http.get(`${BASE_URL}/run/my-action/credits`, ({ request }) => {
+          capturedHeaders = request.headers;
+          return HttpResponse.json({
+            ok: true,
+            data: {
+              quota: 100,
+              used: 5,
+              remaining: 95,
+              resetAt: null,
+              interval: 'monthly',
+            },
+          });
+        }),
+      );
+
+      const { fetchCredits } = await getModule();
+      await fetchCredits('my-action');
+
+      expect(capturedHeaders!.get('Authorization')).toBe(`Bearer ${TEST_TOKEN}`);
+    });
+
+    test('returns CreditBalance on success', async () => {
+      server.use(
+        http.get(`${BASE_URL}/run/my-action/credits`, () =>
+          HttpResponse.json({
+            ok: true,
+            data: {
+              quota: 100,
+              used: 5,
+              remaining: 95,
+              resetAt: '2026-04-01T00:00:00Z',
+              interval: 'monthly',
+            },
+          }),
+        ),
+      );
+
+      const { fetchCredits } = await getModule();
+      const result = await fetchCredits('my-action');
+
+      expect(result).toEqual({
+        quota: 100,
+        used: 5,
+        remaining: 95,
+        resetAt: '2026-04-01T00:00:00Z',
+        interval: 'monthly',
+      });
+    });
+
+    test('throws CanupError on error', async () => {
+      server.use(
+        http.get(`${BASE_URL}/run/my-action/credits`, () =>
+          HttpResponse.json(
+            { ok: false, error: { code: 'HTTP_ERROR', message: 'Unauthorized' } },
+            { status: 401 },
+          ),
+        ),
+      );
+
+      const { fetchCredits } = await getModule();
+
+      try {
+        await fetchCredits('my-action');
+        expect.fail('should have thrown');
+      } catch (err) {
+        expect(err).toBeInstanceOf(CanupError);
+        expect((err as CanupError).code).toBe('HTTP_ERROR');
+      }
+    });
+  });
+
+  describe('fetchCustomer', () => {
+    const sampleCustomer = {
+      appName: 'Acme',
+      subscriptionStatus: 'active' as const,
+      cancelAt: null,
+      trialEnd: null,
+      email: 'subscriber@example.com',
+      billingAvailable: true,
+    };
+
+    test('sends GET /customer with Authorization header and returns the Customer', async () => {
+      let capturedHeaders: Headers | null = null;
+
+      server.use(
+        http.get(`${BASE_URL}/customer`, ({ request }) => {
+          capturedHeaders = request.headers;
+          return HttpResponse.json({ ok: true, data: sampleCustomer });
+        }),
+      );
+
+      const { fetchCustomer } = await getModule();
+      const result = await fetchCustomer();
+
+      expect(capturedHeaders!.get('Authorization')).toBe(`Bearer ${TEST_TOKEN}`);
+      expect(result).toEqual(sampleCustomer);
+    });
+
+    test('throws CanupError on error', async () => {
+      server.use(
+        http.get(`${BASE_URL}/customer`, () =>
+          HttpResponse.json(
+            { ok: false, error: { code: 'HTTP_ERROR', message: 'Unauthorized' } },
+            { status: 401 },
+          ),
+        ),
+      );
+
+      const { fetchCustomer } = await getModule();
+
+      await expect(fetchCustomer()).rejects.toBeInstanceOf(CanupError);
+    });
+  });
+
+  describe('fetchSubscribeLink', () => {
+    test('POSTs with Authorization header and returns { url }', async () => {
+      let capturedMethod: string | null = null;
+      let capturedHeaders: Headers | null = null;
+
+      server.use(
+        http.post(`${BASE_URL}/subscribe/link`, ({ request }) => {
+          capturedMethod = request.method;
+          capturedHeaders = request.headers;
+          return HttpResponse.json({ ok: true, data: { url: `${BASE_URL}/subscribe/abc123` } });
+        }),
+      );
+
+      const { fetchSubscribeLink } = await getModule();
+      const result = await fetchSubscribeLink();
+
+      expect(capturedMethod).toBe('POST');
+      expect(capturedHeaders!.get('Authorization')).toBe(`Bearer ${TEST_TOKEN}`);
+      expect(result).toEqual({ url: `${BASE_URL}/subscribe/abc123` });
+    });
+
+    test('throws CanupError on error', async () => {
+      server.use(
+        http.post(`${BASE_URL}/subscribe/link`, () =>
+          HttpResponse.json(
+            { ok: false, error: { code: 'HTTP_ERROR', message: 'Unauthorized' } },
+            { status: 401 },
+          ),
+        ),
+      );
+
+      const { fetchSubscribeLink } = await getModule();
+
+      await expect(fetchSubscribeLink()).rejects.toBeInstanceOf(CanupError);
+    });
+  });
+
+  describe('base URL', () => {
+    test('defaults to https://canup.link when __canup_url is not set', async () => {
+      vi.stubGlobal('__canup_url', undefined);
+
+      server.use(
+        http.post('https://canup.link/run/my-action', () =>
+          HttpResponse.json({ ok: true, data: { result: 'default', durationMs: 1 } }),
+        ),
+      );
+
+      vi.resetModules();
+      const { runAction } = await import('../internal/api-client.js');
+      const result = await runAction('my-action');
+
+      expect(result).toEqual({ result: 'default', durationMs: 1 });
+    });
+
+    test('uses globalThis.__canup_url override when set', async () => {
+      vi.stubGlobal('__canup_url', 'http://custom-url.local');
+
+      server.use(
+        http.post(`http://custom-url.local/run/my-action`, () =>
+          HttpResponse.json({ ok: true, data: { result: 'ok', durationMs: 1 } }),
+        ),
+      );
+
+      const { runAction } = await getModule();
+      const result = await runAction('my-action');
+
+      expect(result).toEqual({ result: 'ok', durationMs: 1 });
+    });
+  });
+});

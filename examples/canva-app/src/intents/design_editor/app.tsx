@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { Alert, FormField, Rows, Text, TextInput } from '@canva/app-ui-kit';
 import { addElementAtPoint, addElementAtCursor } from '@canva/design';
 import { useFeatureSupport } from '@canva/app-hooks';
-import { ActionButton, CreditCounter } from 'canup';
-import type { CanupError } from 'canup';
+import { ActionButton, SubscriptionStatus } from '@canup/ui';
+import type { CanupError } from '@canup/ui';
 import * as styles from 'styles/components.css';
 
 type ResultState =
@@ -42,7 +42,7 @@ export function App() {
   const handleError = (error: CanupError) => {
     setResult({
       kind: 'error',
-      message: error.type === 'CREDITS_EXHAUSTED' ? 'No credits remaining.' : error.message,
+      message: error.code === 'CREDITS_EXHAUSTED' ? 'No credits remaining.' : error.message,
     });
   };
 
@@ -62,6 +62,8 @@ export function App() {
             />
           )}
         />
+        {/* Action panel: the button plus its live credit status, one drop-in
+            (ActionButton renders ActionCredits below itself by default). */}
         <ActionButton
           action="generate-text"
           params={{ prompt }}
@@ -73,7 +75,6 @@ export function App() {
         >
           Generate Text
         </ActionButton>
-        <CreditCounter action="generate-text" />
         {result.kind === 'success' && (
           <Alert tone="positive" title="Generated">
             <Text>{result.text}</Text>
@@ -89,6 +90,8 @@ export function App() {
             <Text>{result.message}</Text>
           </Alert>
         )}
+        {/* Account area: subscription status + manage/subscribe pathway. */}
+        <SubscriptionStatus />
       </Rows>
     </div>
   );
