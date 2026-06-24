@@ -12,7 +12,6 @@ vi.mock('../../api-client.js', () => ({
   CanupClient: vi.fn(function () {
     return client;
   }),
-  formatBytes: vi.fn((b: number) => `${b}B`),
 }));
 
 // Mock output

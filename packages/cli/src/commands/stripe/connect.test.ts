@@ -1,5 +1,6 @@
 import { describe, expect, vi } from 'vitest';
 import { test, client, output, project, spinner } from '#test/fixtures.js';
+import { ApiError } from '../../errors.js';
 
 const { mockReadSecretInput } = vi.hoisted(() => ({ mockReadSecretInput: vi.fn() }));
 
@@ -58,9 +59,9 @@ describe('stripe connect command', () => {
 
   test('shows error for invalid Stripe key', async ({ client, output, processMocks }) => {
     mockReadSecretInput.mockResolvedValue('sk_bad');
-    const err = new Error('Invalid API key') as Error & { errorCode: string };
-    err.errorCode = 'STRIPE_KEY_INVALID';
-    client.connectStripe.mockRejectedValue(err);
+    client.connectStripe.mockRejectedValue(
+      new ApiError(400, 'STRIPE_KEY_INVALID', 'Invalid API key'),
+    );
 
     const { Command } = await import('commander');
     const { registerStripeConnectAction } = await import('../../commands/stripe/connect.js');
@@ -79,11 +80,9 @@ describe('stripe connect command', () => {
 
   test('shows error for permission issue', async ({ client, output, processMocks }) => {
     mockReadSecretInput.mockResolvedValue('sk_test_limited');
-    const err = new Error('Missing: charges:read, subscriptions:read') as Error & {
-      errorCode: string;
-    };
-    err.errorCode = 'STRIPE_PERMISSION_ERROR';
-    client.connectStripe.mockRejectedValue(err);
+    client.connectStripe.mockRejectedValue(
+      new ApiError(403, 'STRIPE_PERMISSION_ERROR', 'Missing: charges:read, subscriptions:read'),
+    );
 
     const { Command } = await import('commander');
     const { registerStripeConnectAction } = await import('../../commands/stripe/connect.js');

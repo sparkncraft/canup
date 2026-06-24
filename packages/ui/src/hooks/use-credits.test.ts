@@ -4,7 +4,7 @@ import { useCredits } from './use-credits.js';
 import { fetchCredits } from '../internal/api-client.js';
 import { queryClient, creditKey } from '../internal/query.js';
 import { acquire } from '../internal/realtime.js';
-import type { CreditBalance } from '../types.js';
+import type { CreditBalance } from '@canup/types';
 
 vi.mock('../internal/api-client.js', () => ({
   fetchCredits: vi.fn(),

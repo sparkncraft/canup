@@ -1,8 +1,7 @@
 import type { Command } from 'commander';
-import { formatBytes } from '../../api-client.js';
 import { requireClient } from '../../config/require-project.js';
 import { info, label, formatTable } from '../../ui/output.js';
-import { assertLanguage, MAX_LAYER_SIZE_DISPLAY } from './_shared.js';
+import { assertLanguage, formatBytes, MAX_LAYER_SIZE_DISPLAY } from './_shared.js';
 
 export function registerDepsListAction(depsCommand: Command): void {
   depsCommand

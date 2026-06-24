@@ -31,8 +31,8 @@ type CallbackOutcome = CredentialsOk | CredentialsErr;
 /**
  * Start a local HTTP callback server for receiving the OAuth redirect.
  *
- * The server listens on 127.0.0.1 (per research Pitfall 3: ALWAYS use
- * 127.0.0.1, never localhost) with port 0 (OS-assigned random port).
+ * The server listens on 127.0.0.1 (never localhost, which can resolve to an
+ * external interface) with port 0 (OS-assigned random port).
  *
  * Handles:
  * - GET /callback?token=<userKey>&keyId=<id>[&state=<x>] -> resolves credentialsPromise, serves success page

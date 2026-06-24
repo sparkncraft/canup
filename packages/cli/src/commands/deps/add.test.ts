@@ -12,8 +12,6 @@ vi.mock('../../api-client.js', () => ({
   CanupClient: vi.fn(function () {
     return client;
   }),
-  parsePackageSpecs: vi.fn((specs: string[]) => specs.map((s) => ({ name: s }))),
-  formatBytes: vi.fn((b: number) => `${b}B`),
 }));
 
 // Mock output

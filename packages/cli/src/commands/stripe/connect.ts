@@ -1,5 +1,6 @@
 import type { Command } from 'commander';
 import { requireClient } from '../../config/require-project.js';
+import { ApiError } from '../../errors.js';
 import { readSecretInput } from '../../lib/input.js';
 import { success, error } from '../../ui/output.js';
 import { createSpinner } from '../../ui/spinner.js';
@@ -28,14 +29,13 @@ export function registerStripeConnectAction(stripeCommand: Command): void {
         success('Stripe connected successfully.');
       } catch (err) {
         spin.fail('Connection failed');
-        const e = err as Error & { errorCode?: string };
 
-        if (e.errorCode === 'STRIPE_KEY_INVALID') {
+        if (err instanceof ApiError && err.code === 'STRIPE_KEY_INVALID') {
           error('Invalid Stripe API key. Check that you copied the full key.');
-        } else if (e.errorCode === 'STRIPE_PERMISSION_ERROR') {
-          error(`Stripe key lacks required permissions: ${e.message}`);
+        } else if (err instanceof ApiError && err.code === 'STRIPE_PERMISSION_ERROR') {
+          error(`Stripe key lacks required permissions: ${err.message}`);
         } else {
-          error(e.message);
+          error(err instanceof Error ? err.message : String(err));
         }
 
         process.exit(1);

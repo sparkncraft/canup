@@ -12,7 +12,6 @@ vi.mock('../../api-client.js', () => ({
   CanupClient: vi.fn(function () {
     return client;
   }),
-  formatBytes: vi.fn((b: number) => `${b}B`),
 }));
 
 // Mock output
@@ -45,7 +44,7 @@ describe('deps list command', () => {
       ],
     );
     expect(processMocks.log).toHaveBeenCalledWith('');
-    expect(output.label).toHaveBeenCalledWith('Layer', expect.stringContaining('5000'));
+    expect(output.label).toHaveBeenCalledWith('Layer', expect.stringContaining('4.9KB'));
   });
 
   test('shows empty state message when no deps', async ({ client, output }) => {

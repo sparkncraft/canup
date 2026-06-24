@@ -38,49 +38,7 @@ import type {
 } from '@canup/types';
 import { DEFAULT_API_URL, API_VERSION } from './constants.js';
 import { CLI_USER_AGENT } from './version.js';
-
-// ──────────────────────────────────────────────
-// Package spec parser
-// ──────────────────────────────────────────────
-
-/**
- * Parse package specs like "express@4.18.2", "@types/node@20", "requests==2.31.0"
- * into { name, version } objects.
- *
- * npm: split on last @ (handles scoped packages like @types/node@20)
- * pip: split on ==
- */
-export function parsePackageSpecs(specs: string[], language: string): PackageSpec[] {
-  return specs.map((spec) => {
-    if (language === 'nodejs') {
-      // npm: split on last @ (handles scoped packages like @types/node@20)
-      const lastAt = spec.lastIndexOf('@');
-      if (lastAt > 0) {
-        return { name: spec.slice(0, lastAt), version: spec.slice(lastAt + 1) };
-      }
-      return { name: spec };
-    }
-    // pip: split on ==
-    const eqIdx = spec.indexOf('==');
-    if (eqIdx > 0) {
-      return { name: spec.slice(0, eqIdx), version: spec.slice(eqIdx + 2) };
-    }
-    return { name: spec };
-  });
-}
-
-// ──────────────────────────────────────────────
-// Formatting utilities
-// ──────────────────────────────────────────────
-
-/**
- * Format a byte count into a human-readable string.
- */
-export function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes}B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
-}
+import { ApiError } from './errors.js';
 
 export class CanupClient {
   private apiUrl: string;
@@ -247,13 +205,11 @@ export class CanupClient {
       } catch {
         // non-JSON error response
       }
-      const error = new Error(body?.error?.message ?? res.statusText) as Error & {
-        statusCode: number;
-        errorCode: string;
-      };
-      error.statusCode = res.status;
-      error.errorCode = body?.error?.code ?? 'HttpError';
-      throw error;
+      throw new ApiError(
+        res.status,
+        body?.error?.code ?? 'HttpError',
+        body?.error?.message ?? res.statusText,
+      );
     }
 
     return (await res.json()) as TestResult;
@@ -461,13 +417,7 @@ export class CanupClient {
     const body = (await res.json()) as ApiResponse<T>;
 
     if (!body.ok) {
-      const error = new Error(body.error.message) as Error & {
-        statusCode: number;
-        errorCode: string;
-      };
-      error.statusCode = res.status;
-      error.errorCode = body.error.code;
-      throw error;
+      throw new ApiError(res.status, body.error.code, body.error.message);
     }
 
     return body.data;

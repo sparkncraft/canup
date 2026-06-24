@@ -1,5 +1,5 @@
-import type { Language } from '@canup/types';
-import { formatBytes, type CanupClient } from '../../api-client.js';
+import type { Language, PackageSpec } from '@canup/types';
+import { type CanupClient } from '../../api-client.js';
 import { error } from '../../ui/output.js';
 import { createSpinner } from '../../ui/spinner.js';
 
@@ -12,6 +12,41 @@ export function assertLanguage(language: string): asserts language is Language {
     error(`Invalid language: "${language}". Must be "python" or "nodejs".`);
     process.exit(1);
   }
+}
+
+/**
+ * Parse package specs like "express@4.18.2", "@types/node@20", "requests==2.31.0"
+ * into { name, version } objects.
+ *
+ * npm: split on last @ (handles scoped packages like @types/node@20)
+ * pip: split on ==
+ */
+export function parsePackageSpecs(specs: string[], language: string): PackageSpec[] {
+  return specs.map((spec) => {
+    if (language === 'nodejs') {
+      // npm: split on last @ (handles scoped packages like @types/node@20)
+      const lastAt = spec.lastIndexOf('@');
+      if (lastAt > 0) {
+        return { name: spec.slice(0, lastAt), version: spec.slice(lastAt + 1) };
+      }
+      return { name: spec };
+    }
+    // pip: split on ==
+    const eqIdx = spec.indexOf('==');
+    if (eqIdx > 0) {
+      return { name: spec.slice(0, eqIdx), version: spec.slice(eqIdx + 2) };
+    }
+    return { name: spec };
+  });
+}
+
+/**
+ * Format a byte count into a human-readable string.
+ */
+export function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes}B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
 }
 
 /**

@@ -1,5 +1,6 @@
 import { describe, test as baseTest, expect, vi } from 'vitest';
-import { parsePackageSpecs, formatBytes, CanupClient } from './api-client.js';
+import { CanupClient } from './api-client.js';
+import { ApiError } from './errors.js';
 
 // ──────────────────────────────────────────────
 // Fetch mock setup
@@ -35,81 +36,6 @@ function errorResponse(code: string, message: string, status = 400) {
 function rawResponse(body: unknown, httpOk = true, status = 200) {
   return { ok: httpOk, status, json: () => Promise.resolve(body) };
 }
-
-// ──────────────────────────────────────────────
-// Existing tests — parsePackageSpecs
-// ──────────────────────────────────────────────
-
-describe('parsePackageSpecs', () => {
-  test('parses npm package with version', () => {
-    const result = parsePackageSpecs(['express@4.18.2'], 'nodejs');
-    expect(result).toEqual([{ name: 'express', version: '4.18.2' }]);
-  });
-
-  test('parses npm scoped package with version', () => {
-    const result = parsePackageSpecs(['@types/node@20'], 'nodejs');
-    expect(result).toEqual([{ name: '@types/node', version: '20' }]);
-  });
-
-  test('parses pip package with == version', () => {
-    const result = parsePackageSpecs(['requests==2.31.0'], 'python');
-    expect(result).toEqual([{ name: 'requests', version: '2.31.0' }]);
-  });
-
-  test('parses package without version', () => {
-    const result = parsePackageSpecs(['flask'], 'python');
-    expect(result).toEqual([{ name: 'flask' }]);
-  });
-
-  test('parses npm package without version', () => {
-    const result = parsePackageSpecs(['lodash'], 'nodejs');
-    expect(result).toEqual([{ name: 'lodash' }]);
-  });
-
-  test('parses multiple packages at once', () => {
-    const result = parsePackageSpecs(['express@4.18.2', 'cors@2.8.5', 'dotenv'], 'nodejs');
-    expect(result).toEqual([
-      { name: 'express', version: '4.18.2' },
-      { name: 'cors', version: '2.8.5' },
-      { name: 'dotenv' },
-    ]);
-  });
-
-  test('parses multiple pip packages', () => {
-    const result = parsePackageSpecs(['requests==2.31.0', 'flask'], 'python');
-    expect(result).toEqual([{ name: 'requests', version: '2.31.0' }, { name: 'flask' }]);
-  });
-});
-
-// ──────────────────────────────────────────────
-// Existing tests — formatBytes
-// ──────────────────────────────────────────────
-
-describe('formatBytes', () => {
-  test('formats bytes (< 1024)', () => {
-    expect(formatBytes(500)).toBe('500B');
-  });
-
-  test('formats 0 bytes', () => {
-    expect(formatBytes(0)).toBe('0B');
-  });
-
-  test('formats kilobytes', () => {
-    const result = formatBytes(2048);
-    expect(result).toContain('KB');
-    expect(result).toBe('2.0KB');
-  });
-
-  test('formats megabytes', () => {
-    const result = formatBytes(5 * 1024 * 1024);
-    expect(result).toContain('MB');
-    expect(result).toBe('5.0MB');
-  });
-
-  test('formats boundary at exactly 1024 bytes', () => {
-    expect(formatBytes(1024)).toBe('1.0KB');
-  });
-});
 
 // ──────────────────────────────────────────────
 // CanupClient tests
@@ -228,18 +154,16 @@ describe('CanupClient', () => {
   // ──── Error handling (via request()) ────
 
   describe('error handling via request()', () => {
-    test('throws with statusCode and errorCode on API error envelope', async () => {
+    test('throws an ApiError with statusCode and code on API error envelope', async () => {
       mockFetch.mockResolvedValueOnce(errorResponse('NotFoundError', 'App not found', 404));
       const client = createClient();
 
-      const err: Error & { statusCode?: number; errorCode?: string } = await client
-        .getMe()
-        .catch((e: unknown) => e as Error & { statusCode?: number; errorCode?: string });
+      const err = await client.getMe().catch((e: unknown) => e);
 
-      expect(err).toBeInstanceOf(Error);
-      expect(err.message).toBe('App not found');
-      expect(err.statusCode).toBe(404);
-      expect(err.errorCode).toBe('NotFoundError');
+      expect(err).toBeInstanceOf(ApiError);
+      expect((err as ApiError).message).toBe('App not found');
+      expect((err as ApiError).statusCode).toBe(404);
+      expect((err as ApiError).code).toBe('NotFoundError');
     });
 
     test('error message matches the API error message', async () => {
@@ -549,7 +473,7 @@ describe('CanupClient', () => {
       expect(result).toHaveProperty('ok', false);
     });
 
-    test('throws on HTTP error with statusCode and errorCode', async () => {
+    test('throws an ApiError on HTTP error with statusCode and code', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
@@ -558,14 +482,12 @@ describe('CanupClient', () => {
       });
       const client = createClient();
 
-      const err: Error & { statusCode?: number; errorCode?: string } = await client
-        .testCode('a1', 'code', 'nodejs', {})
-        .catch((e: unknown) => e as Error & { statusCode?: number; errorCode?: string });
+      const err = await client.testCode('a1', 'code', 'nodejs', {}).catch((e: unknown) => e);
 
-      expect(err).toBeInstanceOf(Error);
-      expect(err.message).toBe('Invalid token');
-      expect(err.statusCode).toBe(401);
-      expect(err.errorCode).toBe('AuthError');
+      expect(err).toBeInstanceOf(ApiError);
+      expect((err as ApiError).message).toBe('Invalid token');
+      expect((err as ApiError).statusCode).toBe(401);
+      expect((err as ApiError).code).toBe('AuthError');
     });
 
     test('falls back to statusText and HttpError when response is not JSON', async () => {
@@ -577,13 +499,12 @@ describe('CanupClient', () => {
       });
       const client = createClient();
 
-      const err: Error & { statusCode?: number; errorCode?: string } = await client
-        .testCode('a1', 'code', 'nodejs', {})
-        .catch((e: unknown) => e as Error & { statusCode?: number; errorCode?: string });
+      const err = await client.testCode('a1', 'code', 'nodejs', {}).catch((e: unknown) => e);
 
-      expect(err.message).toBe('Internal Server Error');
-      expect(err.statusCode).toBe(500);
-      expect(err.errorCode).toBe('HttpError');
+      expect(err).toBeInstanceOf(ApiError);
+      expect((err as ApiError).message).toBe('Internal Server Error');
+      expect((err as ApiError).statusCode).toBe(500);
+      expect((err as ApiError).code).toBe('HttpError');
     });
 
     test('sends Authorization header when token is set', async () => {

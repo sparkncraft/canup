@@ -1,7 +1,7 @@
 [
   {
     "name": "@canup/ui entry (full import)",
-    "path": "packages/ui/dist/index.js",
+    "path": "dist/index.js",
     "limit": "40 kB",
     "gzip": true,
     "ignore": [

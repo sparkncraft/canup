@@ -1,5 +1,5 @@
 name: CI
-# PR checks: lint, typecheck, test, build, size, coverage, changeset
+# PR checks: lint, typecheck, test, build, size, coverage
 
 on:
   pull_request:
@@ -76,13 +76,14 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
       - run: pnpm test:build
+      # The example consumes @canup/ui's built dist, so typecheck it after build.
+      - run: pnpm --filter canva-app-example run typecheck
 
   size:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
       contents: read
-      pull-requests: write
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -90,10 +91,9 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-      - uses: andresz1/size-limit-action@v1
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          package_manager: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm size:check
 
   coverage:
     needs: [test]
@@ -113,51 +113,6 @@ jobs:
       - run: pnpm test:coverage
       - uses: davelosert/vitest-coverage-report-action@v2
         if: always()
-
-  changeset-check:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions:
-      contents: read
-      pull-requests: write
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - name: Check for changeset
-        id: changeset
-        run: |
-          if pnpm changeset status --since=origin/main 2>/dev/null; then
-            echo "has_changeset=true" >> $GITHUB_OUTPUT
-          else
-            echo "has_changeset=false" >> $GITHUB_OUTPUT
-          fi
-      - name: Comment on PR
-        if: steps.changeset.outputs.has_changeset == 'false'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const body = '> **Changeset reminder**: This PR does not include a changeset. If this PR changes user-facing behavior, run `pnpm changeset` to add one.';
-            const { data: comments } = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-            });
-            const existing = comments.find(c => c.body.includes('Changeset reminder'));
-            if (!existing) {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                body,
-              });
-            }
 
   ci-ok:
     if: ${{ !cancelled() }}

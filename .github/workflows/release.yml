@@ -1,21 +1,26 @@
-# Publishes `canup` to npm via Changesets + npm Trusted Publishing (OIDC).
+# Publishes @canup/ui and @canup/cli to npm via npm Trusted Publishing (OIDC).
 #
-# No npm token is used. Authentication happens through GitHub's OIDC token, which
-# npm exchanges for a short-lived publish credential (requires `id-token: write`
-# and a trusted publisher configured for this package on npmjs.com — see
+# Manual trigger. Bump the package versions on main first (they version in
+# lockstep), then run this workflow from the Actions tab.
+#
+# No npm token is used: authentication is GitHub's OIDC token, which npm
+# exchanges for a short-lived publish credential (requires `id-token: write` and
+# a trusted publisher configured for each package on npmjs.com — see
 # RELEASING.md). Provenance is generated automatically because this is a public
 # repository.
+#
+# npm OIDC cannot bootstrap a brand-new package name: the first publish of each
+# package must be a manual `npm publish` (with your npm 2FA). This workflow takes
+# over for every release after that.
 name: Release
 on:
-  push:
-    branches: [main]
-concurrency: ${{ github.workflow }}-${{ github.ref }}
+  workflow_dispatch:
+concurrency: ${{ github.workflow }}
 jobs:
   release:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-      pull-requests: write
+      contents: read
       id-token: write
     steps:
       - uses: actions/checkout@v4
@@ -31,12 +36,8 @@ jobs:
       - name: Use npm >= 11.5.1
         run: npm install -g npm@latest
       - run: pnpm install --frozen-lockfile
-      - run: pnpm run build
-      - run: pnpm run test
-      - uses: changesets/action@v1
-        with:
-          publish: pnpm changeset publish
-          version: pnpm changeset version
+      - run: pnpm build
+      - run: pnpm test
+      - run: pnpm --filter "./packages/*" publish --access public --no-git-checks
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_CONFIG_PROVENANCE: true

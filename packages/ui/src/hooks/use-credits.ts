@@ -4,7 +4,7 @@ import { queryClient, creditKey } from '../internal/query.js';
 import { fetchCredits } from '../internal/api-client.js';
 import { acquire } from '../internal/realtime.js';
 import { type CanupError, toCanupError } from '../errors.js';
-import type { CreditBalance } from '../types.js';
+import type { CreditBalance } from '@canup/types';
 
 export interface UseCreditsResult {
   data: CreditBalance | null;
@@ -20,7 +20,7 @@ export interface UseCreditsResult {
  *  - Initial paint: one `GET /run/:slug/credits`.
  *  - Live updates: the shared SSE stream writes every `credits` balance into
  *    this same cache key (see `realtime.ts`), so the balance reflects spends and
- *    quota refreshes without a reload. (Account-level fields — subscription,
+ *    quota refreshes without a reload. (Customer-level fields — subscription,
  *    email, the billing CTA flag — live on `useCustomer`, not here.)
  *  - Safety nets (in `query.ts`): focus refetch + a 5-min visible-tab poll for
  *    the rare case where SSE dies silently.

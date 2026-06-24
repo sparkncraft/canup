@@ -19,8 +19,8 @@ export function useAction(action: string): UseActionResult {
     {
       mutationFn: (params?: Record<string, unknown>) => runAction(action, params),
       // The run response carries the caller's post-run balance — push it into
-      // the cache so this action's CreditCounter reflects the spend immediately,
-      // without waiting on the SSE echo.
+      // the cache so this action's credit balance reflects the spend
+      // immediately, without waiting on the SSE echo.
       onSuccess: (run) => {
         queryClient.setQueryData(creditKey(action), run.credits);
       },

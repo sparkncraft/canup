@@ -1,7 +1,5 @@
 #!/usr/bin/env node
 
-import type { PackageJson } from 'type-fest';
-import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Command } from 'commander';
 import { registerLoginCommand } from './commands/login.js';
@@ -14,17 +12,14 @@ import { registerActionsCommand } from './commands/actions/index.js';
 import { registerSecretsCommand } from './commands/secrets/index.js';
 import { registerDepsCommand } from './commands/deps/index.js';
 import { registerStripeCommand } from './commands/stripe/index.js';
-
-const pkg = JSON.parse(
-  readFileSync(new URL('../package.json', import.meta.url), 'utf-8'),
-) as PackageJson;
+import { CLI_VERSION } from './version.js';
 
 const program = new Command();
 
 program
   .name('canup')
   .description('CanUp CLI - Deploy and manage actions for Canva Apps')
-  .version(pkg.version ?? '0.0.0')
+  .version(CLI_VERSION)
   .option('--cwd <path>', 'Run as if canup was started in <path>')
   .hook('preAction', () => {
     const opts = program.opts<{ cwd?: string }>();

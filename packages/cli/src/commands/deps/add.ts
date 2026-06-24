@@ -1,8 +1,13 @@
 import type { Command } from 'commander';
-import { parsePackageSpecs, formatBytes } from '../../api-client.js';
 import { requireClient } from '../../config/require-project.js';
 import { success, error, info, label } from '../../ui/output.js';
-import { assertLanguage, pollLayerBuild, MAX_LAYER_SIZE_DISPLAY } from './_shared.js';
+import {
+  assertLanguage,
+  pollLayerBuild,
+  parsePackageSpecs,
+  formatBytes,
+  MAX_LAYER_SIZE_DISPLAY,
+} from './_shared.js';
 
 export function registerDepsAddAction(depsCommand: Command): void {
   depsCommand

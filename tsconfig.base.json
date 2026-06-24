@@ -10,9 +10,6 @@
     "resolveJsonModule": true,
     "declaration": true,
     "declarationMap": false,
-    "sourceMap": false,
-    "jsx": "react-jsx"
-  },
-  "include": ["packages/*/src"],
-  "exclude": ["**/*.test.ts", "**/*.test.tsx", "**/dist"]
+    "sourceMap": false
+  }
 }

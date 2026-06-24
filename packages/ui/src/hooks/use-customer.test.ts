@@ -4,7 +4,7 @@ import { useCustomer } from './use-customer.js';
 import { fetchCustomer } from '../internal/api-client.js';
 import { queryClient, customerKey } from '../internal/query.js';
 import { acquire } from '../internal/realtime.js';
-import type { Customer } from '../types.js';
+import type { Customer } from '@canup/types';
 
 vi.mock('../internal/api-client.js', () => ({
   fetchCustomer: vi.fn(),

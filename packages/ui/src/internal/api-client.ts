@@ -7,11 +7,13 @@ import type {
   RunResult,
   SubscribeLinkResult,
 } from '@canup/types';
-import { DEFAULT_API_URL } from '../constants.js';
 
 declare global {
   var __canup_url: string | undefined;
 }
+
+/** Production CanUp API origin; overridable at runtime via `globalThis.__canup_url` (used in tests). */
+const DEFAULT_API_URL = 'https://canup.link';
 
 export const getBaseUrl = (): string => globalThis.__canup_url ?? DEFAULT_API_URL;
 

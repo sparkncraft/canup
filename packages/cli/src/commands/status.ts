@@ -75,7 +75,7 @@ export function registerStatusCommand(program: Command): void {
         const { config, canupDir, client } = requireClient();
         const actionsDir = getActionsDir(canupDir, config);
 
-        // Fetch all remote state in parallel (per research: Promise.all is fine for CLI)
+        // Fetch all remote state in parallel.
         const [appInfo, remoteActions, secrets, pythonDepsResult, nodejsDepsResult] =
           await Promise.all([
             client.getAppInfo(config.appId),
