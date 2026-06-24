@@ -1,30 +1,30 @@
 # CanUp
 
-Managed backend for Canva Apps. Deploy serverless actions, meter credits and subscriptions, and drop in React components -- all from one package.
+Managed backend for Canva Apps. Deploy serverless actions, meter credits and subscriptions, and drop in React components. Ships as two packages: `@canup/cli` (the developer tool) and `@canup/ui` (the React components).
 
 ## Install
 
 ```sh
-npm install canup
+npm install @canup/ui
 # or
-pnpm add canup
+pnpm add @canup/ui
 ```
 
 ## Quick Start
 
 ```sh
-npx canup login          # Authenticate via GitHub OAuth
-npx canup init           # Link to your Canva app, create canup/ folder
-npx canup actions new generate-text    # Scaffold an action
-npx canup actions deploy generate-text # Deploy to AWS Lambda
+npx @canup/cli login          # Authenticate via GitHub OAuth
+npx @canup/cli init           # Link to your Canva app, create canup/ folder
+npx @canup/cli actions new generate-text    # Scaffold an action
+npx @canup/cli actions deploy generate-text # Deploy to AWS Lambda
 ```
 
 ## React Components
 
-Import components directly from `canup` in your Canva app:
+Import components directly from `@canup/ui` in your Canva app:
 
 ```tsx
-import { ActionButton, SubscriptionStatus } from 'canup';
+import { ActionButton, SubscriptionStatus } from '@canup/ui';
 
 function App() {
   return (
@@ -94,7 +94,7 @@ See [`examples/canva-app`](./examples/canva-app) for a complete, compliant refer
 For full control, use the hooks directly:
 
 ```tsx
-import { useAction, useCredits, useCustomer } from 'canup';
+import { useAction, useCredits, useCustomer } from '@canup/ui';
 
 function MyComponent() {
   const { execute, loading } = useAction('generate-text');

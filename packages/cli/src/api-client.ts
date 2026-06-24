@@ -36,7 +36,7 @@ import type {
   TestResult,
   User,
 } from '@canup/types';
-import { DEFAULT_API_URL, API_VERSION } from '../constants.js';
+import { DEFAULT_API_URL, API_VERSION } from './constants.js';
 import { CLI_USER_AGENT } from './version.js';
 
 // ──────────────────────────────────────────────

@@ -4,7 +4,7 @@ import open from 'open';
 import { startCallbackServer } from './oauth-server.js';
 import { saveCredentials, type UserCredentials } from './token-store.js';
 import { CanupClient } from '../api-client.js';
-import { DEFAULT_API_URL } from '../../constants.js';
+import { DEFAULT_API_URL } from '../constants.js';
 import { info, success } from '../ui/output.js';
 
 const STATE_NONCE_BYTES = 16;

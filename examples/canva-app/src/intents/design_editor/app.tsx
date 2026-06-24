@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { Alert, FormField, Rows, Text, TextInput } from '@canva/app-ui-kit';
 import { addElementAtPoint, addElementAtCursor } from '@canva/design';
 import { useFeatureSupport } from '@canva/app-hooks';
-import { ActionButton, SubscriptionStatus } from 'canup';
-import type { CanupError } from 'canup';
+import { ActionButton, SubscriptionStatus } from '@canup/ui';
+import type { CanupError } from '@canup/ui';
 import * as styles from 'styles/components.css';
 
 type ResultState =

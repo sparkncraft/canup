@@ -16,7 +16,7 @@ import { registerDepsCommand } from './commands/deps/index.js';
 import { registerStripeCommand } from './commands/stripe/index.js';
 
 const pkg = JSON.parse(
-  readFileSync(new URL('../../package.json', import.meta.url), 'utf-8'),
+  readFileSync(new URL('../package.json', import.meta.url), 'utf-8'),
 ) as PackageJson;
 
 const program = new Command();

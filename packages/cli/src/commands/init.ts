@@ -164,9 +164,9 @@ export function registerInitCommand(program: Command): void {
         // g. Save project config
         saveProjectConfig(process.cwd(), { appId });
 
-        // h. Add canup as a dependency in the project's package.json
+        // h. Add @canup/ui as a dependency in the project's package.json
         try {
-          const sdkPkgPath = resolve(import.meta.dirname, '../../../package.json');
+          const sdkPkgPath = resolve(import.meta.dirname, '../../package.json');
           const sdkPkg = JSON.parse(readFileSync(sdkPkgPath, 'utf-8')) as PackageJson;
           const sdkVersion = sdkPkg.version!;
 
@@ -175,15 +175,15 @@ export function registerInitCommand(program: Command): void {
             const pkgContent = readFileSync(projectPkgPath, 'utf-8');
             const pkg = JSON.parse(pkgContent) as PackageJson;
             pkg.dependencies ??= {};
-            if (!pkg.dependencies.canup) {
-              pkg.dependencies.canup = '^' + sdkVersion;
+            if (!pkg.dependencies['@canup/ui']) {
+              pkg.dependencies['@canup/ui'] = '^' + sdkVersion;
               writeFileSync(projectPkgPath, JSON.stringify(pkg, null, 2) + '\n');
-              info('Added "canup" to package.json dependencies');
+              info('Added "@canup/ui" to package.json dependencies');
             }
           }
         } catch {
           // Non-critical: user can add manually
-          hint('Add "canup" to your package.json dependencies');
+          hint('Add "@canup/ui" to your package.json dependencies');
         }
 
         // i. Suggest install command based on lockfile detection

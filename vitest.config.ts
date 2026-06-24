@@ -13,7 +13,7 @@ export default defineConfig({
         test: {
           ...shared,
           name: 'cli',
-          include: ['src/cli/**/*.test.ts'],
+          include: ['packages/cli/src/**/*.test.ts'],
         },
       }),
       defineProject({
@@ -21,15 +21,15 @@ export default defineConfig({
           ...shared,
           name: 'ui',
           environment: 'jsdom',
-          include: ['src/ui/**/*.test.ts', 'src/ui/**/*.test.tsx'],
-          setupFiles: ['test/setup/ui.ts'],
+          include: ['packages/ui/src/**/*.test.ts', 'packages/ui/src/**/*.test.tsx'],
+          setupFiles: ['packages/ui/test/setup/ui.ts'],
         },
       }),
     ],
     coverage: {
       provider: 'v8',
-      include: ['src/**/*.ts', 'src/**/*.tsx'],
-      exclude: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'src/**/index.ts', 'src/**/types.ts'],
+      include: ['packages/*/src/**/*.ts', 'packages/*/src/**/*.tsx'],
+      exclude: ['**/*.test.ts', '**/*.test.tsx', '**/index.ts', '**/types.ts'],
       reporter: ['text', 'json-summary', 'json'],
       thresholds: {
         statements: 95,

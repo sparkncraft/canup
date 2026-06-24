@@ -186,12 +186,7 @@ describe('actions test command', () => {
 
       await runTest('handler.ts', '--remote');
 
-      expect(client.testCode).toHaveBeenCalledWith(
-        'test-app-id',
-        expect.any(String),
-        'nodejs',
-        {},
-      );
+      expect(client.testCode).toHaveBeenCalledWith('test-app-id', expect.any(String), 'nodejs', {});
     });
 
     test('resolves bare name from convention directory for remote test', async ({
@@ -490,12 +485,7 @@ describe('actions test command', () => {
 
       await runTest('handler.js', '--remote');
 
-      expect(client.testCode).toHaveBeenCalledWith(
-        'test-app-id',
-        expect.any(String),
-        'nodejs',
-        {},
-      );
+      expect(client.testCode).toHaveBeenCalledWith('test-app-id', expect.any(String), 'nodejs', {});
     });
 
     test('exits when params file contains invalid JSON', async ({ output, processMocks }) => {

@@ -1,0 +1,36 @@
+{
+  "name": "@canup/cli",
+  "version": "0.2.0",
+  "description": "Command-line tool to scaffold, deploy, and manage Canva app backends on CanUp.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sparkncraft/canup.git",
+    "directory": "packages/cli"
+  },
+  "keywords": [
+    "canva",
+    "canva-apps",
+    "serverless",
+    "lambda",
+    "cli",
+    "deploy"
+  ],
+  "type": "module",
+  "bin": {
+    "canup": "./dist/index.mjs"
+  },
+  "files": [
+    "dist"
+  ],
+  "imports": {
+    "#test/*": "./test/*"
+  },
+  "dependencies": {
+    "@inquirer/prompts": "^8.3.0",
+    "chalk": "^5.6.2",
+    "commander": "^13.1.0",
+    "open": "^10.1.0",
+    "ora": "^9.3.0"
+  }
+}

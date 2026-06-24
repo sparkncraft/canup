@@ -1,9 +1,10 @@
 import { defineConfig } from 'tsdown';
 
 export default defineConfig([
-  // UI components (what `import from 'canup'` resolves to)
+  // @canup/ui — browser React components.
   {
-    entry: { 'ui/index': 'src/ui/index.ts' },
+    entry: { index: 'packages/ui/src/index.ts' },
+    outDir: 'packages/ui/dist',
     format: 'esm',
     // eager: full tsc-driven declarations so the re-exported @canup/types types
     // (e.g. CreditBalance) inline cleanly into the bundled .d.ts.
@@ -21,12 +22,14 @@ export default defineConfig([
     },
     clean: true,
   },
-  // CLI binary
+  // @canup/cli — Node binary.
   {
-    entry: { 'cli/index': 'src/cli/index.ts' },
+    entry: { index: 'packages/cli/src/index.ts' },
+    outDir: 'packages/cli/dist',
     format: 'esm',
     dts: false,
     platform: 'node',
     target: 'node20',
+    clean: true,
   },
 ]);

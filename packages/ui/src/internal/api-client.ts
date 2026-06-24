@@ -7,7 +7,7 @@ import type {
   RunResult,
   SubscribeLinkResult,
 } from '@canup/types';
-import { DEFAULT_API_URL } from '../../constants.js';
+import { DEFAULT_API_URL } from '../constants.js';
 
 declare global {
   var __canup_url: string | undefined;

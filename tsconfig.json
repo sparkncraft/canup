@@ -11,14 +11,8 @@
     "declaration": true,
     "declarationMap": false,
     "sourceMap": false,
-    "outDir": "./dist",
-    "rootDir": "./src",
-    "jsx": "react-jsx",
-    "baseUrl": ".",
-    "paths": {
-      "#test/*": ["./test/*"]
-    }
+    "jsx": "react-jsx"
   },
-  "include": ["src"],
-  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx"]
+  "include": ["packages/*/src"],
+  "exclude": ["**/*.test.ts", "**/*.test.tsx", "**/dist"]
 }

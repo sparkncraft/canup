@@ -1,45 +1,21 @@
 {
-  "name": "canup",
-  "version": "0.1.0",
-  "description": "Managed backend for Canva Apps — CLI & React components",
+  "name": "canup-sdk",
+  "version": "0.0.0",
+  "description": "CanUp SDK monorepo — @canup/ui React components and @canup/cli developer tool.",
   "license": "MIT",
+  "private": true,
   "repository": {
     "type": "git",
     "url": "git+https://github.com/sparkncraft/canup.git"
   },
-  "keywords": [
-    "canva",
-    "canva-apps",
-    "serverless",
-    "lambda",
-    "cli",
-    "deploy",
-    "react"
-  ],
   "packageManager": "pnpm@10.30.2",
   "type": "module",
-  "bin": {
-    "canup": "./dist/cli/index.mjs"
-  },
-  "exports": {
-    ".": {
-      "types": "./dist/ui/index.d.ts",
-      "import": "./dist/ui/index.js"
-    }
-  },
-  "files": [
-    "dist"
-  ],
-  "imports": {
-    "#test/*": "./test/*"
-  },
-  "sideEffects": false,
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "test:build": "publint --strict && attw --pack . --profile esm-only",
+    "test:build": "publint --strict packages/ui && publint --strict packages/cli && attw --pack packages/ui --profile esm-only && attw --pack packages/cli --profile esm-only",
     "size": "size-limit",
     "size:check": "size-limit --limit",
     "lint": "eslint .",
@@ -52,51 +28,6 @@
   "simple-git-hooks": {
     "pre-commit": "branch=$(git rev-parse --abbrev-ref HEAD); if [ \"$branch\" = \"main\" ]; then echo '\\n❌ Cannot commit directly to main. Create a feature branch first.\\n' >&2; exit 1; fi && pnpm lint-staged",
     "pre-push": "while read local_ref rest; do case \"$local_ref\" in refs/tags/*) ;; *) branch=$(git rev-parse --abbrev-ref HEAD); if [ \"$branch\" = \"main\" ]; then echo '\\n❌ Cannot push directly to main. Use a branch + PR.\\n' >&2; exit 1; fi ;; esac; done"
-  },
-  "lint-staged": {
-    "*.{ts,tsx}": [
-      "eslint --fix",
-      "prettier --write"
-    ],
-    "*.{json,md,yml,yaml}": "prettier --write"
-  },
-  "dependencies": {
-    "@inquirer/prompts": "^8.3.0",
-    "@tanstack/react-query": "^5.96.0",
-    "chalk": "^5.6.2",
-    "commander": "^13.1.0",
-    "eventsource": "^4.1.0",
-    "open": "^10.1.0",
-    "ora": "^9.3.0",
-    "tsx": "^4.19.4"
-  },
-  "peerDependencies": {
-    "@canva/app-i18n-kit": "^1.2.0",
-    "@canva/app-ui-kit": ">=5.0.0 <7.0.0",
-    "@canva/platform": "*",
-    "@canva/user": "*",
-    "react": ">=18",
-    "react-intl": ">=6.6.8 <=7.1.11"
-  },
-  "peerDependenciesMeta": {
-    "react": {
-      "optional": true
-    },
-    "@canva/app-i18n-kit": {
-      "optional": true
-    },
-    "@canva/app-ui-kit": {
-      "optional": true
-    },
-    "@canva/platform": {
-      "optional": true
-    },
-    "@canva/user": {
-      "optional": true
-    },
-    "react-intl": {
-      "optional": true
-    }
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.2",
@@ -113,6 +44,7 @@
     "@testing-library/react": "^16.3.2",
     "@types/node": "^22.13.4",
     "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
     "@vitest/coverage-v8": "^4.1.2",
     "eslint": "^10.1.0",
     "eslint-config-prettier": "^10.1.8",
@@ -122,6 +54,7 @@
     "prettier": "^3.8.1",
     "publint": "^0.3.18",
     "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "react-intl": "^7.1.11",
     "simple-git-hooks": "^2.13.1",
     "size-limit": "^12.0.1",

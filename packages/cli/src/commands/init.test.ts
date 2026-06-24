@@ -517,7 +517,7 @@ describe('init command', () => {
     expect(processMocks.exit).toHaveBeenCalledWith(1);
   });
 
-  test('adds canup dependency to package.json when not present', async ({
+  test('adds @canup/ui dependency to package.json when not present', async ({
     output,
     processMocks,
   }) => {
@@ -541,12 +541,12 @@ describe('init command', () => {
 
     expect(mockWriteFileSync).toHaveBeenCalledWith(
       expect.stringContaining('package.json'),
-      expect.stringContaining('"canup"'),
+      expect.stringContaining('"@canup/ui"'),
     );
-    expect(output.info).toHaveBeenCalledWith('Added "canup" to package.json dependencies');
+    expect(output.info).toHaveBeenCalledWith('Added "@canup/ui" to package.json dependencies');
   });
 
-  test('skips adding canup when already in package.json dependencies', async ({
+  test('skips adding @canup/ui when already in package.json dependencies', async ({
     output,
     processMocks,
   }) => {
@@ -557,7 +557,9 @@ describe('init command', () => {
 
     mockReadFileSync
       .mockReturnValueOnce(JSON.stringify({ version: '1.0.0' }))
-      .mockReturnValueOnce(JSON.stringify({ name: 'my-app', dependencies: { canup: '^0.9.0' } }));
+      .mockReturnValueOnce(
+        JSON.stringify({ name: 'my-app', dependencies: { '@canup/ui': '^0.9.0' } }),
+      );
     mockExistsSync.mockReturnValueOnce(true).mockReturnValue(false);
 
     const { Command } = await import('commander');

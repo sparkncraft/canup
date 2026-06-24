@@ -1,0 +1,50 @@
+{
+  "name": "@canup/ui",
+  "version": "0.2.0",
+  "description": "React components for Canva apps with a managed CanUp backend — actions, credits, and monetization status.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sparkncraft/canup.git",
+    "directory": "packages/ui"
+  },
+  "keywords": [
+    "canva",
+    "canva-apps",
+    "react",
+    "components",
+    "monetization",
+    "credits"
+  ],
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "imports": {
+    "#test/*": "./test/*"
+  },
+  "sideEffects": false,
+  "dependencies": {
+    "@tanstack/react-query": "^5.96.0",
+    "eventsource": "^4.1.0"
+  },
+  "peerDependencies": {
+    "@canva/app-i18n-kit": ">=1.2.0",
+    "@canva/app-ui-kit": ">=5.0.0 <6.0.0",
+    "@canva/platform": ">=2.0.0",
+    "@canva/user": ">=2.0.0",
+    "react": ">=19.0.0 <20.0.0",
+    "react-intl": ">=6.6.8 <=7.1.11"
+  },
+  "peerDependenciesMeta": {
+    "@canva/app-i18n-kit": {
+      "optional": true
+    }
+  }
+}
