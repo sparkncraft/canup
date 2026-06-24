@@ -18,11 +18,10 @@ export interface UseCreditsResult {
  * Live credit balance for one action.
  *
  *  - Initial paint: one `GET /run/:slug/credits`.
- *  - Live updates: the shared SSE stream writes every `credits.update` balance
- *    into this same cache key (see `realtime.ts`). Because the wire carries
- *    `email` and the `billingAvailable` CTA flag, the "logged in as ..." line
- *    and the subscribe/manage CTA refresh on re-subscribe / customer.deleted /
- *    Stripe (dis)connect without a reload.
+ *  - Live updates: the shared SSE stream writes every `credits` balance into
+ *    this same cache key (see `realtime.ts`), so the balance reflects spends and
+ *    quota refreshes without a reload. (Account-level fields — subscription,
+ *    email, the billing CTA flag — live on `useCustomer`, not here.)
  *  - Safety nets (in `query.ts`): focus refetch + a 5-min visible-tab poll for
  *    the rare case where SSE dies silently.
  */

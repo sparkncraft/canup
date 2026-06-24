@@ -36,7 +36,6 @@ function App() {
         onResult={(result) => console.log(result)}
         onError={(error) => console.error(error.message)}
         variant="primary"
-        showCredits
       >
         Generate
       </ActionButton>
@@ -56,15 +55,16 @@ management boilerplate.
 ### `<ActionButton action … showCredits?>`
 
 Runs a deployed action when clicked. Disables itself automatically when the user is out
-of credits. Set `showCredits` to render the per-action credit status (an `<ActionCredits>`)
-directly below the button.
+of credits, and renders the per-action credit status (an `<ActionCredits>`) directly below
+the button -- so the blocked state always shows a status and a resolution CTA. On by
+default; pass `showCredits={false}` to render the button alone.
 
 ### `<ActionCredits action>`
 
 Per-action credit status: how many credits remain, when they refresh, and -- when the
 balance is exhausted -- a critical alert with a "Buy credits" call to action. Renders
-nothing for actions that aren't credit-metered. Use it standalone, or via
-`<ActionButton showCredits>`.
+nothing for actions that aren't credit-metered. Use it standalone, or let `<ActionButton>`
+render it for you (on by default).
 
 ### `<SubscriptionStatus>`
 
@@ -77,7 +77,7 @@ when the app has no billing configured.
 Canva's [Monetization Status](https://www.canva.dev/docs/apps/design-guidelines/monetization-status/)
 guidelines require apps to show the user their credit/subscription status, a way to manage
 it, and to attribute every credit/plan noun with the app's name. These components do that
-out of the box: drop `<ActionButton showCredits>` in your action panel and
+out of the box: drop `<ActionButton>` in your action panel and
 `<SubscriptionStatus>` in your account area, and the compliant layout is handled for you.
 The app name is resolved server-side -- no configuration needed. Payment calls to action
 are automatically hidden on platforms that don't permit external payment flows (e.g. iOS),

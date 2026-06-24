@@ -129,6 +129,7 @@ describe('useCustomer', () => {
   });
 
   test('exposes error as CanupError when fetch fails after retries', async () => {
+    using _warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     mockFetchCustomer.mockRejectedValue(new Error('Network error'));
 
     const { result } = renderHook(() => useCustomer());
@@ -143,6 +144,16 @@ describe('useCustomer', () => {
     expect(result.current.appName).toBeNull();
     expect(result.current.error).not.toBeNull();
     expect(result.current.error!.code).toBe('NETWORK_ERROR');
+  });
+
+  test('warns when the fetch fails, so the silent render-nothing surface is diagnosable', async () => {
+    using warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    mockFetchCustomer.mockRejectedValue(new Error('Network error'));
+
+    renderHook(() => useCustomer());
+
+    await waitFor(() => expect(warn).toHaveBeenCalled(), { timeout: 5000 });
+    expect(String(warn.mock.calls[0]?.[0])).toContain('[canup]');
   });
 
   test('acquires the shared SSE connection on mount and releases on unmount', () => {

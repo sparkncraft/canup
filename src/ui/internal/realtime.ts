@@ -1,8 +1,8 @@
 import { EventSource } from 'eventsource';
 import type { RealtimeEvent } from '@canup/types';
 import { getJwt } from './jwt-cache.js';
+import { getBaseUrl } from './api-client.js';
 import { queryClient, creditKey, customerKey } from './query.js';
-import { DEFAULT_API_URL } from '../../constants.js';
 
 /**
  * One SSE connection shared by the whole SDK consumer. Every mounted hook calls
@@ -84,7 +84,7 @@ function applyCustomerUpdate(event: Extract<RealtimeEvent, { type: 'customer' }>
 function open(): void {
   if (connection || subscribers === 0) return;
 
-  const url = `${globalThis.__canup_url ?? DEFAULT_API_URL}/events`;
+  const url = `${getBaseUrl()}/events`;
   connection = new EventSource(url, {
     fetch: async (input, init) => {
       const token = await getJwt();

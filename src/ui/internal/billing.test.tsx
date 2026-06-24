@@ -45,7 +45,7 @@ describe('billing CTAs', () => {
     expect(screen.getByText('Manage Acme subscription')).toBeTruthy();
   });
 
-  test('renders nothing when the surface forbids payments', () => {
+  test('renders nothing when the surface forbids payments (Canva store policy)', () => {
     mockGetPlatformInfo.mockReturnValue({ canAcceptPayments: false });
     renderWithCanva(<SubscribeLink appName="Acme" />);
     expect(screen.queryByText('Subscribe to Acme')).toBeNull();
@@ -59,6 +59,7 @@ describe('billing CTAs', () => {
     await waitFor(() =>
       expect(mockRequestOpen).toHaveBeenCalledWith({ url: 'https://x/subscribe/abc' }),
     );
+    expect(screen.queryByText(/Couldn't open billing/)).toBeNull();
   });
 
   test('drops a second click while a mint is in flight', async () => {
@@ -74,13 +75,16 @@ describe('billing CTAs', () => {
     await waitFor(() => expect(mockFetchSubscribeLink).toHaveBeenCalledOnce());
   });
 
-  test('a mint error does not throw and leaves the CTA in place', async () => {
+  test('a mint error surfaces an inline error and leaves the CTA in place', async () => {
     mockFetchSubscribeLink.mockRejectedValueOnce(new Error('network'));
     renderWithCanva(<BuyCreditsLink appName="Acme" />);
     fireEvent.click(screen.getByText('Buy Acme credits'));
 
     await waitFor(() => expect(mockFetchSubscribeLink).toHaveBeenCalledOnce());
     expect(mockRequestOpen).not.toHaveBeenCalled();
+    // The CTA stays put and the user gets a visible, retryable error — never a
+    // dead, silent click.
+    expect(screen.getByText("Couldn't open billing. Please try again.")).toBeTruthy();
     expect(screen.getByText('Buy Acme credits')).toBeTruthy();
   });
 });

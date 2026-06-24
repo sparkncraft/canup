@@ -1,7 +1,8 @@
-import { Link } from '@canva/app-ui-kit';
+import { Link, Text } from '@canva/app-ui-kit';
+import { useCallback, useState } from 'react';
 import { getPlatformInfo, requestOpenExternalUrl } from '@canva/platform';
 import { useIntl } from './i18n/use-intl.js';
-import { creditsMessages, subscriptionMessages } from './i18n/messages.js';
+import { billingMessages, creditsMessages, subscriptionMessages } from './i18n/messages.js';
 import { fetchSubscribeLink, getBaseUrl } from './api-client.js';
 
 let minting = false;
@@ -13,7 +14,7 @@ let minting = false;
  * copy. The link is minted at click time — never cached on render — so its
  * short-lived token is always fresh. A module-level guard drops a second click
  * while one mint is in flight; Canva renders its own external-link consent, so
- * no in-app spinner is needed. Errors leave the CTA in place for a retry.
+ * no in-app spinner is needed. Throws on failure so the caller can surface it.
  */
 async function openBilling(): Promise<void> {
   if (minting) return;
@@ -21,8 +22,6 @@ async function openBilling(): Promise<void> {
   try {
     const { url } = await fetchSubscribeLink();
     await requestOpenExternalUrl({ url });
-  } catch {
-    // Best-effort: leave the CTA in place so the user can retry.
   } finally {
     minting = false;
   }
@@ -30,15 +29,37 @@ async function openBilling(): Promise<void> {
 
 /**
  * A payments-gated billing link. Renders nothing on surfaces that forbid
- * external payment flows (`canAcceptPayments === false`, e.g. iOS) — the
- * surrounding component still shows status; only the CTA is withheld.
+ * external payment flows (`canAcceptPayments === false`, e.g. iOS) — Canva's
+ * store policy disallows payment call-to-actions there; the surrounding
+ * component still shows status, only the CTA is withheld. If a click fails to
+ * mint or open, an inline error appears and the link stays put for a retry.
  */
 function BillingLink({ label }: { label: string }) {
+  const intl = useIntl();
+  const [failed, setFailed] = useState(false);
+
+  // Sync handler (returns void) so it matches Link's `requestOpenExternalUrl`
+  // signature; the mint runs fire-and-forget and surfaces failures inline.
+  const handleOpen = useCallback(() => {
+    setFailed(false);
+    openBilling().catch(() => {
+      setFailed(true);
+    });
+  }, []);
+
   if (!getPlatformInfo().canAcceptPayments) return null;
+
   return (
-    <Link href={`${getBaseUrl()}/subscribe`} requestOpenExternalUrl={openBilling}>
-      {label}
-    </Link>
+    <>
+      <Link href={`${getBaseUrl()}/subscribe`} requestOpenExternalUrl={handleOpen}>
+        {label}
+      </Link>
+      {failed ? (
+        <Text size="small" tone="critical">
+          {intl.formatMessage(billingMessages.openFailed)}
+        </Text>
+      ) : null}
+    </>
   );
 }
 

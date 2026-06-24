@@ -38,7 +38,7 @@ export function SubscriptionStatus() {
 
   switch (subscriptionStatus) {
     case 'active': {
-      const cancelDate = formatDate(cancelAt);
+      const cancelDate = formatDate(cancelAt, intl.locale);
       return (
         <Rows spacing="1u" align="center">
           <Text alignment="center" tone="secondary">
@@ -55,7 +55,7 @@ export function SubscriptionStatus() {
       );
     }
     case 'trialing': {
-      const trialEndDate = formatDate(trialEnd);
+      const trialEndDate = formatDate(trialEnd, intl.locale);
       return (
         <Rows spacing="1u" align="center">
           <Text alignment="center" tone="secondary">
@@ -72,6 +72,8 @@ export function SubscriptionStatus() {
       );
     }
     case 'past_due':
+      // The manage pathway lives inside the critical alert — Canva's
+      // access-limitation guideline asks the alert to provide the resolution.
       return (
         <Alert tone="critical" title={intl.formatMessage(m.pastDueTitle, { appName })}>
           <ManageSubscriptionLink appName={appName} />

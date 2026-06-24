@@ -51,6 +51,18 @@ export function useCustomer(): UseCustomerResult {
   const customer: Customer | null = data ?? null;
   const error = queryError ? toCanupError(queryError) : null;
 
+  // The monetization components deliberately render nothing until the customer
+  // resolves (no app name → no compliant, attributed surface). That makes a
+  // failed fetch invisible, so surface it once for the developer to diagnose.
+  const errorMessage = error?.message ?? null;
+  useEffect(() => {
+    if (errorMessage) {
+      console.warn(
+        `[canup] couldn't load the customer billing status — monetization components will render nothing until it loads: ${errorMessage}`,
+      );
+    }
+  }, [errorMessage]);
+
   return {
     appName: customer?.appName ?? null,
     subscriptionStatus: customer?.subscriptionStatus ?? null,

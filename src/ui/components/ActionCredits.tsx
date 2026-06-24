@@ -11,6 +11,31 @@ export interface ActionCreditsProps {
   action: string;
 }
 
+interface ExhaustedCreditsAlertProps {
+  appName: string;
+  resetAt: string | null;
+}
+
+function ExhaustedCreditsAlert({ appName, resetAt }: ExhaustedCreditsAlertProps) {
+  const intl = useIntl();
+  const resetDate = formatDate(resetAt, intl.locale);
+
+  // The "buy" pathway lives inside the critical alert — Canva's access-limitation
+  // guideline asks the alert to provide the resolution pathway.
+  return (
+    <Alert tone="critical" title={intl.formatMessage(creditsMessages.exhaustedTitle, { appName })}>
+      <Rows spacing="1u">
+        {resetDate ? (
+          <Text size="small">
+            {intl.formatMessage(creditsMessages.exhaustedRefresh, { resetDate })}
+          </Text>
+        ) : null}
+        <BuyCreditsLink appName={appName} />
+      </Rows>
+    </Alert>
+  );
+}
+
 /**
  * Per-action credit status. Shows the live balance for `action`, attributed with
  * the app name. Renders only when the action is credit-metered (`quota != null`).
@@ -22,7 +47,7 @@ export interface ActionCreditsProps {
  * rather than shown unattributed.
  */
 export function ActionCredits({ action }: ActionCreditsProps) {
-  const { data, loading: creditsLoading } = useCredits(action);
+  const { data, exhausted, loading: creditsLoading } = useCredits(action);
   const { appName, loading: customerLoading } = useCustomer();
   const intl = useIntl();
 
@@ -31,23 +56,8 @@ export function ActionCredits({ action }: ActionCreditsProps) {
   // No per-action credits to show, or no app name to attribute them to.
   if (data?.quota == null || appName == null) return null;
 
-  if (data.remaining <= 0) {
-    const resetDate = formatDate(data.resetAt);
-    return (
-      <Alert
-        tone="critical"
-        title={intl.formatMessage(creditsMessages.exhaustedTitle, { appName })}
-      >
-        <Rows spacing="1u">
-          {resetDate ? (
-            <Text size="small">
-              {intl.formatMessage(creditsMessages.exhaustedRefresh, { resetDate })}
-            </Text>
-          ) : null}
-          <BuyCreditsLink appName={appName} />
-        </Rows>
-      </Alert>
-    );
+  if (exhausted) {
+    return <ExhaustedCreditsAlert appName={appName} resetAt={data.resetAt} />;
   }
 
   const showInterval = data.interval != null && data.interval !== 'lifetime';

@@ -239,9 +239,19 @@ describe('ActionButton', () => {
     expect(credits.textContent).toBe('my-action');
   });
 
-  test('does not render ActionCredits by default', () => {
+  test('renders ActionCredits below the button by default (zero-config credit visibility)', () => {
     renderWithCanva(
       <ActionButton action="my-action" variant="primary">
+        Go
+      </ActionButton>,
+    );
+
+    expect(screen.getByTestId('action-credits').textContent).toBe('my-action');
+  });
+
+  test('does not render ActionCredits when showCredits is false', () => {
+    renderWithCanva(
+      <ActionButton action="my-action" variant="primary" showCredits={false}>
         Go
       </ActionButton>,
     );

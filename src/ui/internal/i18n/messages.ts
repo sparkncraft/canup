@@ -30,6 +30,14 @@ export const creditsMessages = defineMessages({
   },
 });
 
+/** Strings for the payments-gated billing CTAs (`BillingLink`). */
+export const billingMessages = defineMessages({
+  openFailed: {
+    id: 'canup.billing.openFailed',
+    defaultMessage: "Couldn't open billing. Please try again.",
+  },
+});
+
 /**
  * Customer-level subscription status strings (`<SubscriptionStatus>`). Same
  * app-name attribution; `{appName}` is always set (the component renders only

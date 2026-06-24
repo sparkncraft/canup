@@ -62,7 +62,8 @@ export function App() {
             />
           )}
         />
-        {/* Action panel: the button plus its live credit status, one drop-in. */}
+        {/* Action panel: the button plus its live credit status, one drop-in
+            (ActionButton renders ActionCredits below itself by default). */}
         <ActionButton
           action="generate-text"
           params={{ prompt }}
@@ -71,7 +72,6 @@ export function App() {
           variant="primary"
           stretch
           disabled={!addElement}
-          showCredits
         >
           Generate Text
         </ActionButton>

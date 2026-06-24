@@ -22,7 +22,7 @@ export type ActionButtonProps = DistributiveOmit<
   onError?: (error: CanupError) => void;
   /** Fires after the action settles (success or error). Pair with `onStart` to bracket consumer-side loading state. */
   onSettled?: () => void;
-  /** When true, renders `<ActionCredits action={action}>` directly below the button — the common action-panel layout as one drop-in. Default off. */
+  /** Renders `<ActionCredits action={action}>` directly below the button — the common action-panel layout as one drop-in, and the path that keeps the blocked-credits state compliant (status + a resolution CTA). On by default; pass `showCredits={false}` to render the button alone. */
   showCredits?: boolean;
 };
 
@@ -33,7 +33,7 @@ export function ActionButton({
   onResult,
   onError,
   onSettled,
-  showCredits,
+  showCredits = true,
   disabled,
   children,
   variant,
@@ -45,16 +45,20 @@ export function ActionButton({
   const latest = useRef({ params, onStart, onResult, onError, onSettled });
   latest.current = { params, onStart, onResult, onError, onSettled };
 
-  const handleClick = useCallback(async () => {
+  // Sync handler (returns void) so it matches Canva's `Button.onClick` signature.
+  // `onStart` fires synchronously; the run settles asynchronously after.
+  const handleClick = useCallback(() => {
     latest.current.onStart?.();
-    try {
-      const result = await execute(latest.current.params);
-      latest.current.onResult?.(result);
-    } catch (err) {
-      latest.current.onError?.(toCanupError(err));
-    } finally {
-      latest.current.onSettled?.();
-    }
+    execute(latest.current.params)
+      .then((result) => {
+        latest.current.onResult?.(result);
+      })
+      .catch((err: unknown) => {
+        latest.current.onError?.(toCanupError(err));
+      })
+      .finally(() => {
+        latest.current.onSettled?.();
+      });
   }, [execute]);
 
   // Canva's Button uses nested discriminated unions (pressed × size × variant)
@@ -68,7 +72,7 @@ export function ActionButton({
     // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- disabled=false should not override exhausted=true
     disabled: disabled || exhausted,
     children,
-  } as unknown as CanvaButtonProps;
+  } as CanvaButtonProps;
 
   if (showCredits) {
     return (

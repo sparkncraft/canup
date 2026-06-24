@@ -1,5 +1,6 @@
 import { describe, test, expect } from 'vitest';
 import { getTranslations } from './translations.js';
+import { billingMessages, creditsMessages, subscriptionMessages } from './messages.js';
 
 const EXPECTED_LOCALES = [
   'ar',
@@ -22,14 +23,22 @@ const EXPECTED_LOCALES = [
   'vi',
 ];
 
-// The locale-independent status lines guaranteed to be translated in every
-// locale today (the app-name-attributed strings fall back to English until a
-// dedicated translation pass — see translations.ts).
-const TRANSLATED_MESSAGE_IDS = [
-  'canup.credits.exhaustedRefresh',
-  'canup.subscription.cancelScheduled',
-  'canup.subscription.loggedInAs',
+// Every message the SDK ships, derived from the definitions so coverage can't
+// silently drift when a message is added.
+const ALL_MESSAGES: { id: string; defaultMessage: string }[] = [
+  ...Object.values(creditsMessages),
+  ...Object.values(subscriptionMessages),
+  ...Object.values(billingMessages),
 ];
+
+// The one message that uses an ICU select; its `{...}` blocks aren't simple
+// argument placeholders, so it gets a dedicated structural check below.
+const SELECT_MESSAGE_ID = 'canup.credits.refreshSuffix';
+
+/** Simple `{name}` argument placeholders referenced by a message. */
+function placeholders(message: string): Set<string> {
+  return new Set([...message.matchAll(/\{([a-zA-Z]+)\}/g)].map((m) => m[1]));
+}
 
 describe('translations', () => {
   test('all 18 non-English locales have translations', () => {
@@ -39,12 +48,32 @@ describe('translations', () => {
     }
   });
 
-  test('each locale translates the non-attributed status lines', () => {
+  test('every message is translated in every locale', () => {
     for (const locale of EXPECTED_LOCALES) {
       const messages = getTranslations(locale);
-      for (const id of TRANSLATED_MESSAGE_IDS) {
+      for (const { id } of ALL_MESSAGES) {
         expect(messages[id], `${locale} missing ${id}`).toBeDefined();
-        expect(typeof messages[id], `${locale}/${id} should be string`).toBe('string');
+        expect(typeof messages[id], `${locale}/${id} should be a string`).toBe('string');
+      }
+    }
+  });
+
+  test('each translation preserves the same {placeholders} as the English source', () => {
+    for (const locale of EXPECTED_LOCALES) {
+      const messages = getTranslations(locale);
+      for (const { id, defaultMessage } of ALL_MESSAGES) {
+        if (id === SELECT_MESSAGE_ID) continue; // handled structurally below
+        expect(placeholders(messages[id]), `${locale}/${id}`).toEqual(placeholders(defaultMessage));
+      }
+    }
+  });
+
+  test('the refresh-interval select keeps its ICU structure in every locale', () => {
+    for (const locale of EXPECTED_LOCALES) {
+      const msg = getTranslations(locale)[SELECT_MESSAGE_ID];
+      expect(msg, `${locale} missing ${SELECT_MESSAGE_ID}`).toContain('{interval, select,');
+      for (const arm of ['daily {', 'weekly {', 'monthly {', 'other {']) {
+        expect(msg, `${locale} missing select arm "${arm}"`).toContain(arm);
       }
     }
   });

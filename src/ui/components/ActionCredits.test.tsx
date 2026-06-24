@@ -19,10 +19,12 @@ const mockUseCredits = vi.mocked(useCredits);
 const mockUseCustomer = vi.mocked(useCustomer);
 
 function credits(over: Partial<ReturnType<typeof useCredits>['data'] & object> = {}) {
+  const data = { quota: 100, used: 88, remaining: 12, resetAt: null, interval: 'monthly', ...over };
   return {
-    data: { quota: 100, used: 88, remaining: 12, resetAt: null, interval: 'monthly', ...over },
+    data,
     loading: false,
-    exhausted: false,
+    // Mirror the real hook's derivation so the stub stays faithful.
+    exhausted: data.quota !== null && data.remaining <= 0,
     error: null,
     refresh: vi.fn(),
   } as ReturnType<typeof useCredits>;
