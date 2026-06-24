@@ -111,8 +111,20 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm test:coverage
-      - uses: davelosert/vitest-coverage-report-action@v2
+      # Each package emits its own coverage/ report (per-package vitest config),
+      # so report on each separately.
+      - name: Coverage report — @canup/ui
+        uses: davelosert/vitest-coverage-report-action@v2
         if: always()
+        with:
+          name: '@canup/ui'
+          working-directory: packages/ui
+      - name: Coverage report — @canup/cli
+        uses: davelosert/vitest-coverage-report-action@v2
+        if: always()
+        with:
+          name: '@canup/cli'
+          working-directory: packages/cli
 
   ci-ok:
     if: ${{ !cancelled() }}
