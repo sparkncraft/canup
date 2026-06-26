@@ -60,17 +60,23 @@ export function ActionCredits({ action }: ActionCreditsProps) {
     return <ExhaustedCreditsAlert appName={appName} resetAt={data.resetAt} />;
   }
 
-  const showInterval = data.interval != null && data.interval !== 'lifetime';
+  // A null interval and `lifetime` both mean "no refresh cadence" — they fall to
+  // the message's `other` arm, which omits the cadence word so the absence reads
+  // as one-time credits. The count is emphasized in a bold span (Canva's pattern);
+  // passing it as a node keeps every locale's count bold without per-locale markup.
+  const bold = (value: number) => (
+    <Text variant="bold" tagName="span" size="small">
+      {value}
+    </Text>
+  );
   return (
-    <Text alignment="center" tone="secondary">
+    <Text alignment="center" tone="secondary" size="small">
       {intl.formatMessage(creditsMessages.remaining, {
-        remaining: data.remaining,
-        quota: data.quota,
+        remaining: bold(data.remaining),
+        quota: bold(data.quota),
         appName,
+        interval: data.interval ?? 'lifetime',
       })}
-      {showInterval
-        ? intl.formatMessage(creditsMessages.refreshSuffix, { interval: data.interval })
-        : ''}
     </Text>
   );
 }

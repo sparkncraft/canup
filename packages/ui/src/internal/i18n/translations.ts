@@ -3,35 +3,36 @@
  * react-intl uses each message's `defaultMessage`.
  *
  * Every message is translated in every supported locale (a test pins full
- * coverage and ICU-placeholder parity against the English source). The strings
- * are machine-drafted and reviewed for grammar, register, and terminology, but
- * have not yet had a professional native pass — they should get one before a
- * public stable release. The `ar` and `th` entries in particular are the lowest
- * confidence and warrant a native spot-check.
+ * coverage and ICU-placeholder parity against the English source). Each locale
+ * has had a native-fluent review pass for grammar, register, and terminology;
+ * the `ar` and `th` entries still warrant a final native spot-check before a
+ * public stable release.
+ *
+ * `canup.credits.remaining` carries an ICU `select` on the refresh interval:
+ * the daily/weekly/monthly arms inflect the cadence as an adjective on "credits"
+ * for that locale, and the `other` arm (lifetime / unset) drops the cadence word.
  */
 const translations: Record<string, Record<string, string>> = {
   ar: {
-    'canup.credits.remaining': 'تبقّى {remaining} من {quota} من أرصدة {appName}',
-    'canup.credits.refreshSuffix':
-      ' · يتم التجديد {interval, select, daily {يوميًا} weekly {أسبوعيًا} monthly {شهريًا} other {يوميًا}}',
+    'canup.credits.remaining':
+      '{interval, select, daily {بقي لديك {remaining} من أصل {quota} من رصيد {appName} اليومي} weekly {بقي لديك {remaining} من أصل {quota} من رصيد {appName} الأسبوعي} monthly {بقي لديك {remaining} من أصل {quota} من رصيد {appName} الشهري} other {بقي لديك {remaining} من أصل {quota} من رصيد {appName}}}',
     'canup.credits.exhaustedTitle': 'لقد نفد رصيدك في {appName}.',
-    'canup.credits.exhaustedRefresh': 'يتم تجديد الأرصدة في {resetDate}.',
-    'canup.credits.buy': 'شراء أرصدة {appName}',
+    'canup.credits.exhaustedRefresh': 'يتجدّد الرصيد في {resetDate}.',
+    'canup.credits.buy': 'شراء رصيد {appName}',
     'canup.subscription.subscribed': 'أنت مشترك في {appName}.',
     'canup.subscription.manage': 'إدارة الاشتراك في {appName}',
     'canup.subscription.cancelScheduled': 'ينتهي الاشتراك في {cancelDate}.',
-    'canup.subscription.trial': 'أنت في فترة تجريبية من {appName}.',
+    'canup.subscription.trial': 'أنت تستخدم النسخة التجريبية من {appName}.',
     'canup.subscription.trialEnds': 'تنتهي الفترة التجريبية في {trialEndDate}.',
     'canup.subscription.pastDueTitle': 'هناك مشكلة في عملية الدفع الخاصة بـ {appName}.',
     'canup.subscription.freePlan': 'أنت تستخدم الخطة المجانية من {appName}.',
     'canup.subscription.subscribe': 'الاشتراك في {appName}',
-    'canup.subscription.loggedInAs': 'تم تسجيل الدخول بحساب {email}.',
-    'canup.billing.openFailed': 'تعذّر فتح صفحة الدفع. حاول مرة أخرى.',
+    'canup.subscription.loggedInAs': 'أنت مسجّل الدخول بحساب {email}.',
+    'canup.billing.openFailed': 'تعذّر فتح صفحة الفوترة. يُرجى المحاولة مرة أخرى.',
   },
   de: {
-    'canup.credits.remaining': '{remaining} von {quota} {appName}-Credits übrig',
-    'canup.credits.refreshSuffix':
-      ' · wird {interval, select, daily {täglich} weekly {wöchentlich} monthly {monatlich} other {täglich}} erneuert',
+    'canup.credits.remaining':
+      '{interval, select, daily {{remaining} von {quota} tägliche {appName}-Credits übrig} weekly {{remaining} von {quota} wöchentliche {appName}-Credits übrig} monthly {{remaining} von {quota} monatliche {appName}-Credits übrig} other {{remaining} von {quota} {appName}-Credits übrig}}',
     'canup.credits.exhaustedTitle': 'Deine {appName}-Credits sind aufgebraucht.',
     'canup.credits.exhaustedRefresh': 'Credits werden am {resetDate} erneuert.',
     'canup.credits.buy': '{appName}-Credits kaufen',
@@ -45,19 +46,18 @@ const translations: Record<string, Record<string, string>> = {
     'canup.subscription.subscribe': '{appName} abonnieren',
     'canup.subscription.loggedInAs': 'Du bist als {email} angemeldet.',
     'canup.billing.openFailed':
-      'Abrechnung konnte nicht geöffnet werden. Bitte versuche es erneut.',
+      'Die Abrechnung konnte nicht geöffnet werden. Bitte versuche es erneut.',
   },
   es: {
-    'canup.credits.remaining': 'Te quedan {remaining} de {quota} créditos de {appName}',
-    'canup.credits.refreshSuffix':
-      ' · se renuevan {interval, select, daily {a diario} weekly {cada semana} monthly {cada mes} other {a diario}}',
+    'canup.credits.remaining':
+      '{interval, select, daily {Te quedan {remaining} de {quota} créditos diarios de {appName}} weekly {Te quedan {remaining} de {quota} créditos semanales de {appName}} monthly {Te quedan {remaining} de {quota} créditos mensuales de {appName}} other {Te quedan {remaining} de {quota} créditos de {appName}}}',
     'canup.credits.exhaustedTitle': 'Te has quedado sin créditos de {appName}.',
     'canup.credits.exhaustedRefresh': 'Los créditos se renuevan el {resetDate}.',
     'canup.credits.buy': 'Comprar créditos de {appName}',
-    'canup.subscription.subscribed': 'Estás suscrito a {appName}.',
+    'canup.subscription.subscribed': 'Tienes una suscripción a {appName}.',
     'canup.subscription.manage': 'Gestionar la suscripción a {appName}',
     'canup.subscription.cancelScheduled': 'La suscripción finaliza el {cancelDate}.',
-    'canup.subscription.trial': 'Estás en una prueba de {appName}.',
+    'canup.subscription.trial': 'Tienes una prueba de {appName}.',
     'canup.subscription.trialEnds': 'La prueba finaliza el {trialEndDate}.',
     'canup.subscription.pastDueTitle': 'Hay un problema con tu pago de {appName}.',
     'canup.subscription.freePlan': 'Estás en el plan gratuito de {appName}.',
@@ -66,13 +66,12 @@ const translations: Record<string, Record<string, string>> = {
     'canup.billing.openFailed': 'No se pudo abrir la página de pago. Inténtalo de nuevo.',
   },
   'es-419': {
-    'canup.credits.remaining': 'Te quedan {remaining} de {quota} créditos de {appName}',
-    'canup.credits.refreshSuffix':
-      ' · se renuevan {interval, select, daily {a diario} weekly {cada semana} monthly {cada mes} other {a diario}}',
+    'canup.credits.remaining':
+      '{interval, select, daily {Te quedan {remaining} de {quota} créditos diarios de {appName}} weekly {Te quedan {remaining} de {quota} créditos semanales de {appName}} monthly {Te quedan {remaining} de {quota} créditos mensuales de {appName}} other {Te quedan {remaining} de {quota} créditos de {appName}}}',
     'canup.credits.exhaustedTitle': 'Te quedaste sin créditos de {appName}.',
     'canup.credits.exhaustedRefresh': 'Los créditos se renuevan el {resetDate}.',
     'canup.credits.buy': 'Comprar créditos de {appName}',
-    'canup.subscription.subscribed': 'Estás suscrito a {appName}.',
+    'canup.subscription.subscribed': 'Tienes una suscripción a {appName}.',
     'canup.subscription.manage': 'Administrar la suscripción a {appName}',
     'canup.subscription.cancelScheduled': 'La suscripción termina el {cancelDate}.',
     'canup.subscription.trial': 'Estás en una prueba de {appName}.',
@@ -84,9 +83,8 @@ const translations: Record<string, Record<string, string>> = {
     'canup.billing.openFailed': 'No se pudo abrir la página de pago. Vuelve a intentarlo.',
   },
   fr: {
-    'canup.credits.remaining': 'Il vous reste {remaining} crédits {appName} sur {quota}',
-    'canup.credits.refreshSuffix':
-      ' · renouvellement {interval, select, daily {quotidien} weekly {hebdomadaire} monthly {mensuel} other {quotidien}}',
+    'canup.credits.remaining':
+      '{interval, select, daily {Il vous reste {remaining} sur {quota} crédits {appName} quotidiens} weekly {Il vous reste {remaining} sur {quota} crédits {appName} hebdomadaires} monthly {Il vous reste {remaining} sur {quota} crédits {appName} mensuels} other {Il vous reste {remaining} sur {quota} crédits {appName}}}',
     'canup.credits.exhaustedTitle': "Vous n'avez plus de crédits {appName}.",
     'canup.credits.exhaustedRefresh': 'Les crédits se renouvellent le {resetDate}.',
     'canup.credits.buy': 'Acheter des crédits {appName}',
@@ -95,24 +93,23 @@ const translations: Record<string, Record<string, string>> = {
     'canup.subscription.cancelScheduled': "L'abonnement prend fin le {cancelDate}.",
     'canup.subscription.trial': "Vous bénéficiez d'un essai de {appName}.",
     'canup.subscription.trialEnds': "L'essai prend fin le {trialEndDate}.",
-    'canup.subscription.pastDueTitle': 'Il y a un problème avec votre paiement {appName}.',
+    'canup.subscription.pastDueTitle': 'Un problème est survenu avec votre paiement {appName}.',
     'canup.subscription.freePlan': 'Vous utilisez le forfait gratuit de {appName}.',
     'canup.subscription.subscribe': "S'abonner à {appName}",
     'canup.subscription.loggedInAs': 'Vous êtes connecté(e) en tant que {email}.',
     'canup.billing.openFailed': "Impossible d'ouvrir la page de paiement. Veuillez réessayer.",
   },
   id: {
-    'canup.credits.remaining': 'Tersisa {remaining} dari {quota} kredit {appName}',
-    'canup.credits.refreshSuffix':
-      ' · diperbarui {interval, select, daily {setiap hari} weekly {setiap minggu} monthly {setiap bulan} other {setiap hari}}',
+    'canup.credits.remaining':
+      '{interval, select, daily {Tersisa {remaining} dari {quota} kredit {appName} harian} weekly {Tersisa {remaining} dari {quota} kredit {appName} mingguan} monthly {Tersisa {remaining} dari {quota} kredit {appName} bulanan} other {Tersisa {remaining} dari {quota} kredit {appName}}}',
     'canup.credits.exhaustedTitle': 'Kredit {appName} Anda telah habis.',
-    'canup.credits.exhaustedRefresh': 'Kredit diperbarui pada {resetDate}.',
+    'canup.credits.exhaustedRefresh': 'Kredit akan diperbarui pada {resetDate}.',
     'canup.credits.buy': 'Beli kredit {appName}',
     'canup.subscription.subscribed': 'Anda berlangganan {appName}.',
     'canup.subscription.manage': 'Kelola langganan {appName}',
     'canup.subscription.cancelScheduled': 'Langganan berakhir pada {cancelDate}.',
-    'canup.subscription.trial': 'Anda sedang mencoba {appName}.',
-    'canup.subscription.trialEnds': 'Masa coba berakhir pada {trialEndDate}.',
+    'canup.subscription.trial': 'Anda sedang menjalani uji coba {appName}.',
+    'canup.subscription.trialEnds': 'Uji coba berakhir pada {trialEndDate}.',
     'canup.subscription.pastDueTitle': 'Ada masalah dengan pembayaran {appName} Anda.',
     'canup.subscription.freePlan': 'Anda menggunakan paket gratis {appName}.',
     'canup.subscription.subscribe': 'Berlangganan {appName}',
@@ -120,27 +117,25 @@ const translations: Record<string, Record<string, string>> = {
     'canup.billing.openFailed': 'Tidak dapat membuka halaman pembayaran. Coba lagi.',
   },
   it: {
-    'canup.credits.remaining': '{remaining} di {quota} crediti {appName} rimasti',
-    'canup.credits.refreshSuffix':
-      ' · si rinnovano {interval, select, daily {ogni giorno} weekly {ogni settimana} monthly {ogni mese} other {ogni giorno}}',
+    'canup.credits.remaining':
+      '{interval, select, daily {Ti rimangono {remaining} crediti giornalieri {appName} su {quota}} weekly {Ti rimangono {remaining} crediti settimanali {appName} su {quota}} monthly {Ti rimangono {remaining} crediti mensili {appName} su {quota}} other {Ti rimangono {remaining} crediti {appName} su {quota}}}',
     'canup.credits.exhaustedTitle': 'Hai esaurito i crediti {appName}.',
     'canup.credits.exhaustedRefresh': 'I crediti si rinnovano il {resetDate}.',
     'canup.credits.buy': 'Acquista crediti {appName}',
     'canup.subscription.subscribed': 'Hai un abbonamento a {appName}.',
     'canup.subscription.manage': "Gestisci l'abbonamento a {appName}",
     'canup.subscription.cancelScheduled': "L'abbonamento termina il {cancelDate}.",
-    'canup.subscription.trial': 'Hai una prova di {appName}.',
+    'canup.subscription.trial': 'Hai una prova gratuita di {appName}.',
     'canup.subscription.trialEnds': 'La prova termina il {trialEndDate}.',
     'canup.subscription.pastDueTitle': "C'è un problema con il pagamento di {appName}.",
-    'canup.subscription.freePlan': 'Hai il piano gratuito di {appName}.',
+    'canup.subscription.freePlan': 'Usi il piano gratuito di {appName}.',
     'canup.subscription.subscribe': 'Abbonati a {appName}',
     'canup.subscription.loggedInAs': "Hai effettuato l'accesso come {email}.",
     'canup.billing.openFailed': 'Impossibile aprire la pagina di pagamento. Riprova.',
   },
   ja: {
-    'canup.credits.remaining': '{appName} クレジットの残り {remaining}/{quota}',
-    'canup.credits.refreshSuffix':
-      ' · {interval, select, daily {毎日} weekly {毎週} monthly {毎月} other {毎日}}更新',
+    'canup.credits.remaining':
+      '{interval, select, daily {{appName} の日次クレジット残り {remaining}/{quota}} weekly {{appName} の週次クレジット残り {remaining}/{quota}} monthly {{appName} の月次クレジット残り {remaining}/{quota}} other {{appName} クレジット残り {remaining}/{quota}}}',
     'canup.credits.exhaustedTitle': '{appName} のクレジットを使い切りました。',
     'canup.credits.exhaustedRefresh': 'クレジットは{resetDate}に更新されます。',
     'canup.credits.buy': '{appName} クレジットを購入',
@@ -151,22 +146,21 @@ const translations: Record<string, Record<string, string>> = {
     'canup.subscription.trialEnds': 'トライアルは{trialEndDate}に終了します。',
     'canup.subscription.pastDueTitle': '{appName} のお支払いに問題があります。',
     'canup.subscription.freePlan': '{appName} の無料プランをご利用中です。',
-    'canup.subscription.subscribe': '{appName} に登録',
+    'canup.subscription.subscribe': '{appName} のサブスクリプションに登録',
     'canup.subscription.loggedInAs': '{email} でログイン中です。',
     'canup.billing.openFailed': '請求ページを開けませんでした。もう一度お試しください。',
   },
   ko: {
-    'canup.credits.remaining': '{appName} 크레딧 {quota}개 중 {remaining}개 남음',
-    'canup.credits.refreshSuffix':
-      ' · {interval, select, daily {매일} weekly {매주} monthly {매월} other {매일}} 갱신',
+    'canup.credits.remaining':
+      '{interval, select, daily {{appName} 일간 크레딧 {quota}개 중 {remaining}개 남음} weekly {{appName} 주간 크레딧 {quota}개 중 {remaining}개 남음} monthly {{appName} 월간 크레딧 {quota}개 중 {remaining}개 남음} other {{appName} 크레딧 {quota}개 중 {remaining}개 남음}}',
     'canup.credits.exhaustedTitle': '{appName} 크레딧을 모두 사용했습니다.',
     'canup.credits.exhaustedRefresh': '크레딧은 {resetDate}에 갱신됩니다.',
     'canup.credits.buy': '{appName} 크레딧 구매',
     'canup.subscription.subscribed': '{appName}을(를) 구독 중입니다.',
     'canup.subscription.manage': '{appName} 구독 관리',
     'canup.subscription.cancelScheduled': '구독이 {cancelDate}에 종료됩니다.',
-    'canup.subscription.trial': '{appName} 체험판을 이용 중입니다.',
-    'canup.subscription.trialEnds': '체험판이 {trialEndDate}에 종료됩니다.',
+    'canup.subscription.trial': '{appName} 무료 체험을 이용 중입니다.',
+    'canup.subscription.trialEnds': '무료 체험이 {trialEndDate}에 종료됩니다.',
     'canup.subscription.pastDueTitle': '{appName} 결제에 문제가 있습니다.',
     'canup.subscription.freePlan': '{appName} 무료 요금제를 이용 중입니다.',
     'canup.subscription.subscribe': '{appName} 구독',
@@ -174,16 +168,15 @@ const translations: Record<string, Record<string, string>> = {
     'canup.billing.openFailed': '결제 페이지를 열 수 없습니다. 다시 시도해 주세요.',
   },
   ms: {
-    'canup.credits.remaining': 'Baki {remaining} daripada {quota} kredit {appName}',
-    'canup.credits.refreshSuffix':
-      ' · diperbaharui {interval, select, daily {setiap hari} weekly {setiap minggu} monthly {setiap bulan} other {setiap hari}}',
+    'canup.credits.remaining':
+      '{interval, select, daily {Tinggal {remaining} daripada {quota} kredit {appName} harian} weekly {Tinggal {remaining} daripada {quota} kredit {appName} mingguan} monthly {Tinggal {remaining} daripada {quota} kredit {appName} bulanan} other {Tinggal {remaining} daripada {quota} kredit {appName}}}',
     'canup.credits.exhaustedTitle': 'Kredit {appName} anda telah habis.',
-    'canup.credits.exhaustedRefresh': 'Kredit diperbaharui pada {resetDate}.',
+    'canup.credits.exhaustedRefresh': 'Kredit akan diperbaharui pada {resetDate}.',
     'canup.credits.buy': 'Beli kredit {appName}',
-    'canup.subscription.subscribed': 'Anda melanggan {appName}.',
+    'canup.subscription.subscribed': 'Anda telah melanggan {appName}.',
     'canup.subscription.manage': 'Urus langganan {appName}',
     'canup.subscription.cancelScheduled': 'Langganan tamat pada {cancelDate}.',
-    'canup.subscription.trial': 'Anda sedang mencuba {appName}.',
+    'canup.subscription.trial': 'Anda sedang dalam tempoh percubaan {appName}.',
     'canup.subscription.trialEnds': 'Percubaan tamat pada {trialEndDate}.',
     'canup.subscription.pastDueTitle': 'Terdapat masalah dengan pembayaran {appName} anda.',
     'canup.subscription.freePlan': 'Anda menggunakan pelan percuma {appName}.',
@@ -192,17 +185,16 @@ const translations: Record<string, Record<string, string>> = {
     'canup.billing.openFailed': 'Tidak dapat membuka halaman pembayaran. Cuba lagi.',
   },
   nl: {
-    'canup.credits.remaining': '{remaining} van {quota} {appName}-credits over',
-    'canup.credits.refreshSuffix':
-      ' · wordt {interval, select, daily {dagelijks} weekly {wekelijks} monthly {maandelijks} other {dagelijks}} vernieuwd',
+    'canup.credits.remaining':
+      '{interval, select, daily {{remaining} van {quota} dagelijkse {appName}-credits over} weekly {{remaining} van {quota} wekelijkse {appName}-credits over} monthly {{remaining} van {quota} maandelijkse {appName}-credits over} other {{remaining} van {quota} {appName}-credits over}}',
     'canup.credits.exhaustedTitle': 'Je {appName}-credits zijn op.',
     'canup.credits.exhaustedRefresh': 'Credits worden vernieuwd op {resetDate}.',
     'canup.credits.buy': '{appName}-credits kopen',
     'canup.subscription.subscribed': 'Je bent geabonneerd op {appName}.',
     'canup.subscription.manage': '{appName}-abonnement beheren',
     'canup.subscription.cancelScheduled': 'Abonnement eindigt op {cancelDate}.',
-    'canup.subscription.trial': 'Je hebt een proefversie van {appName}.',
-    'canup.subscription.trialEnds': 'Proefversie eindigt op {trialEndDate}.',
+    'canup.subscription.trial': 'Je gebruikt een proefperiode van {appName}.',
+    'canup.subscription.trialEnds': 'Proefperiode eindigt op {trialEndDate}.',
     'canup.subscription.pastDueTitle': 'Er is een probleem met je betaling voor {appName}.',
     'canup.subscription.freePlan': 'Je gebruikt het gratis abonnement van {appName}.',
     'canup.subscription.subscribe': 'Abonneren op {appName}',
@@ -210,10 +202,9 @@ const translations: Record<string, Record<string, string>> = {
     'canup.billing.openFailed': 'Kan de betaalpagina niet openen. Probeer het opnieuw.',
   },
   pl: {
-    'canup.credits.remaining': 'Pozostało {remaining} z {quota} kredytów {appName}',
-    'canup.credits.refreshSuffix':
-      ' · odnawiają się {interval, select, daily {codziennie} weekly {co tydzień} monthly {co miesiąc} other {codziennie}}',
-    'canup.credits.exhaustedTitle': 'Wykorzystano wszystkie kredyty {appName}.',
+    'canup.credits.remaining':
+      '{interval, select, daily {Pozostało {remaining} z {quota} dziennych kredytów {appName}} weekly {Pozostało {remaining} z {quota} tygodniowych kredytów {appName}} monthly {Pozostało {remaining} z {quota} miesięcznych kredytów {appName}} other {Pozostało {remaining} z {quota} kredytów {appName}}}',
+    'canup.credits.exhaustedTitle': 'Nie masz już kredytów {appName}.',
     'canup.credits.exhaustedRefresh': 'Kredyty odnowią się {resetDate}.',
     'canup.credits.buy': 'Kup kredyty {appName}',
     'canup.subscription.subscribed': 'Masz subskrypcję {appName}.',
@@ -228,9 +219,8 @@ const translations: Record<string, Record<string, string>> = {
     'canup.billing.openFailed': 'Nie można otworzyć strony płatności. Spróbuj ponownie.',
   },
   'pt-BR': {
-    'canup.credits.remaining': '{remaining} de {quota} créditos restantes do {appName}',
-    'canup.credits.refreshSuffix':
-      ' · renova {interval, select, daily {diariamente} weekly {semanalmente} monthly {mensalmente} other {diariamente}}',
+    'canup.credits.remaining':
+      '{interval, select, daily {Restam {remaining} de {quota} créditos diários do {appName}} weekly {Restam {remaining} de {quota} créditos semanais do {appName}} monthly {Restam {remaining} de {quota} créditos mensais do {appName}} other {Restam {remaining} de {quota} créditos do {appName}}}',
     'canup.credits.exhaustedTitle': 'Seus créditos do {appName} acabaram.',
     'canup.credits.exhaustedRefresh': 'Os créditos são renovados em {resetDate}.',
     'canup.credits.buy': 'Comprar créditos do {appName}',
@@ -246,93 +236,88 @@ const translations: Record<string, Record<string, string>> = {
     'canup.billing.openFailed': 'Não foi possível abrir a página de pagamento. Tente novamente.',
   },
   ro: {
-    'canup.credits.remaining': '{remaining} din {quota} credite {appName} rămase',
-    'canup.credits.refreshSuffix':
-      ' · se reîmprospătează {interval, select, daily {zilnic} weekly {săptămânal} monthly {lunar} other {zilnic}}',
+    'canup.credits.remaining':
+      '{interval, select, daily {Ți-au rămas {remaining} din {quota} credite {appName} zilnice} weekly {Ți-au rămas {remaining} din {quota} credite {appName} săptămânale} monthly {Ți-au rămas {remaining} din {quota} credite {appName} lunare} other {Ți-au rămas {remaining} din {quota} credite {appName}}}',
     'canup.credits.exhaustedTitle': 'Nu mai ai credite {appName}.',
-    'canup.credits.exhaustedRefresh': 'Creditele se reîmprospătează pe {resetDate}.',
+    'canup.credits.exhaustedRefresh': 'Creditele se reînnoiesc pe {resetDate}.',
     'canup.credits.buy': 'Cumpără credite {appName}',
-    'canup.subscription.subscribed': 'Ești abonat la {appName}.',
-    'canup.subscription.manage': 'Gestionează abonamentul {appName}',
+    'canup.subscription.subscribed': 'Ești abonat(ă) la {appName}.',
+    'canup.subscription.manage': 'Gestionează abonamentul la {appName}',
     'canup.subscription.cancelScheduled': 'Abonamentul se încheie pe {cancelDate}.',
     'canup.subscription.trial': 'Ești în perioada de probă pentru {appName}.',
     'canup.subscription.trialEnds': 'Perioada de probă se încheie pe {trialEndDate}.',
-    'canup.subscription.pastDueTitle': 'Există o problemă cu plata ta {appName}.',
+    'canup.subscription.pastDueTitle': 'Există o problemă cu plata ta pentru {appName}.',
     'canup.subscription.freePlan': 'Ești pe planul gratuit {appName}.',
     'canup.subscription.subscribe': 'Abonează-te la {appName}',
     'canup.subscription.loggedInAs': 'Ești conectat(ă) ca {email}.',
     'canup.billing.openFailed': 'Pagina de plată nu a putut fi deschisă. Încearcă din nou.',
   },
   sv: {
-    'canup.credits.remaining': '{remaining} av {quota} {appName}-krediter kvar',
-    'canup.credits.refreshSuffix':
-      ' · förnyas {interval, select, daily {dagligen} weekly {varje vecka} monthly {varje månad} other {dagligen}}',
+    'canup.credits.remaining':
+      '{interval, select, daily {{remaining} av {quota} dagliga {appName}-krediter kvar} weekly {{remaining} av {quota} veckovisa {appName}-krediter kvar} monthly {{remaining} av {quota} månatliga {appName}-krediter kvar} other {{remaining} av {quota} {appName}-krediter kvar}}',
     'canup.credits.exhaustedTitle': 'Dina {appName}-krediter är slut.',
-    'canup.credits.exhaustedRefresh': 'Krediter förnyas den {resetDate}.',
+    'canup.credits.exhaustedRefresh': 'Krediterna förnyas den {resetDate}.',
     'canup.credits.buy': 'Köp {appName}-krediter',
     'canup.subscription.subscribed': 'Du prenumererar på {appName}.',
     'canup.subscription.manage': 'Hantera {appName}-prenumeration',
-    'canup.subscription.cancelScheduled': 'Prenumerationen avslutas {cancelDate}.',
+    'canup.subscription.cancelScheduled': 'Prenumerationen avslutas den {cancelDate}.',
     'canup.subscription.trial': 'Du testar {appName}.',
-    'canup.subscription.trialEnds': 'Provperioden avslutas {trialEndDate}.',
+    'canup.subscription.trialEnds': 'Provperioden avslutas den {trialEndDate}.',
     'canup.subscription.pastDueTitle': 'Det finns ett problem med din {appName}-betalning.',
-    'canup.subscription.freePlan': 'Du har {appName}-gratisplanen.',
+    'canup.subscription.freePlan': 'Du använder {appName}-gratisplanen.',
     'canup.subscription.subscribe': 'Prenumerera på {appName}',
     'canup.subscription.loggedInAs': 'Du är inloggad som {email}.',
     'canup.billing.openFailed': 'Det gick inte att öppna betalsidan. Försök igen.',
   },
   th: {
-    'canup.credits.remaining': 'เหลือเครดิต {appName} {remaining} จาก {quota}',
-    'canup.credits.refreshSuffix':
-      ' · รีเซ็ต{interval, select, daily {ทุกวัน} weekly {ทุกสัปดาห์} monthly {ทุกเดือน} other {ทุกวัน}}',
+    'canup.credits.remaining':
+      '{interval, select, daily {เครดิต {appName} รายวันเหลือ {remaining} จาก {quota}} weekly {เครดิต {appName} รายสัปดาห์เหลือ {remaining} จาก {quota}} monthly {เครดิต {appName} รายเดือนเหลือ {remaining} จาก {quota}} other {เครดิต {appName} เหลือ {remaining} จาก {quota}}}',
     'canup.credits.exhaustedTitle': 'เครดิต {appName} ของคุณหมดแล้ว',
-    'canup.credits.exhaustedRefresh': 'เครดิตจะรีเซ็ตในวันที่ {resetDate}',
+    'canup.credits.exhaustedRefresh': 'เครดิตจะรีเฟรชในวันที่ {resetDate}',
     'canup.credits.buy': 'ซื้อเครดิต {appName}',
     'canup.subscription.subscribed': 'คุณสมัครสมาชิก {appName} แล้ว',
     'canup.subscription.manage': 'จัดการการสมัครสมาชิก {appName}',
-    'canup.subscription.cancelScheduled': 'การสมัครสมาชิกสิ้นสุดในวันที่ {cancelDate}',
+    'canup.subscription.cancelScheduled': 'การสมัครสมาชิกจะสิ้นสุดในวันที่ {cancelDate}',
     'canup.subscription.trial': 'คุณกำลังทดลองใช้ {appName}',
-    'canup.subscription.trialEnds': 'การทดลองใช้สิ้นสุดในวันที่ {trialEndDate}',
+    'canup.subscription.trialEnds': 'การทดลองใช้จะสิ้นสุดในวันที่ {trialEndDate}',
     'canup.subscription.pastDueTitle': 'มีปัญหากับการชำระเงิน {appName} ของคุณ',
     'canup.subscription.freePlan': 'คุณกำลังใช้แผนฟรีของ {appName}',
     'canup.subscription.subscribe': 'สมัครสมาชิก {appName}',
     'canup.subscription.loggedInAs': 'คุณเข้าสู่ระบบด้วย {email}',
-    'canup.billing.openFailed': 'ไม่สามารถเปิดหน้าการชำระเงินได้ ลองอีกครั้ง',
+    'canup.billing.openFailed': 'ไม่สามารถเปิดหน้าการชำระเงินได้ โปรดลองอีกครั้ง',
   },
   tr: {
-    'canup.credits.remaining': '{quota} {appName} kredisinden {remaining} tanesi kaldı',
-    'canup.credits.refreshSuffix':
-      ' · {interval, select, daily {günlük} weekly {haftalık} monthly {aylık} other {günlük}} yenilenir',
+    'canup.credits.remaining':
+      '{interval, select, daily {{quota} günlük {appName} kredisinden {remaining} tanesi kaldı} weekly {{quota} haftalık {appName} kredisinden {remaining} tanesi kaldı} monthly {{quota} aylık {appName} kredisinden {remaining} tanesi kaldı} other {{quota} {appName} kredisinden {remaining} tanesi kaldı}}',
     'canup.credits.exhaustedTitle': '{appName} krediniz bitti.',
-    'canup.credits.exhaustedRefresh': 'Krediler {resetDate} tarihinde yenilenir.',
-    'canup.credits.buy': '{appName} kredisi satın al',
+    'canup.credits.exhaustedRefresh': 'Krediler {resetDate} tarihinde yenilenecek.',
+    'canup.credits.buy': '{appName} kredisi satın alın',
     'canup.subscription.subscribed': '{appName} aboneliğiniz var.',
-    'canup.subscription.manage': '{appName} aboneliğini yönet',
-    'canup.subscription.cancelScheduled': 'Abonelik {cancelDate} tarihinde sona erer.',
-    'canup.subscription.trial': '{appName} deneme sürümünü kullanıyorsunuz.',
-    'canup.subscription.trialEnds': 'Deneme süresi {trialEndDate} tarihinde sona erer.',
+    'canup.subscription.manage': '{appName} aboneliğini yönetin',
+    'canup.subscription.cancelScheduled': 'Abonelik {cancelDate} tarihinde sona erecek.',
+    'canup.subscription.trial': '{appName} deneme süresindesiniz.',
+    'canup.subscription.trialEnds': 'Deneme süresi {trialEndDate} tarihinde sona erecek.',
     'canup.subscription.pastDueTitle': '{appName} ödemenizle ilgili bir sorun var.',
     'canup.subscription.freePlan': '{appName} ücretsiz planını kullanıyorsunuz.',
-    'canup.subscription.subscribe': '{appName} aboneliği al',
+    'canup.subscription.subscribe': '{appName} aboneliği başlatın',
     'canup.subscription.loggedInAs': '{email} olarak giriş yaptınız.',
     'canup.billing.openFailed': 'Ödeme sayfası açılamadı. Lütfen tekrar deneyin.',
   },
   vi: {
-    'canup.credits.remaining': 'Còn {remaining} trong {quota} tín dụng {appName}',
-    'canup.credits.refreshSuffix':
-      ' · làm mới {interval, select, daily {hằng ngày} weekly {hằng tuần} monthly {hằng tháng} other {hằng ngày}}',
+    'canup.credits.remaining':
+      '{interval, select, daily {Còn {remaining} trên {quota} tín dụng {appName} hằng ngày} weekly {Còn {remaining} trên {quota} tín dụng {appName} hằng tuần} monthly {Còn {remaining} trên {quota} tín dụng {appName} hằng tháng} other {Còn {remaining} trên {quota} tín dụng {appName}}}',
     'canup.credits.exhaustedTitle': 'Bạn đã hết tín dụng {appName}.',
-    'canup.credits.exhaustedRefresh': 'Tín dụng được làm mới vào {resetDate}.',
+    'canup.credits.exhaustedRefresh': 'Tín dụng sẽ được làm mới vào {resetDate}.',
     'canup.credits.buy': 'Mua tín dụng {appName}',
     'canup.subscription.subscribed': 'Bạn đã đăng ký gói {appName}.',
     'canup.subscription.manage': 'Quản lý gói đăng ký {appName}',
-    'canup.subscription.cancelScheduled': 'Gói đăng ký kết thúc vào {cancelDate}.',
+    'canup.subscription.cancelScheduled': 'Gói đăng ký sẽ kết thúc vào {cancelDate}.',
     'canup.subscription.trial': 'Bạn đang dùng thử {appName}.',
-    'canup.subscription.trialEnds': 'Bản dùng thử kết thúc vào {trialEndDate}.',
+    'canup.subscription.trialEnds': 'Thời gian dùng thử sẽ kết thúc vào {trialEndDate}.',
     'canup.subscription.pastDueTitle': 'Có sự cố với khoản thanh toán {appName} của bạn.',
     'canup.subscription.freePlan': 'Bạn đang dùng gói miễn phí {appName}.',
     'canup.subscription.subscribe': 'Đăng ký {appName}',
-    'canup.subscription.loggedInAs': 'Bạn đã đăng nhập bằng {email}.',
+    'canup.subscription.loggedInAs': 'Bạn đang đăng nhập bằng {email}.',
     'canup.billing.openFailed': 'Không thể mở trang thanh toán. Vui lòng thử lại.',
   },
 };

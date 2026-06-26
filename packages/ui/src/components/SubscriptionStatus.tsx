@@ -41,10 +41,14 @@ export function SubscriptionStatus() {
       const cancelDate = formatDate(cancelAt, intl.locale);
       return (
         <Rows spacing="1u" align="center">
-          <Text alignment="center" tone="secondary">
-            {intl.formatMessage(m.subscribed, { appName })}
-          </Text>
-          <ManageSubscriptionLink appName={appName} />
+          {/* Status line + management CTA sit tight (0u); supplementary
+              account/billing detail lines sit 1u below, per Canva's pattern. */}
+          <Rows spacing="0" align="center">
+            <Text alignment="center" tone="secondary" size="small">
+              {intl.formatMessage(m.subscribed, { appName })}
+            </Text>
+            <ManageSubscriptionLink appName={appName} />
+          </Rows>
           {cancelDate ? (
             <Text size="xsmall" tone="tertiary">
               {intl.formatMessage(m.cancelScheduled, { cancelDate })}
@@ -58,15 +62,17 @@ export function SubscriptionStatus() {
       const trialEndDate = formatDate(trialEnd, intl.locale);
       return (
         <Rows spacing="1u" align="center">
-          <Text alignment="center" tone="secondary">
-            {intl.formatMessage(m.trial, { appName })}
-          </Text>
+          <Rows spacing="0" align="center">
+            <Text alignment="center" tone="secondary" size="small">
+              {intl.formatMessage(m.trial, { appName })}
+            </Text>
+            <ManageSubscriptionLink appName={appName} />
+          </Rows>
           {trialEndDate ? (
             <Text size="xsmall" tone="tertiary">
               {intl.formatMessage(m.trialEnds, { trialEndDate })}
             </Text>
           ) : null}
-          <ManageSubscriptionLink appName={appName} />
           {emailLine}
         </Rows>
       );
@@ -84,8 +90,9 @@ export function SubscriptionStatus() {
       // status + an upgrade pathway, but only when the app has Stripe connected.
       if (!billingAvailable) return null;
       return (
-        <Rows spacing="1u" align="center">
-          <Text alignment="center" tone="secondary">
+        // Status line + subscribe CTA sit tight (0u), per Canva's pattern.
+        <Rows spacing="0" align="center">
+          <Text alignment="center" tone="secondary" size="small">
             {intl.formatMessage(m.freePlan, { appName })}
           </Text>
           <SubscribeLink appName={appName} />

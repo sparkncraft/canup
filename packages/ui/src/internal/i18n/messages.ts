@@ -5,16 +5,17 @@ import { defineMessages } from 'react-intl';
  * attributed with the app name — Canva requires this to distinguish an app's
  * credits from Canva's own. Components only render these once the customer
  * resource (which carries `appName`) has resolved, so `{appName}` is always set.
+ *
+ * `remaining` folds the refresh cadence into the noun phrase as an adjective
+ * ("monthly credits"). A missing cadence is meaningful: the `other` arm — which
+ * covers `lifetime` and any unset interval — drops the word entirely, since
+ * credits with no refresh schedule simply read as "credits left".
  */
 export const creditsMessages = defineMessages({
   remaining: {
     id: 'canup.credits.remaining',
-    defaultMessage: '{remaining} of {quota} {appName} credits left',
-  },
-  refreshSuffix: {
-    id: 'canup.credits.refreshSuffix',
     defaultMessage:
-      ' · refreshes {interval, select, daily {daily} weekly {weekly} monthly {monthly} other {daily}}',
+      '{interval, select, daily {{remaining} of {quota} {appName} daily credits left} weekly {{remaining} of {quota} {appName} weekly credits left} monthly {{remaining} of {quota} {appName} monthly credits left} other {{remaining} of {quota} {appName} credits left}}',
   },
   exhaustedTitle: {
     id: 'canup.credits.exhaustedTitle',

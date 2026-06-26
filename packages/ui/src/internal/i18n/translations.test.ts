@@ -31,9 +31,10 @@ const ALL_MESSAGES: { id: string; defaultMessage: string }[] = [
   ...Object.values(billingMessages),
 ];
 
-// The one message that uses an ICU select; its `{...}` blocks aren't simple
-// argument placeholders, so it gets a dedicated structural check below.
-const SELECT_MESSAGE_ID = 'canup.credits.refreshSuffix';
+// The one message that uses an ICU select (the cadence-attributed remaining
+// balance); its `{...}` blocks aren't simple argument placeholders, so it gets a
+// dedicated structural check below.
+const SELECT_MESSAGE_ID = 'canup.credits.remaining';
 
 /** Simple `{name}` argument placeholders referenced by a message. */
 function placeholders(message: string): Set<string> {
@@ -68,12 +69,16 @@ describe('translations', () => {
     }
   });
 
-  test('the refresh-interval select keeps its ICU structure in every locale', () => {
+  test('the remaining-balance select keeps its ICU structure and placeholders in every locale', () => {
     for (const locale of EXPECTED_LOCALES) {
       const msg = getTranslations(locale)[SELECT_MESSAGE_ID];
       expect(msg, `${locale} missing ${SELECT_MESSAGE_ID}`).toContain('{interval, select,');
       for (const arm of ['daily {', 'weekly {', 'monthly {', 'other {']) {
         expect(msg, `${locale} missing select arm "${arm}"`).toContain(arm);
+      }
+      // Count + attribution placeholders must survive into the select arms.
+      for (const ph of ['{remaining}', '{quota}', '{appName}']) {
+        expect(msg, `${locale}/${SELECT_MESSAGE_ID} missing ${ph}`).toContain(ph);
       }
     }
   });
