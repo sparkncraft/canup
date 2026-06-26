@@ -9,6 +9,7 @@ import {
   projectConfig,
   actionsDiscovery,
 } from '#test/fixtures.js';
+import { CanupError } from '@canup/contracts';
 
 const { mockReadFileSync, mockWriteFileSync, mockUnlinkSync, mockExistsSync } = vi.hoisted(() => ({
   mockReadFileSync: vi.fn(),
@@ -410,8 +411,7 @@ describe('actions test command', () => {
     }) => {
       mockExistsSync.mockReturnValue(true);
 
-      const apiError = new Error('Not found') as Error & { httpStatus: number };
-      apiError.httpStatus = 404;
+      const apiError = new CanupError('APP_NOT_FOUND', 'Not found', 404);
       client.testCode.mockRejectedValue(apiError);
 
       mockReadFileSync.mockReturnValue('code');
@@ -425,8 +425,7 @@ describe('actions test command', () => {
     test('handles 401 authentication error', async ({ client, output, processMocks }) => {
       mockExistsSync.mockReturnValue(true);
 
-      const apiError = new Error('Unauthorized') as Error & { httpStatus: number };
-      apiError.httpStatus = 401;
+      const apiError = new CanupError('UNAUTHENTICATED', 'Unauthorized', 401);
       client.testCode.mockRejectedValue(apiError);
 
       mockReadFileSync.mockReturnValue('code');

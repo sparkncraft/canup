@@ -2,6 +2,7 @@ import type { Command } from 'commander';
 import { requireClient } from '../config/require-project.js';
 import { getActionsDir } from '../config/project-config.js';
 import { discoverActions } from '../config/actions-discovery.js';
+import { isCanupError } from '@canup/contracts';
 import { error, hint, dim } from '../ui/output.js';
 
 /**
@@ -147,13 +148,12 @@ export function registerStatusCommand(program: Command): void {
 
         console.log();
       } catch (err) {
-        const e = err as Error & { httpStatus?: number };
-        if (e.httpStatus === 401) {
+        if (isCanupError(err) && err.code === 'UNAUTHENTICATED') {
           error('Not authenticated.');
           hint('Run `canup login` to re-authenticate.');
           process.exit(1);
         }
-        error(`Status failed: ${e.message}`);
+        error(`Status failed: ${err instanceof Error ? err.message : String(err)}`);
         process.exit(1);
       }
     });

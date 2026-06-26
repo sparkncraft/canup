@@ -1,4 +1,5 @@
 import { describe, expect, vi } from 'vitest';
+import { CanupError } from '@canup/contracts';
 import { test, output, client, project } from '#test/fixtures.js';
 
 vi.mock('../../config/require-project.js', () => ({
@@ -174,8 +175,7 @@ describe('actions invocations command', () => {
   });
 
   test('handles 404 error on detail view', async ({ client, output, processMocks }) => {
-    const apiError = new Error('Not found') as Error & { httpStatus: number };
-    apiError.httpStatus = 404;
+    const apiError = new CanupError('INVOCATION_NOT_FOUND', 'Not found', 404);
     client.getInvocationDetail.mockRejectedValue(apiError);
 
     const { Command } = await import('commander');
@@ -195,8 +195,7 @@ describe('actions invocations command', () => {
   });
 
   test('handles 401 auth error', async ({ client, output, processMocks }) => {
-    const apiError = new Error('Unauthorized') as Error & { httpStatus: number };
-    apiError.httpStatus = 401;
+    const apiError = new CanupError('UNAUTHENTICATED', 'Unauthorized', 401);
     client.listInvocations.mockRejectedValue(apiError);
 
     const { Command } = await import('commander');

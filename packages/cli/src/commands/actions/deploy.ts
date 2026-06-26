@@ -5,6 +5,7 @@ import { requireClient } from '../../config/require-project.js';
 import { getActionsDir } from '../../config/project-config.js';
 import { discoverActions, resolveActionByName } from '../../config/actions-discovery.js';
 import type { CanupClient } from '../../api-client.js';
+import { isCanupError } from '@canup/contracts';
 import { error, hint, label, success, info } from '../../ui/output.js';
 import { withSpinner } from '../../ui/spinner.js';
 
@@ -142,9 +143,8 @@ export function registerActionsDeployAction(actionsCommand: Command): void {
           await deployAll(actionsDir, config.appId, client, remoteActions);
         }
       } catch (err) {
-        const e = err as Error & { httpStatus?: number };
-        error(e.message);
-        if (e.httpStatus === 401) {
+        error(err instanceof Error ? err.message : String(err));
+        if (isCanupError(err) && err.code === 'UNAUTHENTICATED') {
           hint('Run `canup init` to re-authenticate.');
         }
         process.exit(1);

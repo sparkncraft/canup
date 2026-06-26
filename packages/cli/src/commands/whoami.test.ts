@@ -1,4 +1,5 @@
 import { describe, expect, vi } from 'vitest';
+import { CanupError } from '@canup/contracts';
 import { test, client, tokenStore } from '#test/fixtures.js';
 
 vi.mock('../auth/token-store.js', () => tokenStore);
@@ -89,8 +90,7 @@ describe('whoami command', () => {
   test('prints session expired on 401 error', async ({ client: c, processMocks }) => {
     tokenStore.loadCredentials.mockReturnValue({ userKey: 'cnup_x', keyId: 'apikey_x' });
 
-    const error = new Error('Invalid or expired session') as Error & { httpStatus: number };
-    error.httpStatus = 401;
+    const error = new CanupError('UNAUTHENTICATED', 'Invalid or expired session', 401);
     c.getMe.mockRejectedValue(error);
 
     const { Command } = await import('commander');

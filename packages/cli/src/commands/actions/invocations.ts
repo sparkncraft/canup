@@ -1,5 +1,6 @@
 import chalk from 'chalk';
 import type { Command } from 'commander';
+import { isCanupError } from '@canup/contracts';
 import type { CanupClient } from '../../api-client.js';
 import { requireClient } from '../../config/require-project.js';
 import { error, hint, info, label, dim, formatTable } from '../../ui/output.js';
@@ -58,18 +59,17 @@ export function registerActionsInvocationsAction(actionsCommand: Command): void 
             await showInvocationsList(client, config.appId, slug, limit, options.search);
           }
         } catch (err) {
-          const e = err as Error & { httpStatus?: number };
-          if (e.httpStatus === 401) {
+          if (isCanupError(err) && err.code === 'UNAUTHENTICATED') {
             error('Not authenticated.');
             hint('Run `canup init` to re-authenticate.');
             process.exit(1);
           }
-          if (e.httpStatus === 404) {
+          if (isCanupError(err) && err.code === 'INVOCATION_NOT_FOUND') {
             error('Execution not found.');
             hint('Run `canup actions invocations` to see recent executions.');
             process.exit(1);
           }
-          error(e.message);
+          error(err instanceof Error ? err.message : String(err));
           process.exit(1);
         }
       },

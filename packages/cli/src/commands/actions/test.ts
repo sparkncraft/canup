@@ -7,6 +7,7 @@ import { spawn } from 'node:child_process';
 import { requireProject } from '../../config/require-project.js';
 import { getActionsDir, type ProjectConfig } from '../../config/project-config.js';
 import { resolveActionByName } from '../../config/actions-discovery.js';
+import { isCanupError } from '@canup/contracts';
 import { CanupClient } from '../../api-client.js';
 import { success, error, hint, dim } from '../../ui/output.js';
 import { withSpinner } from '../../ui/spinner.js';
@@ -357,16 +358,15 @@ export function registerActionsTestAction(actionsCommand: Command): void {
             await runLocalTest(actionPath, language, params, context);
           }
         } catch (err) {
-          const httpStatus = (err as { httpStatus?: number }).httpStatus;
           const message = err instanceof Error ? err.message : String(err);
 
-          if (httpStatus === 401) {
+          if (isCanupError(err) && err.code === 'UNAUTHENTICATED') {
             error('Not authenticated.');
             hint('Run `canup login` to re-authenticate.');
             process.exit(1);
           }
 
-          if (httpStatus === 404) {
+          if (isCanupError(err) && err.code === 'APP_NOT_FOUND') {
             error('App not found on server.');
             hint('Check your project config or use local mode (without --remote).');
             process.exit(1);

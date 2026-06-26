@@ -1,4 +1,5 @@
 import type { Command } from 'commander';
+import { isCanupError } from '@canup/contracts';
 import { requireClient } from '../../config/require-project.js';
 import { success, error, info } from '../../ui/output.js';
 import { assertLanguage } from './_shared.js';
@@ -18,9 +19,8 @@ export function registerDepsClearAction(depsCommand: Command): void {
         await client.clearDeps(config.appId, language);
         success(`All ${language} packages cleared`);
       } catch (err) {
-        const e = err as Error & { httpStatus?: number };
-        error(e.message);
-        if (e.httpStatus === 401) {
+        error(err instanceof Error ? err.message : String(err));
+        if (isCanupError(err) && err.code === 'UNAUTHENTICATED') {
           info('Run `canup init` to re-authenticate.');
         }
         process.exit(1);

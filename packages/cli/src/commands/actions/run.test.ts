@@ -2,6 +2,7 @@ import { describe, expect, vi } from 'vitest';
 import { writeFileSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { CanupError } from '@canup/contracts';
 import { test as baseTest, output, client, spinner, project } from '#test/fixtures.js';
 
 const test = baseTest.extend('tmpFile', async ({}, { onCleanup }) => {
@@ -354,8 +355,7 @@ describe('actions run command', () => {
       output,
       processMocks,
     }) => {
-      const apiError = new Error('Unauthorized') as Error & { httpStatus: number };
-      apiError.httpStatus = 401;
+      const apiError = new CanupError('UNAUTHENTICATED', 'Unauthorized', 401);
       client.listActionsWithScript.mockRejectedValue(apiError);
 
       const { Command } = await import('commander');
@@ -377,8 +377,7 @@ describe('actions run command', () => {
       output,
       processMocks,
     }) => {
-      const apiError = new Error('Not found') as Error & { httpStatus: number };
-      apiError.httpStatus = 404;
+      const apiError = new CanupError('ACTION_NOT_FOUND', 'Not found', 404);
       client.listActionsWithScript.mockRejectedValue(apiError);
 
       const { Command } = await import('commander');

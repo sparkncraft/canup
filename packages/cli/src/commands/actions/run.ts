@@ -1,4 +1,5 @@
 import type { Command } from 'commander';
+import { isCanupError } from '@canup/contracts';
 import { requireClient } from '../../config/require-project.js';
 import { error, hint } from '../../ui/output.js';
 import { withSpinner } from '../../ui/spinner.js';
@@ -45,16 +46,15 @@ export function registerActionsRunAction(actionsCommand: Command): void {
 
         displayTestResult(result, { success: 'Run succeeded', failure: 'Run failed' });
       } catch (err) {
-        const httpStatus = (err as { httpStatus?: number }).httpStatus;
         const message = err instanceof Error ? err.message : String(err);
 
-        if (httpStatus === 401) {
+        if (isCanupError(err) && err.code === 'UNAUTHENTICATED') {
           error('Not authenticated.');
           hint('Run `canup login` to re-authenticate.');
           process.exit(1);
         }
 
-        if (httpStatus === 404) {
+        if (isCanupError(err) && err.code === 'ACTION_NOT_FOUND') {
           error(`Action not found: ${name}`);
           hint('Deploy the action first with `canup actions deploy`.');
           process.exit(1);
