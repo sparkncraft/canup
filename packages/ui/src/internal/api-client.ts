@@ -1,15 +1,13 @@
 import { getJwt } from './jwt-cache.js';
-import { toCanupError, unwrapResponse } from '@canup/contracts';
+import { toCanupError, unwrapResponse, DEFAULT_CANUP_URL } from '@canup/contracts';
 import type { CreditBalance, Customer, RunResult, SubscribeLinkResult } from '@canup/contracts';
 
 declare global {
   var __canup_url: string | undefined;
 }
 
-/** Production CanUp API origin; overridable at runtime via `globalThis.__canup_url` (used in tests). */
-const DEFAULT_API_URL = 'https://canup.link';
-
-export const getBaseUrl = (): string => globalThis.__canup_url ?? DEFAULT_API_URL;
+/** API origin; overridable at runtime via `globalThis.__canup_url` (used in tests). */
+export const getBaseUrl = (): string => globalThis.__canup_url ?? DEFAULT_CANUP_URL;
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   let res: Response;

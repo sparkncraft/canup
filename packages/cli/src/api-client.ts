@@ -35,16 +35,15 @@ import type {
   TestResult,
   User,
 } from '@canup/contracts';
-import { DEFAULT_API_URL, API_VERSION } from './constants.js';
 import { CLI_USER_AGENT } from './version.js';
-import { CanupError, unwrapResponse } from '@canup/contracts';
+import { CanupError, unwrapResponse, DEFAULT_CANUP_URL, API_VERSION } from '@canup/contracts';
 
 export class CanupClient {
   private apiUrl: string;
   private token?: string;
 
   constructor(options?: { apiUrl?: string; token?: string }) {
-    this.apiUrl = options?.apiUrl ?? process.env.CANUP_URL ?? DEFAULT_API_URL;
+    this.apiUrl = options?.apiUrl ?? process.env.CANUP_URL ?? DEFAULT_CANUP_URL;
     this.token = options?.token;
   }
 
