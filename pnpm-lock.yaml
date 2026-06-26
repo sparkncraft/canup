@@ -152,8 +152,8 @@ importers:
         version: 9.3.0
     devDependencies:
       '@canup/contracts':
-        specifier: ^0.2.0
-        version: 0.2.0
+        specifier: ^0.2.1
+        version: 0.2.1
       '@types/node':
         specifier: ^22.13.4
         version: 22.19.15
@@ -171,8 +171,8 @@ importers:
         version: 4.1.0
     devDependencies:
       '@canup/contracts':
-        specifier: ^0.2.0
-        version: 0.2.0
+        specifier: ^0.2.1
+        version: 0.2.1
       '@canva/app-i18n-kit':
         specifier: ^1.2.0
         version: 1.2.0(@formatjs/intl@3.1.8(typescript@5.9.3))(intl-messageformat@10.7.18)(react-dom@19.2.4(react@19.2.4))(react-intl@7.1.11(react@19.2.4)(typescript@5.9.3))(react@19.2.4)
@@ -286,8 +286,8 @@ packages:
   '@braidai/lang@1.1.2':
     resolution: {integrity: sha512-qBcknbBufNHlui137Hft8xauQMTZDKdophmLFv05r2eNmdIv/MlPuP4TdUknHG68UdWLgVZwgxVe735HzJNIwA==}
 
-  '@canup/contracts@0.2.0':
-    resolution: {integrity: sha512-fWzARwXMDYbDKTr+oxsqdZdhEwBE/9IBTUnm7/N/7AQwK0yBF2w5Fn/F2yOMlbhAcsfZUIt9UL5EjoYcFmXfJw==}
+  '@canup/contracts@0.2.1':
+    resolution: {integrity: sha512-N68U4i0k/tZ9JUHBXsKIFVZHbHBYIUrU73o1lkpNV2yP8QJ7eHjMxafhmmFs10wnc7MnUAh50lzIc6dNKyeDDQ==}
 
   '@canva/app-hooks@0.0.0-beta.4':
     resolution: {integrity: sha512-QPIoVyIRz55Ta0PNxD07OHvyGOD7R1irwEPfs1T7At21TJHFAnlTt/Je8IfZcm6lrNR6oOSBBZrRiFeJA49PEg==}
@@ -3927,7 +3927,7 @@ snapshots:
 
   '@braidai/lang@1.1.2': {}
 
-  '@canup/contracts@0.2.0': {}
+  '@canup/contracts@0.2.1': {}
 
   '@canva/app-hooks@0.0.0-beta.4(@canva/design@2.8.0(@canva/error@2.2.1))(@canva/platform@2.2.2(@canva/error@2.2.1))(react@19.2.4)':
     dependencies:

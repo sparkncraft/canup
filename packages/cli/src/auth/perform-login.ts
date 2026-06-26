@@ -4,7 +4,7 @@ import open from 'open';
 import { startCallbackServer } from './oauth-server.js';
 import { saveCredentials, type UserCredentials } from './token-store.js';
 import { CanupClient } from '../api-client.js';
-import { DEFAULT_API_URL } from '../constants.js';
+import { DEFAULT_CANUP_URL } from '@canup/contracts';
 import { info, success } from '../ui/output.js';
 
 const STATE_NONCE_BYTES = 16;
@@ -22,7 +22,7 @@ const STATE_NONCE_BYTES = 16;
  * Returns the saved credentials for callers/tests that want them.
  */
 export async function performLogin(): Promise<UserCredentials> {
-  const apiUrl = process.env.CANUP_URL ?? DEFAULT_API_URL;
+  const apiUrl = process.env.CANUP_URL ?? DEFAULT_CANUP_URL;
   const { port, credentialsPromise, close } = await startCallbackServer();
 
   const host = osHostname();

@@ -45,7 +45,7 @@
     "eventsource": "^4.1.0"
   },
   "devDependencies": {
-    "@canup/contracts": "^0.2.0",
+    "@canup/contracts": "^0.2.1",
     "@canva/app-i18n-kit": "^1.2.0",
     "@canva/app-ui-kit": "^5.9.0",
     "@canva/platform": "^2.2.2",
