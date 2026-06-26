@@ -13,6 +13,7 @@ import {
   CANUP_DIR,
   DEFAULT_ACTIONS_DIR,
 } from '../config/project-config.js';
+import { isCanupError } from '@canup/contracts';
 import { success, error, hint, info, label } from '../ui/output.js';
 
 const API_KEY_SOURCE = 'canup-cli';
@@ -224,16 +225,15 @@ export function registerInitCommand(program: Command): void {
           }
         }
       } catch (err) {
-        const httpStatus = (err as { httpStatus?: number }).httpStatus;
         const message = err instanceof Error ? err.message : String(err);
 
-        if (httpStatus === 401) {
+        if (isCanupError(err) && err.code === 'UNAUTHENTICATED') {
           error('Session expired.');
           hint('Run `canup login` to re-authenticate.');
           process.exit(1);
         }
 
-        if (httpStatus === 409) {
+        if (isCanupError(err) && err.code === 'APP_OWNERSHIP_CONFLICT') {
           error('This Canva App ID is already registered by another user.');
           process.exit(1);
         }

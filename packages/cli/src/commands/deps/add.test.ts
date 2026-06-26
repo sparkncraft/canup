@@ -1,4 +1,5 @@
 import { describe, expect, vi } from 'vitest';
+import { CanupError } from '@canup/contracts';
 import { test, client, output, spinner, project } from '#test/fixtures.js';
 
 // Mock require-project
@@ -169,8 +170,7 @@ describe('deps add command', () => {
   });
 
   test('handles API error with 401 status', async ({ client, output, processMocks }) => {
-    const apiError = new Error('Unauthorized') as Error & { httpStatus: number };
-    apiError.httpStatus = 401;
+    const apiError = new CanupError('UNAUTHENTICATED', 'Unauthorized', 401);
     client.addDeps.mockRejectedValue(apiError);
 
     const { Command } = await import('commander');

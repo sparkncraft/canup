@@ -1,4 +1,5 @@
 import { describe, expect, vi } from 'vitest';
+import { CanupError } from '@canup/contracts';
 import { test, client, output, spinner, project } from '#test/fixtures.js';
 
 // Mock require-project
@@ -123,8 +124,7 @@ describe('deps remove command', () => {
   });
 
   test('handles package not found (404)', async ({ client, output, processMocks }) => {
-    const apiError = new Error('Not found') as Error & { httpStatus: number };
-    apiError.httpStatus = 404;
+    const apiError = new CanupError('PACKAGE_NOT_FOUND', 'Not found', 404);
     client.removeDep.mockRejectedValue(apiError);
 
     const { Command } = await import('commander');
@@ -221,8 +221,7 @@ describe('deps remove command', () => {
   });
 
   test('shows auth hint on 401 error', async ({ client, output, processMocks }) => {
-    const apiError = new Error('Unauthorized') as Error & { httpStatus: number };
-    apiError.httpStatus = 401;
+    const apiError = new CanupError('UNAUTHENTICATED', 'Unauthorized', 401);
     client.removeDep.mockRejectedValue(apiError);
 
     const { Command } = await import('commander');

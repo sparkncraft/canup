@@ -1,4 +1,5 @@
 import type { Command } from 'commander';
+import { isCanupError } from '@canup/contracts';
 import { requireClient } from '../../config/require-project.js';
 import { success, error, info, label } from '../../ui/output.js';
 import {
@@ -43,9 +44,8 @@ export function registerDepsAddAction(depsCommand: Command): void {
           label('Package', `${pkg.name}${pkg.version ? `@${pkg.version}` : ''}`);
         }
       } catch (err) {
-        const e = err as Error & { httpStatus?: number };
-        error(e.message);
-        if (e.httpStatus === 401) {
+        error(err instanceof Error ? err.message : String(err));
+        if (isCanupError(err) && err.code === 'UNAUTHENTICATED') {
           info('Run `canup init` to re-authenticate.');
         }
         process.exit(1);

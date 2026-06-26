@@ -1,4 +1,5 @@
 import { describe, expect, vi } from 'vitest';
+import { CanupError } from '@canup/contracts';
 import { test, client, output, project } from '#test/fixtures.js';
 
 // Mock require-project
@@ -51,8 +52,7 @@ describe('deps clear command', () => {
   });
 
   test('handles API error', async ({ client, output, processMocks }) => {
-    const apiError = new Error('Server error') as Error & { httpStatus: number };
-    apiError.httpStatus = 500;
+    const apiError = new CanupError('INTERNAL_ERROR', 'Server error', 500);
     client.clearDeps.mockRejectedValue(apiError);
 
     const { Command } = await import('commander');
@@ -69,8 +69,7 @@ describe('deps clear command', () => {
   });
 
   test('handles 401 error with re-auth hint', async ({ client, output, processMocks }) => {
-    const apiError = new Error('Unauthorized') as Error & { httpStatus: number };
-    apiError.httpStatus = 401;
+    const apiError = new CanupError('UNAUTHENTICATED', 'Unauthorized', 401);
     client.clearDeps.mockRejectedValue(apiError);
 
     const { Command } = await import('commander');

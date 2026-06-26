@@ -1,4 +1,5 @@
 import type { Command } from 'commander';
+import { isCanupError } from '@canup/contracts';
 import { requireClient } from '../../config/require-project.js';
 import { success, error, hint } from '../../ui/output.js';
 
@@ -18,11 +19,10 @@ export function registerSecretsDeleteAction(secretsCommand: Command): void {
           hint('Warning: Lambda sync failed. Changes will be synced on next operation.');
         }
       } catch (err) {
-        const e = err as Error & { httpStatus?: number };
-        if (e.httpStatus === 404) {
+        if (isCanupError(err) && err.code === 'SECRET_NOT_FOUND') {
           error(`Secret "${name}" not found.`);
         } else {
-          error(e.message);
+          error(err instanceof Error ? err.message : String(err));
         }
         process.exit(1);
       }

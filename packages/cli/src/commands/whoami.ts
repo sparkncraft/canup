@@ -1,4 +1,5 @@
 import type { Command } from 'commander';
+import { isCanupError } from '@canup/contracts';
 import { loadCredentials } from '../auth/token-store.js';
 import { CanupClient } from '../api-client.js';
 
@@ -28,9 +29,7 @@ export function registerWhoamiCommand(program: Command): void {
         console.log(`Email:        ${me.email}`);
         console.log(`Member since: ${new Date(me.createdAt).toLocaleDateString()}`);
       } catch (err) {
-        const httpStatus = (err as { httpStatus?: number }).httpStatus;
-
-        if (httpStatus === 401) {
+        if (isCanupError(err) && err.code === 'UNAUTHENTICATED') {
           console.error('Session expired. Run `canup login` to re-authenticate.');
           process.exit(1);
         }

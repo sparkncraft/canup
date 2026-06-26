@@ -1,4 +1,5 @@
 import { describe, expect, vi } from 'vitest';
+import { CanupError } from '@canup/contracts';
 import { test, client, output, project } from '#test/fixtures.js';
 
 // Mock require-project
@@ -35,8 +36,7 @@ describe('secrets delete command', () => {
   });
 
   test('handles 404 not found', async ({ client, output, processMocks }) => {
-    const apiError = new Error('Not found') as Error & { httpStatus: number };
-    apiError.httpStatus = 404;
+    const apiError = new CanupError('SECRET_NOT_FOUND', 'Not found', 404);
     client.deleteSecret.mockRejectedValue(apiError);
 
     const { Command } = await import('commander');

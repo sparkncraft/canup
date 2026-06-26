@@ -1,4 +1,5 @@
 import { describe, expect, vi } from 'vitest';
+import { CanupError } from '@canup/contracts';
 import { test, output, client, tokenStore, projectConfig } from '#test/fixtures.js';
 
 // Local mocks referenced in vi.mock() factories -- must be hoisted
@@ -177,8 +178,7 @@ describe('init command', () => {
     tokenStore.loadCredentials.mockReturnValue({ userKey: 'cnup_x', keyId: 'apikey_x' });
     projectConfig.loadProjectConfig.mockReturnValue(null);
 
-    const apiError = new Error('Server error') as Error & { httpStatus: number };
-    apiError.httpStatus = 500;
+    const apiError = new CanupError('INTERNAL_ERROR', 'Server error', 500);
     client.registerApp.mockRejectedValue(apiError);
 
     const { Command } = await import('commander');
@@ -203,8 +203,7 @@ describe('init command', () => {
       name: 'App',
     });
 
-    const apiError = new Error('Key creation failed') as Error & { httpStatus: number };
-    apiError.httpStatus = 500;
+    const apiError = new CanupError('INTERNAL_ERROR', 'Key creation failed', 500);
     client.createApiKey.mockRejectedValue(apiError);
 
     const { Command } = await import('commander');
@@ -268,8 +267,7 @@ describe('init command', () => {
     tokenStore.loadCredentials.mockReturnValue({ userKey: 'cnup_x', keyId: 'apikey_x' });
     projectConfig.loadProjectConfig.mockReturnValue(null);
 
-    const apiError = new Error('Conflict') as Error & { httpStatus: number };
-    apiError.httpStatus = 409;
+    const apiError = new CanupError('APP_OWNERSHIP_CONFLICT', 'Conflict', 409);
     client.registerApp.mockRejectedValue(apiError);
 
     const { Command } = await import('commander');
@@ -295,8 +293,7 @@ describe('init command', () => {
     });
     projectConfig.loadProjectConfig.mockReturnValue(null);
 
-    const apiError = new Error('Unauthorized') as Error & { httpStatus: number };
-    apiError.httpStatus = 401;
+    const apiError = new CanupError('UNAUTHENTICATED', 'Unauthorized', 401);
     client.registerApp.mockRejectedValue(apiError);
 
     const { Command } = await import('commander');

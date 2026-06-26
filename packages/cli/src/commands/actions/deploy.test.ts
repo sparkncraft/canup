@@ -9,6 +9,7 @@ import {
   projectConfig,
   actionsDiscovery,
 } from '#test/fixtures.js';
+import { CanupError } from '@canup/contracts';
 
 const { mockReadFileSync } = vi.hoisted(() => ({
   mockReadFileSync: vi.fn(),
@@ -320,10 +321,7 @@ describe('actions deploy command', () => {
   test('handles API error during deploy', async ({ client, output, processMocks }) => {
     projectConfig.getActionsDir.mockReturnValue('/project/canup/actions');
 
-    const apiError = new Error('Conflict: action already deploying') as Error & {
-      httpStatus: number;
-    };
-    apiError.httpStatus = 409;
+    const apiError = new CanupError('INTERNAL_ERROR', 'Conflict: action already deploying', 409);
     client.listActions.mockRejectedValue(apiError);
 
     const { Command } = await import('commander');
@@ -342,8 +340,7 @@ describe('actions deploy command', () => {
   test('handles 401 error with re-auth hint', async ({ client, output, processMocks }) => {
     projectConfig.getActionsDir.mockReturnValue('/project/canup/actions');
 
-    const apiError = new Error('Unauthorized') as Error & { httpStatus: number };
-    apiError.httpStatus = 401;
+    const apiError = new CanupError('UNAUTHENTICATED', 'Unauthorized', 401);
     client.listActions.mockRejectedValue(apiError);
 
     const { Command } = await import('commander');

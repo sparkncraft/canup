@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import type { Command } from 'commander';
 import { requireClient } from '../config/require-project.js';
 import { getActionsDir } from '../config/project-config.js';
+import { isCanupError } from '@canup/contracts';
 import { error, hint, info, success, warn } from '../ui/output.js';
 import { withSpinner } from '../ui/spinner.js';
 
@@ -95,9 +96,8 @@ export function registerPullCommand(program: Command): void {
           `Pulled ${pulled} action${pulled !== 1 ? 's' : ''}${upToDate > 0 ? `, ${upToDate} up to date` : ''}${skipped > 0 ? `, ${skipped} skipped` : ''}`,
         );
       } catch (err) {
-        const e = err as Error & { httpStatus?: number };
-        error(e.message);
-        if (e.httpStatus === 401) {
+        error(err instanceof Error ? err.message : String(err));
+        if (isCanupError(err) && err.code === 'UNAUTHENTICATED') {
           hint('Run `canup init` to re-authenticate.');
         }
         process.exit(1);

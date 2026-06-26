@@ -1,4 +1,5 @@
 import type { Command } from 'commander';
+import { isCanupError } from '@canup/contracts';
 import { requireClient } from '../../config/require-project.js';
 import { success, error, hint } from '../../ui/output.js';
 
@@ -13,12 +14,11 @@ export function registerActionsRemoveAction(actionsCommand: Command): void {
         await client.deleteAction(config.appId, name);
         success(`Removed ${name}`);
       } catch (err) {
-        const e = err as Error & { httpStatus?: number };
-        if (e.httpStatus === 404) {
+        if (isCanupError(err) && err.code === 'ACTION_NOT_FOUND') {
           error(`Action not found: ${name}`);
           hint('Run `canup actions list` to see deployed actions.');
         } else {
-          error(e.message);
+          error(err instanceof Error ? err.message : String(err));
         }
         process.exit(1);
       }
