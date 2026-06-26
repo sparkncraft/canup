@@ -95,9 +95,9 @@ export function registerPullCommand(program: Command): void {
           `Pulled ${pulled} action${pulled !== 1 ? 's' : ''}${upToDate > 0 ? `, ${upToDate} up to date` : ''}${skipped > 0 ? `, ${skipped} skipped` : ''}`,
         );
       } catch (err) {
-        const e = err as Error & { statusCode?: number };
+        const e = err as Error & { httpStatus?: number };
         error(e.message);
-        if (e.statusCode === 401) {
+        if (e.httpStatus === 401) {
           hint('Run `canup init` to re-authenticate.');
         }
         process.exit(1);

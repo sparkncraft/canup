@@ -3,8 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { queryClient, creditKey } from '../internal/query.js';
 import { fetchCredits } from '../internal/api-client.js';
 import { acquire } from '../internal/realtime.js';
-import { type CanupError, toCanupError } from '../errors.js';
-import type { CreditBalance } from '@canup/types';
+import { type CanupError, toCanupError } from '@canup/contracts';
+import type { CreditBalance } from '@canup/contracts';
 
 export interface UseCreditsResult {
   data: CreditBalance | null;

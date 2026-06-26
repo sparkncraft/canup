@@ -1,7 +1,7 @@
 /**
  * HTTP client for the CanUp API.
  *
- * Uses native fetch (Node.js 18+). Wire shapes come from `@canup/types`, the
+ * Uses native fetch (Node.js 18+). Wire shapes come from `@canup/contracts`, the
  * published contract every endpoint serializes — the client casts responses to
  * those types rather than re-declaring them. All app-scoped methods take an
  * appId and build app-scoped URLs. The API returns camelCase natively, so there
@@ -11,7 +11,6 @@
 import type {
   Action,
   ApiKeyCreateResult,
-  ApiResponse,
   App,
   AppListItem,
   Build,
@@ -35,10 +34,10 @@ import type {
   StripeStatusResult,
   TestResult,
   User,
-} from '@canup/types';
+} from '@canup/contracts';
 import { DEFAULT_API_URL, API_VERSION } from './constants.js';
 import { CLI_USER_AGENT } from './version.js';
-import { ApiError } from './errors.js';
+import { CanupError, unwrapResponse } from '@canup/contracts';
 
 export class CanupClient {
   private apiUrl: string;
@@ -205,10 +204,10 @@ export class CanupClient {
       } catch {
         // non-JSON error response
       }
-      throw new ApiError(
-        res.status,
-        body?.error?.code ?? 'HttpError',
+      throw new CanupError(
+        body?.error?.code ?? 'TRANSPORT_ERROR',
         body?.error?.message ?? res.statusText,
+        res.status,
       );
     }
 
@@ -414,12 +413,6 @@ export class CanupClient {
       signal: options?.signal,
     });
 
-    const body = (await res.json()) as ApiResponse<T>;
-
-    if (!body.ok) {
-      throw new ApiError(res.status, body.error.code, body.error.message);
-    }
-
-    return body.data;
+    return unwrapResponse<T>(res);
   }
 }

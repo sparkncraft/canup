@@ -4,7 +4,7 @@ import { useCustomer } from './use-customer.js';
 import { fetchCustomer } from '../internal/api-client.js';
 import { queryClient, customerKey } from '../internal/query.js';
 import { acquire } from '../internal/realtime.js';
-import type { Customer } from '@canup/types';
+import type { Customer } from '@canup/contracts';
 
 vi.mock('../internal/api-client.js', () => ({
   fetchCustomer: vi.fn(),
@@ -143,7 +143,7 @@ describe('useCustomer', () => {
 
     expect(result.current.appName).toBeNull();
     expect(result.current.error).not.toBeNull();
-    expect(result.current.error!.code).toBe('NETWORK_ERROR');
+    expect(result.current.error!.code).toBe('TRANSPORT_ERROR');
   });
 
   test('warns when the fetch fails, so the silent render-nothing surface is diagnosable', async () => {

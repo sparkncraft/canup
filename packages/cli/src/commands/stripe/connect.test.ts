@@ -1,6 +1,6 @@
 import { describe, expect, vi } from 'vitest';
 import { test, client, output, project, spinner } from '#test/fixtures.js';
-import { ApiError } from '../../errors.js';
+import { CanupError } from '@canup/contracts';
 
 const { mockReadSecretInput } = vi.hoisted(() => ({ mockReadSecretInput: vi.fn() }));
 
@@ -60,7 +60,7 @@ describe('stripe connect command', () => {
   test('shows error for invalid Stripe key', async ({ client, output, processMocks }) => {
     mockReadSecretInput.mockResolvedValue('sk_bad');
     client.connectStripe.mockRejectedValue(
-      new ApiError(400, 'STRIPE_KEY_INVALID', 'Invalid API key'),
+      new CanupError('STRIPE_KEY_INVALID', 'Invalid API key', 400),
     );
 
     const { Command } = await import('commander');
@@ -81,7 +81,7 @@ describe('stripe connect command', () => {
   test('shows error for permission issue', async ({ client, output, processMocks }) => {
     mockReadSecretInput.mockResolvedValue('sk_test_limited');
     client.connectStripe.mockRejectedValue(
-      new ApiError(403, 'STRIPE_PERMISSION_ERROR', 'Missing: charges:read, subscriptions:read'),
+      new CanupError('STRIPE_PERMISSION_ERROR', 'Missing: charges:read, subscriptions:read', 403),
     );
 
     const { Command } = await import('commander');

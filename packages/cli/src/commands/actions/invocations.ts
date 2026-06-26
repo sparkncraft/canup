@@ -58,13 +58,13 @@ export function registerActionsInvocationsAction(actionsCommand: Command): void 
             await showInvocationsList(client, config.appId, slug, limit, options.search);
           }
         } catch (err) {
-          const e = err as Error & { statusCode?: number };
-          if (e.statusCode === 401) {
+          const e = err as Error & { httpStatus?: number };
+          if (e.httpStatus === 401) {
             error('Not authenticated.');
             hint('Run `canup init` to re-authenticate.');
             process.exit(1);
           }
-          if (e.statusCode === 404) {
+          if (e.httpStatus === 404) {
             error('Execution not found.');
             hint('Run `canup actions invocations` to see recent executions.');
             process.exit(1);

@@ -357,16 +357,16 @@ export function registerActionsTestAction(actionsCommand: Command): void {
             await runLocalTest(actionPath, language, params, context);
           }
         } catch (err) {
-          const statusCode = (err as { statusCode?: number }).statusCode;
+          const httpStatus = (err as { httpStatus?: number }).httpStatus;
           const message = err instanceof Error ? err.message : String(err);
 
-          if (statusCode === 401) {
+          if (httpStatus === 401) {
             error('Not authenticated.');
             hint('Run `canup login` to re-authenticate.');
             process.exit(1);
           }
 
-          if (statusCode === 404) {
+          if (httpStatus === 404) {
             error('App not found on server.');
             hint('Check your project config or use local mode (without --remote).');
             process.exit(1);

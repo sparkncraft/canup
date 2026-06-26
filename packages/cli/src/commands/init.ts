@@ -224,16 +224,16 @@ export function registerInitCommand(program: Command): void {
           }
         }
       } catch (err) {
-        const statusCode = (err as { statusCode?: number }).statusCode;
+        const httpStatus = (err as { httpStatus?: number }).httpStatus;
         const message = err instanceof Error ? err.message : String(err);
 
-        if (statusCode === 401) {
+        if (httpStatus === 401) {
           error('Session expired.');
           hint('Run `canup login` to re-authenticate.');
           process.exit(1);
         }
 
-        if (statusCode === 409) {
+        if (httpStatus === 409) {
           error('This Canva App ID is already registered by another user.');
           process.exit(1);
         }

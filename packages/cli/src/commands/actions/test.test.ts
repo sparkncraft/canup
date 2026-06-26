@@ -410,8 +410,8 @@ describe('actions test command', () => {
     }) => {
       mockExistsSync.mockReturnValue(true);
 
-      const apiError = new Error('Not found') as Error & { statusCode: number };
-      apiError.statusCode = 404;
+      const apiError = new Error('Not found') as Error & { httpStatus: number };
+      apiError.httpStatus = 404;
       client.testCode.mockRejectedValue(apiError);
 
       mockReadFileSync.mockReturnValue('code');
@@ -425,8 +425,8 @@ describe('actions test command', () => {
     test('handles 401 authentication error', async ({ client, output, processMocks }) => {
       mockExistsSync.mockReturnValue(true);
 
-      const apiError = new Error('Unauthorized') as Error & { statusCode: number };
-      apiError.statusCode = 401;
+      const apiError = new Error('Unauthorized') as Error & { httpStatus: number };
+      apiError.httpStatus = 401;
       client.testCode.mockRejectedValue(apiError);
 
       mockReadFileSync.mockReturnValue('code');

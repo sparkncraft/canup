@@ -17,5 +17,5 @@ export type { UseCustomerResult } from './hooks/use-customer.js';
 // The `SubscriptionStatus` enum is intentionally not re-exported under that name
 // — it would collide with the `<SubscriptionStatus>` component. Consumers who
 // need the union can reach it via `Customer['subscriptionStatus']`.
-export type { CreditBalance, Customer } from '@canup/types';
-export { CanupError } from './errors.js';
+export type { CreditBalance, Customer } from '@canup/contracts';
+export { CanupError } from '@canup/contracts';

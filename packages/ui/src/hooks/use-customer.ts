@@ -3,8 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { queryClient, customerKey } from '../internal/query.js';
 import { fetchCustomer } from '../internal/api-client.js';
 import { acquire } from '../internal/realtime.js';
-import { type CanupError, toCanupError } from '../errors.js';
-import type { Customer, SubscriptionStatus } from '@canup/types';
+import { type CanupError, toCanupError } from '@canup/contracts';
+import type { Customer, SubscriptionStatus } from '@canup/contracts';
 
 export interface UseCustomerResult {
   /** Canonical app name, for attributing every credit/plan/manage noun. */

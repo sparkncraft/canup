@@ -4,7 +4,7 @@ import { useCredits } from './use-credits.js';
 import { fetchCredits } from '../internal/api-client.js';
 import { queryClient, creditKey } from '../internal/query.js';
 import { acquire } from '../internal/realtime.js';
-import type { CreditBalance } from '@canup/types';
+import type { CreditBalance } from '@canup/contracts';
 
 vi.mock('../internal/api-client.js', () => ({
   fetchCredits: vi.fn(),
@@ -141,7 +141,7 @@ describe('useCredits', () => {
     expect(result.current.data).toBeNull();
     expect(result.current.exhausted).toBe(false);
     expect(result.current.error).not.toBeNull();
-    expect(result.current.error!.code).toBe('NETWORK_ERROR');
+    expect(result.current.error!.code).toBe('TRANSPORT_ERROR');
     expect(result.current.error!.message).toBe('Network error');
   });
 

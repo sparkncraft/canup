@@ -169,8 +169,8 @@ describe('deps add command', () => {
   });
 
   test('handles API error with 401 status', async ({ client, output, processMocks }) => {
-    const apiError = new Error('Unauthorized') as Error & { statusCode: number };
-    apiError.statusCode = 401;
+    const apiError = new Error('Unauthorized') as Error & { httpStatus: number };
+    apiError.httpStatus = 401;
     client.addDeps.mockRejectedValue(apiError);
 
     const { Command } = await import('commander');

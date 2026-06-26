@@ -32,8 +32,8 @@ describe('actions delete command', () => {
   });
 
   test('handles 404 error when action not found', async ({ client, output, processMocks }) => {
-    const apiError = new Error('Not found') as Error & { statusCode: number };
-    apiError.statusCode = 404;
+    const apiError = new Error('Not found') as Error & { httpStatus: number };
+    apiError.httpStatus = 404;
     client.deleteAction.mockRejectedValue(apiError);
 
     const { Command } = await import('commander');
@@ -50,8 +50,8 @@ describe('actions delete command', () => {
   });
 
   test('handles generic error', async ({ client, output, processMocks }) => {
-    const apiError = new Error('Internal server error') as Error & { statusCode: number };
-    apiError.statusCode = 500;
+    const apiError = new Error('Internal server error') as Error & { httpStatus: number };
+    apiError.httpStatus = 500;
     client.deleteAction.mockRejectedValue(apiError);
 
     const { Command } = await import('commander');

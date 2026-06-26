@@ -89,8 +89,8 @@ describe('whoami command', () => {
   test('prints session expired on 401 error', async ({ client: c, processMocks }) => {
     tokenStore.loadCredentials.mockReturnValue({ userKey: 'cnup_x', keyId: 'apikey_x' });
 
-    const error = new Error('Invalid or expired session') as Error & { statusCode: number };
-    error.statusCode = 401;
+    const error = new Error('Invalid or expired session') as Error & { httpStatus: number };
+    error.httpStatus = 401;
     c.getMe.mockRejectedValue(error);
 
     const { Command } = await import('commander');

@@ -45,16 +45,16 @@ export function registerActionsRunAction(actionsCommand: Command): void {
 
         displayTestResult(result, { success: 'Run succeeded', failure: 'Run failed' });
       } catch (err) {
-        const statusCode = (err as { statusCode?: number }).statusCode;
+        const httpStatus = (err as { httpStatus?: number }).httpStatus;
         const message = err instanceof Error ? err.message : String(err);
 
-        if (statusCode === 401) {
+        if (httpStatus === 401) {
           error('Not authenticated.');
           hint('Run `canup login` to re-authenticate.');
           process.exit(1);
         }
 
-        if (statusCode === 404) {
+        if (httpStatus === 404) {
           error(`Action not found: ${name}`);
           hint('Deploy the action first with `canup actions deploy`.');
           process.exit(1);

@@ -33,13 +33,13 @@ export function registerDepsRemoveAction(depsCommand: Command): void {
           });
         }
       } catch (err) {
-        const e = err as Error & { statusCode?: number };
-        if (e.statusCode === 404) {
+        const e = err as Error & { httpStatus?: number };
+        if (e.httpStatus === 404) {
           error(`Package not found.`);
         } else {
           error(e.message);
         }
-        if (e.statusCode === 401) {
+        if (e.httpStatus === 401) {
           info('Run `canup init` to re-authenticate.');
         }
         process.exit(1);

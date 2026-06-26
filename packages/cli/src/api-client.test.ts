@@ -1,6 +1,6 @@
 import { describe, test as baseTest, expect, vi } from 'vitest';
 import { CanupClient } from './api-client.js';
-import { ApiError } from './errors.js';
+import { CanupError } from '@canup/contracts';
 
 // ──────────────────────────────────────────────
 // Fetch mock setup
@@ -154,16 +154,16 @@ describe('CanupClient', () => {
   // ──── Error handling (via request()) ────
 
   describe('error handling via request()', () => {
-    test('throws an ApiError with statusCode and code on API error envelope', async () => {
+    test('throws a CanupError with httpStatus and code on API error envelope', async () => {
       mockFetch.mockResolvedValueOnce(errorResponse('NotFoundError', 'App not found', 404));
       const client = createClient();
 
       const err = await client.getMe().catch((e: unknown) => e);
 
-      expect(err).toBeInstanceOf(ApiError);
-      expect((err as ApiError).message).toBe('App not found');
-      expect((err as ApiError).statusCode).toBe(404);
-      expect((err as ApiError).code).toBe('NotFoundError');
+      expect(err).toBeInstanceOf(CanupError);
+      expect((err as CanupError).message).toBe('App not found');
+      expect((err as CanupError).httpStatus).toBe(404);
+      expect((err as CanupError).code).toBe('NotFoundError');
     });
 
     test('error message matches the API error message', async () => {
@@ -473,7 +473,7 @@ describe('CanupClient', () => {
       expect(result).toHaveProperty('ok', false);
     });
 
-    test('throws an ApiError on HTTP error with statusCode and code', async () => {
+    test('throws a CanupError on HTTP error with httpStatus and code', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
@@ -484,13 +484,13 @@ describe('CanupClient', () => {
 
       const err = await client.testCode('a1', 'code', 'nodejs', {}).catch((e: unknown) => e);
 
-      expect(err).toBeInstanceOf(ApiError);
-      expect((err as ApiError).message).toBe('Invalid token');
-      expect((err as ApiError).statusCode).toBe(401);
-      expect((err as ApiError).code).toBe('AuthError');
+      expect(err).toBeInstanceOf(CanupError);
+      expect((err as CanupError).message).toBe('Invalid token');
+      expect((err as CanupError).httpStatus).toBe(401);
+      expect((err as CanupError).code).toBe('AuthError');
     });
 
-    test('falls back to statusText and HttpError when response is not JSON', async () => {
+    test('falls back to statusText and TRANSPORT_ERROR when response is not JSON', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 500,
@@ -501,10 +501,10 @@ describe('CanupClient', () => {
 
       const err = await client.testCode('a1', 'code', 'nodejs', {}).catch((e: unknown) => e);
 
-      expect(err).toBeInstanceOf(ApiError);
-      expect((err as ApiError).message).toBe('Internal Server Error');
-      expect((err as ApiError).statusCode).toBe(500);
-      expect((err as ApiError).code).toBe('HttpError');
+      expect(err).toBeInstanceOf(CanupError);
+      expect((err as CanupError).message).toBe('Internal Server Error');
+      expect((err as CanupError).httpStatus).toBe(500);
+      expect((err as CanupError).code).toBe('TRANSPORT_ERROR');
     });
 
     test('sends Authorization header when token is set', async () => {

@@ -1,5 +1,5 @@
 import { EventSource } from 'eventsource';
-import type { RealtimeEvent } from '@canup/types';
+import type { RealtimeEvent } from '@canup/contracts';
 import { getJwt } from './jwt-cache.js';
 import { getBaseUrl } from './api-client.js';
 import { queryClient, creditKey, customerKey } from './query.js';
