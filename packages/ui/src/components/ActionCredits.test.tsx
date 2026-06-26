@@ -56,21 +56,39 @@ const test = baseTest.extend('_rtl', [
 ]);
 
 describe('ActionCredits', () => {
-  test('shows remaining credits attributed with the app name', () => {
+  test('shows remaining credits, count bolded, attributed with the app name', () => {
     renderWithCanva(<ActionCredits action="generate" />);
-    expect(screen.getByText(/12 of 100 Acme credits left/)).toBeTruthy();
+    // credits() defaults to a monthly interval — the cadence reads as an adjective.
+    // The count lives in its own (bold) spans, so assert the assembled text.
+    expect(screen.getByText(/credits left/).textContent).toBe(
+      '12 of 100 Acme monthly credits left',
+    );
+    // Each count value is emphasized in its own span, per Canva's pattern.
+    expect(screen.getByText('12')).toBeTruthy();
+    expect(screen.getByText('100')).toBeTruthy();
   });
 
-  test('appends the refresh interval when not lifetime', () => {
+  test.for([
+    ['daily', 'daily'],
+    ['weekly', 'weekly'],
+    ['monthly', 'monthly'],
+  ] as const)('folds the %s cadence into the credit noun', ([interval, word]) => {
+    mockUseCredits.mockReturnValue(credits({ interval }));
     renderWithCanva(<ActionCredits action="generate" />);
-    expect(screen.getByText(/refreshes monthly/)).toBeTruthy();
+    expect(screen.getByText(/credits left/).textContent).toBe(
+      `12 of 100 Acme ${word} credits left`,
+    );
   });
 
-  test('omits the refresh interval for lifetime credits', () => {
-    mockUseCredits.mockReturnValue(credits({ interval: 'lifetime' }));
-    renderWithCanva(<ActionCredits action="generate" />);
-    expect(screen.queryByText(/refreshes/)).toBeNull();
-  });
+  test.for(['lifetime', null] as const)(
+    'omits the cadence word when credits do not refresh (%s)',
+    (interval) => {
+      mockUseCredits.mockReturnValue(credits({ interval }));
+      renderWithCanva(<ActionCredits action="generate" />);
+      expect(screen.getByText(/credits left/).textContent).toBe('12 of 100 Acme credits left');
+      expect(screen.queryByText(/daily|weekly|monthly|lifetime/)).toBeNull();
+    },
+  );
 
   test('renders a critical alert with a buy CTA when exhausted', () => {
     mockUseCredits.mockReturnValue(

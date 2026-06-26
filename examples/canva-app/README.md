@@ -1,6 +1,6 @@
 # Canva App Example with CanUp
 
-A reference Canva app that demonstrates CanUp components in a realistic project setup. Shows prompt input via `TextInput`, server-side action execution via `ActionButton`, adding generated text to the Canva canvas, and credit tracking via `CreditCounter`.
+A reference Canva app that demonstrates CanUp components in a realistic project setup. Shows prompt input via `TextInput`, server-side action execution via `ActionButton` (with its built-in credit status), adding generated text to the Canva canvas, and the account-level `SubscriptionStatus` surface.
 
 ## Setup
 
@@ -14,7 +14,7 @@ A reference Canva app that demonstrates CanUp components in a realistic project 
 1. Install the CLI and authenticate:
 
    ```bash
-   npm install -g canup
+   npm install -g @canup/cli
    canup login
    ```
 
@@ -51,15 +51,15 @@ A reference Canva app that demonstrates CanUp components in a realistic project 
 
 | File                                | Description                                          |
 | ----------------------------------- | ---------------------------------------------------- |
-| `src/intents/design_editor/app.tsx` | Main app UI with ActionButton and CreditCounter      |
+| `src/intents/design_editor/app.tsx` | Main app UI with ActionButton and SubscriptionStatus |
 | `canup/actions/generate-text.js`    | Server-side action handler (replace with your logic) |
 | `canup/canup.json`                  | CanUp project configuration                          |
 
 ### Core integration
 
 ```tsx
-import { ActionButton, CreditCounter } from 'canup';
-import type { CanupError } from 'canup';
+import { ActionButton, SubscriptionStatus } from '@canup/ui';
+import type { CanupError } from '@canup/ui';
 
 <ActionButton
   action="generate-text"
@@ -69,7 +69,7 @@ import type { CanupError } from 'canup';
     await addElement({ type: 'text', children: [text] });
   }}
   onError={(error: CanupError) => {
-    console.error(error.type, error.message);
+    console.error(error.code, error.message);
   }}
   variant="primary"
   stretch
@@ -77,10 +77,10 @@ import type { CanupError } from 'canup';
   Generate Text
 </ActionButton>
 
-<CreditCounter action="generate-text" />
+<SubscriptionStatus />
 ```
 
-`ActionButton` handles loading states, credit exhaustion, and error display automatically. `CreditCounter` shows the remaining credit balance (renders empty if no credit limit is configured).
+`ActionButton` handles loading states, credit exhaustion, and error display automatically, and shows the live credit balance directly below itself (it renders nothing when no credit limit is configured). `SubscriptionStatus` adds the account-level subscription and manage/subscribe surface.
 
 To enable credits:
 
@@ -91,7 +91,7 @@ canup actions credits set generate-text --quota 100 --interval monthly
 ### Using hooks directly
 
 ```tsx
-import { useAction, useCredits } from 'canup';
+import { useAction, useCredits } from '@canup/ui';
 
 function MyComponent() {
   const { execute, loading, error } = useAction('generate-text');
@@ -112,6 +112,6 @@ function MyComponent() {
 
 ## Links
 
-- [CanUp on npm](https://www.npmjs.com/package/canup)
+- [@canup/ui on npm](https://www.npmjs.com/package/@canup/ui)
 - [Canva SDK documentation](https://www.canva.dev/docs/apps/)
 - [Canva App UI Kit](https://www.canva.dev/docs/apps/app-ui-kit/)
