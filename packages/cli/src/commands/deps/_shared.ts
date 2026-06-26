@@ -1,4 +1,4 @@
-import type { Language, PackageSpec } from '@canup/types';
+import type { Language, PackageSpec } from '@canup/contracts';
 import { type CanupClient } from '../../api-client.js';
 import { error } from '../../ui/output.js';
 import { createSpinner } from '../../ui/spinner.js';

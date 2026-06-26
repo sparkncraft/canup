@@ -1,6 +1,6 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
-import type { TestResult } from '@canup/types';
+import type { TestResult } from '@canup/contracts';
 import { success, error, dim } from '../../ui/output.js';
 import { formatDuration } from '../../lib/format.js';
 

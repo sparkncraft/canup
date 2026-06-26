@@ -4,7 +4,7 @@ import { useAction } from './use-action.js';
 import { runAction } from '../internal/api-client.js';
 import { queryClient, creditKey } from '../internal/query.js';
 import { CanupError } from '../errors.js';
-import type { CreditBalance } from '@canup/types';
+import type { CreditBalance } from '@canup/contracts';
 
 vi.mock('../internal/api-client.js', () => ({
   runAction: vi.fn(),

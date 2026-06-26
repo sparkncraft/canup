@@ -1,7 +1,7 @@
 /**
  * HTTP client for the CanUp API.
  *
- * Uses native fetch (Node.js 18+). Wire shapes come from `@canup/types`, the
+ * Uses native fetch (Node.js 18+). Wire shapes come from `@canup/contracts`, the
  * published contract every endpoint serializes — the client casts responses to
  * those types rather than re-declaring them. All app-scoped methods take an
  * appId and build app-scoped URLs. The API returns camelCase natively, so there
@@ -35,7 +35,7 @@ import type {
   StripeStatusResult,
   TestResult,
   User,
-} from '@canup/types';
+} from '@canup/contracts';
 import { DEFAULT_API_URL, API_VERSION } from './constants.js';
 import { CLI_USER_AGENT } from './version.js';
 import { ApiError } from './errors.js';

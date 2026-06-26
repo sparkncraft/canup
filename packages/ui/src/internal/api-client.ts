@@ -6,7 +6,7 @@ import type {
   Customer,
   RunResult,
   SubscribeLinkResult,
-} from '@canup/types';
+} from '@canup/contracts';
 
 declare global {
   var __canup_url: string | undefined;
