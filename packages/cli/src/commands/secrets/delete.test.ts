@@ -35,8 +35,8 @@ describe('secrets delete command', () => {
   });
 
   test('handles 404 not found', async ({ client, output, processMocks }) => {
-    const apiError = new Error('Not found') as Error & { statusCode: number };
-    apiError.statusCode = 404;
+    const apiError = new Error('Not found') as Error & { httpStatus: number };
+    apiError.httpStatus = 404;
     client.deleteSecret.mockRejectedValue(apiError);
 
     const { Command } = await import('commander');

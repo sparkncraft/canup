@@ -3,7 +3,7 @@ import { Button, Rows } from '@canva/app-ui-kit';
 import { useAction } from '../hooks/use-action.js';
 import { useCredits } from '../hooks/use-credits.js';
 import { ActionCredits } from './ActionCredits.js';
-import { type CanupError, toCanupError } from '../errors.js';
+import { type CanupError, toCanupError } from '@canup/contracts';
 
 type CanvaButtonProps = ComponentProps<typeof Button>;
 

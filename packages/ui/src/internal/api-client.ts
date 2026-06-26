@@ -1,12 +1,6 @@
 import { getJwt } from './jwt-cache.js';
-import { CanupError, toCanupError } from '../errors.js';
-import type {
-  ApiResponse,
-  CreditBalance,
-  Customer,
-  RunResult,
-  SubscribeLinkResult,
-} from '@canup/contracts';
+import { toCanupError, unwrapResponse } from '@canup/contracts';
+import type { CreditBalance, Customer, RunResult, SubscribeLinkResult } from '@canup/contracts';
 
 declare global {
   var __canup_url: string | undefined;
@@ -32,20 +26,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     throw toCanupError(err);
   }
 
-  let json: ApiResponse<T>;
-  try {
-    json = (await res.json()) as ApiResponse<T>;
-  } catch {
-    throw new CanupError('HTTP_ERROR', `Server returned ${res.status}`, {
-      status: res.status,
-    });
-  }
-
-  if (!json.ok) {
-    throw new CanupError(json.error.code, json.error.message);
-  }
-
-  return json.data;
+  return unwrapResponse<T>(res);
 }
 
 export const fetchCredits = (action: string) => request<CreditBalance>(`/run/${action}/credits`);

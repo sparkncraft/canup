@@ -147,8 +147,8 @@ export function registerStatusCommand(program: Command): void {
 
         console.log();
       } catch (err) {
-        const e = err as Error & { statusCode?: number };
-        if (e.statusCode === 401) {
+        const e = err as Error & { httpStatus?: number };
+        if (e.httpStatus === 401) {
           error('Not authenticated.');
           hint('Run `canup login` to re-authenticate.');
           process.exit(1);

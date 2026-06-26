@@ -28,9 +28,9 @@ export function registerWhoamiCommand(program: Command): void {
         console.log(`Email:        ${me.email}`);
         console.log(`Member since: ${new Date(me.createdAt).toLocaleDateString()}`);
       } catch (err) {
-        const statusCode = (err as { statusCode?: number }).statusCode;
+        const httpStatus = (err as { httpStatus?: number }).httpStatus;
 
-        if (statusCode === 401) {
+        if (httpStatus === 401) {
           console.error('Session expired. Run `canup login` to re-authenticate.');
           process.exit(1);
         }

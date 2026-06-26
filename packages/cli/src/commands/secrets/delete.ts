@@ -18,8 +18,8 @@ export function registerSecretsDeleteAction(secretsCommand: Command): void {
           hint('Warning: Lambda sync failed. Changes will be synced on next operation.');
         }
       } catch (err) {
-        const e = err as Error & { statusCode?: number };
-        if (e.statusCode === 404) {
+        const e = err as Error & { httpStatus?: number };
+        if (e.httpStatus === 404) {
           error(`Secret "${name}" not found.`);
         } else {
           error(e.message);

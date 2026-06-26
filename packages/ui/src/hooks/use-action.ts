@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { queryClient, creditKey } from '../internal/query.js';
 import { runAction } from '../internal/api-client.js';
-import { type CanupError, toCanupError } from '../errors.js';
+import { type CanupError, toCanupError } from '@canup/contracts';
 
 export interface UseActionResult {
   execute: (params?: Record<string, unknown>) => Promise<unknown>;

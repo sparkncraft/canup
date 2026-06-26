@@ -43,9 +43,9 @@ export function registerDepsAddAction(depsCommand: Command): void {
           label('Package', `${pkg.name}${pkg.version ? `@${pkg.version}` : ''}`);
         }
       } catch (err) {
-        const e = err as Error & { statusCode?: number };
+        const e = err as Error & { httpStatus?: number };
         error(e.message);
-        if (e.statusCode === 401) {
+        if (e.httpStatus === 401) {
           info('Run `canup init` to re-authenticate.');
         }
         process.exit(1);

@@ -143,7 +143,7 @@ describe('useCustomer', () => {
 
     expect(result.current.appName).toBeNull();
     expect(result.current.error).not.toBeNull();
-    expect(result.current.error!.code).toBe('NETWORK_ERROR');
+    expect(result.current.error!.code).toBe('TRANSPORT_ERROR');
   });
 
   test('warns when the fetch fails, so the silent render-nothing surface is diagnosable', async () => {

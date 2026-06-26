@@ -13,8 +13,8 @@ export function registerActionsDeleteAction(actionsCommand: Command): void {
         await client.deleteAction(config.appId, name);
         success(`Deleted ${name}`);
       } catch (err) {
-        const e = err as Error & { statusCode?: number };
-        if (e.statusCode === 404) {
+        const e = err as Error & { httpStatus?: number };
+        if (e.httpStatus === 404) {
           error(`Action not found: ${name}`);
           hint('Run `canup actions list` to see available actions.');
         } else {

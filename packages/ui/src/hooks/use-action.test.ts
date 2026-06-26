@@ -3,7 +3,7 @@ import { renderHook, act, waitFor, cleanup } from '@testing-library/react';
 import { useAction } from './use-action.js';
 import { runAction } from '../internal/api-client.js';
 import { queryClient, creditKey } from '../internal/query.js';
-import { CanupError } from '../errors.js';
+import { CanupError } from '@canup/contracts';
 import type { CreditBalance } from '@canup/contracts';
 
 vi.mock('../internal/api-client.js', () => ({
@@ -122,7 +122,7 @@ describe('useAction', () => {
     expect(result.current.error!.code).toBe('ACTION_NOT_FOUND');
   });
 
-  test('on non-CanupError, error is wrapped in CanupError("NETWORK_ERROR")', async () => {
+  test('on non-CanupError, error is wrapped in CanupError("TRANSPORT_ERROR")', async () => {
     mockRunAction.mockRejectedValue(new Error('Network timeout'));
 
     const { result } = renderHook(() => useAction('my-action'));
@@ -138,7 +138,7 @@ describe('useAction', () => {
     await waitFor(() => {
       expect(result.current.error).toBeInstanceOf(CanupError);
     });
-    expect(result.current.error!.code).toBe('NETWORK_ERROR');
+    expect(result.current.error!.code).toBe('TRANSPORT_ERROR');
     expect(result.current.error!.message).toBe('Network timeout');
   });
 

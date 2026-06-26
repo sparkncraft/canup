@@ -5,7 +5,7 @@ import { renderWithCanva } from '#test/setup/ui.js';
 import { ActionButton } from './ActionButton.js';
 import { useAction } from '../hooks/use-action.js';
 import { useCredits } from '../hooks/use-credits.js';
-import { CanupError } from '../errors.js';
+import { CanupError } from '@canup/contracts';
 
 vi.mock('../hooks/use-action.js', () => ({
   useAction: vi.fn(),

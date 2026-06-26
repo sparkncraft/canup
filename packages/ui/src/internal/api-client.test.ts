@@ -1,7 +1,7 @@
 import { describe, test as baseTest, expect, vi, beforeAll, afterAll, afterEach } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
-import { CanupError } from '../errors.js';
+import { CanupError } from '@canup/contracts';
 
 function createMockJwt(exp: number): string {
   const header = btoa(JSON.stringify({ alg: 'RS256' }));

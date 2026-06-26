@@ -174,8 +174,8 @@ describe('actions invocations command', () => {
   });
 
   test('handles 404 error on detail view', async ({ client, output, processMocks }) => {
-    const apiError = new Error('Not found') as Error & { statusCode: number };
-    apiError.statusCode = 404;
+    const apiError = new Error('Not found') as Error & { httpStatus: number };
+    apiError.httpStatus = 404;
     client.getInvocationDetail.mockRejectedValue(apiError);
 
     const { Command } = await import('commander');
@@ -195,8 +195,8 @@ describe('actions invocations command', () => {
   });
 
   test('handles 401 auth error', async ({ client, output, processMocks }) => {
-    const apiError = new Error('Unauthorized') as Error & { statusCode: number };
-    apiError.statusCode = 401;
+    const apiError = new Error('Unauthorized') as Error & { httpStatus: number };
+    apiError.httpStatus = 401;
     client.listInvocations.mockRejectedValue(apiError);
 
     const { Command } = await import('commander');

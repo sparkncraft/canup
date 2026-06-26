@@ -321,9 +321,9 @@ describe('actions deploy command', () => {
     projectConfig.getActionsDir.mockReturnValue('/project/canup/actions');
 
     const apiError = new Error('Conflict: action already deploying') as Error & {
-      statusCode: number;
+      httpStatus: number;
     };
-    apiError.statusCode = 409;
+    apiError.httpStatus = 409;
     client.listActions.mockRejectedValue(apiError);
 
     const { Command } = await import('commander');
@@ -342,8 +342,8 @@ describe('actions deploy command', () => {
   test('handles 401 error with re-auth hint', async ({ client, output, processMocks }) => {
     projectConfig.getActionsDir.mockReturnValue('/project/canup/actions');
 
-    const apiError = new Error('Unauthorized') as Error & { statusCode: number };
-    apiError.statusCode = 401;
+    const apiError = new Error('Unauthorized') as Error & { httpStatus: number };
+    apiError.httpStatus = 401;
     client.listActions.mockRejectedValue(apiError);
 
     const { Command } = await import('commander');

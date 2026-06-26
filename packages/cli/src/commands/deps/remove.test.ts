@@ -123,8 +123,8 @@ describe('deps remove command', () => {
   });
 
   test('handles package not found (404)', async ({ client, output, processMocks }) => {
-    const apiError = new Error('Not found') as Error & { statusCode: number };
-    apiError.statusCode = 404;
+    const apiError = new Error('Not found') as Error & { httpStatus: number };
+    apiError.httpStatus = 404;
     client.removeDep.mockRejectedValue(apiError);
 
     const { Command } = await import('commander');
@@ -221,8 +221,8 @@ describe('deps remove command', () => {
   });
 
   test('shows auth hint on 401 error', async ({ client, output, processMocks }) => {
-    const apiError = new Error('Unauthorized') as Error & { statusCode: number };
-    apiError.statusCode = 401;
+    const apiError = new Error('Unauthorized') as Error & { httpStatus: number };
+    apiError.httpStatus = 401;
     client.removeDep.mockRejectedValue(apiError);
 
     const { Command } = await import('commander');

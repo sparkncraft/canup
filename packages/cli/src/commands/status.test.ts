@@ -369,8 +369,8 @@ describe('status command', () => {
   test('handles 401 auth error', async ({ client, output, processMocks }) => {
     projectConfig.getActionsDir.mockReturnValue('/project/canup/actions');
 
-    const authError = new Error('Unauthorized') as Error & { statusCode: number };
-    authError.statusCode = 401;
+    const authError = new Error('Unauthorized') as Error & { httpStatus: number };
+    authError.httpStatus = 401;
 
     client.getAppInfo.mockRejectedValue(authError);
     client.listActions.mockRejectedValue(authError);

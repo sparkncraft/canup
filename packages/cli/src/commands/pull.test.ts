@@ -257,8 +257,8 @@ describe('pull command', () => {
   test('handles 401 API error with re-auth hint', async ({ client, output, processMocks }) => {
     projectConfig.getActionsDir.mockReturnValue('/project/canup/actions');
 
-    const apiError = new Error('Unauthorized') as Error & { statusCode: number };
-    apiError.statusCode = 401;
+    const apiError = new Error('Unauthorized') as Error & { httpStatus: number };
+    apiError.httpStatus = 401;
     client.listActionsWithScript.mockRejectedValue(apiError);
 
     await runPull();

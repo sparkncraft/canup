@@ -51,8 +51,8 @@ describe('deps clear command', () => {
   });
 
   test('handles API error', async ({ client, output, processMocks }) => {
-    const apiError = new Error('Server error') as Error & { statusCode: number };
-    apiError.statusCode = 500;
+    const apiError = new Error('Server error') as Error & { httpStatus: number };
+    apiError.httpStatus = 500;
     client.clearDeps.mockRejectedValue(apiError);
 
     const { Command } = await import('commander');
@@ -69,8 +69,8 @@ describe('deps clear command', () => {
   });
 
   test('handles 401 error with re-auth hint', async ({ client, output, processMocks }) => {
-    const apiError = new Error('Unauthorized') as Error & { statusCode: number };
-    apiError.statusCode = 401;
+    const apiError = new Error('Unauthorized') as Error & { httpStatus: number };
+    apiError.httpStatus = 401;
     client.clearDeps.mockRejectedValue(apiError);
 
     const { Command } = await import('commander');
