@@ -227,20 +227,24 @@ export class CanupClient {
     options?: { limit?: number; cursor?: string; search?: string },
   ): Promise<CursorPage<InvocationSummary>> {
     const params = new URLSearchParams();
-    params.set('appId', appId);
     if (slug) params.set('action', slug);
     if (options?.limit !== undefined) params.set('limit', String(options.limit));
     if (options?.cursor) params.set('cursor', options.cursor);
     if (options?.search) params.set('search', options.search);
 
-    return this.request(`/${API_VERSION}/invocations?${params.toString()}`);
+    const query = params.toString();
+    return this.request(
+      `/${API_VERSION}/apps/${encodeURIComponent(appId)}/invocations${query ? `?${query}` : ''}`,
+    );
   }
 
   /**
    * Get detailed info about a single invocation.
    */
-  async getInvocationDetail(id: string): Promise<InvocationDetail> {
-    return this.request(`/${API_VERSION}/invocations/${encodeURIComponent(id)}`);
+  async getInvocationDetail(appId: string, id: string): Promise<InvocationDetail> {
+    return this.request(
+      `/${API_VERSION}/apps/${encodeURIComponent(appId)}/invocations/${encodeURIComponent(id)}`,
+    );
   }
 
   // ──────────────────────────────────────────────

@@ -541,13 +541,13 @@ describe('CanupClient', () => {
   // ──── listInvocations ────
 
   describe('listInvocations', () => {
-    test('sends GET to /v1/invocations with appId', async () => {
+    test('sends GET to /v1/apps/:appId/invocations', async () => {
       const response = { items: [], nextCursor: null };
       mockFetch.mockResolvedValueOnce(okResponse(response));
       const client = createClient();
       await client.listInvocations('a1');
 
-      expect(fetchUrl()).toBe('https://test.api/v1/invocations?appId=a1');
+      expect(fetchUrl()).toBe('https://test.api/v1/apps/a1/invocations');
     });
 
     test('includes action param when slug is provided', async () => {
@@ -556,7 +556,7 @@ describe('CanupClient', () => {
       const client = createClient();
       await client.listInvocations('a1', 'greet');
 
-      expect(fetchUrl()).toBe('https://test.api/v1/invocations?appId=a1&action=greet');
+      expect(fetchUrl()).toBe('https://test.api/v1/apps/a1/invocations?action=greet');
     });
 
     test('appends limit and cursor as query params', async () => {
@@ -565,7 +565,7 @@ describe('CanupClient', () => {
       const client = createClient();
       await client.listInvocations('a1', undefined, { limit: 10, cursor: 'abc123' });
 
-      expect(fetchUrl()).toBe('https://test.api/v1/invocations?appId=a1&limit=10&cursor=abc123');
+      expect(fetchUrl()).toBe('https://test.api/v1/apps/a1/invocations?limit=10&cursor=abc123');
     });
 
     test('appends search as query param when provided', async () => {
@@ -574,7 +574,7 @@ describe('CanupClient', () => {
       const client = createClient();
       await client.listInvocations('a1', undefined, { search: 'timeout error' });
 
-      expect(fetchUrl()).toBe('https://test.api/v1/invocations?appId=a1&search=timeout+error');
+      expect(fetchUrl()).toBe('https://test.api/v1/apps/a1/invocations?search=timeout+error');
     });
 
     test('returns paginated log entries', async () => {
@@ -605,7 +605,7 @@ describe('CanupClient', () => {
   // ──── getInvocationDetail ────
 
   describe('getInvocationDetail', () => {
-    test('sends GET to /v1/invocations/:id', async () => {
+    test('sends GET to /v1/apps/:appId/invocations/:id', async () => {
       const detail = {
         id: 'h1',
         actionSlug: 'greet',
@@ -620,9 +620,9 @@ describe('CanupClient', () => {
       };
       mockFetch.mockResolvedValueOnce(okResponse(detail));
       const client = createClient();
-      const result = await client.getInvocationDetail('h1');
+      const result = await client.getInvocationDetail('a1', 'h1');
 
-      expect(fetchUrl()).toBe('https://test.api/v1/invocations/h1');
+      expect(fetchUrl()).toBe('https://test.api/v1/apps/a1/invocations/h1');
       expect(result).toEqual(detail);
     });
   });
