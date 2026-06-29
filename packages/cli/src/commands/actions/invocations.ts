@@ -52,7 +52,7 @@ export function registerActionsInvocationsAction(actionsCommand: Command): void 
         try {
           if (options.id) {
             // Detail mode
-            await showInvocationDetail(client, options.id);
+            await showInvocationDetail(client, config.appId, options.id);
           } else {
             // List mode
             const limit = options.limit ? parseInt(options.limit, 10) : undefined;
@@ -79,8 +79,8 @@ export function registerActionsInvocationsAction(actionsCommand: Command): void 
 /**
  * Show full detail for a single log entry (--id mode).
  */
-async function showInvocationDetail(client: CanupClient, id: string): Promise<void> {
-  const entry = await client.getInvocationDetail(id);
+async function showInvocationDetail(client: CanupClient, appId: string, id: string): Promise<void> {
+  const entry = await client.getInvocationDetail(appId, id);
 
   label('Execution', entry.id);
   label('Action', entry.actionSlug ?? '—');
